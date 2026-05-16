@@ -1,5 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /private/
-
-Sitemap: https://online.hong-sen.com/sitemap.xml

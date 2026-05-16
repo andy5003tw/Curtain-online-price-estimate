@@ -62,6 +62,32 @@ npm.cmd run seo:check
 npm.cmd run seo:preflight
 ```
 
+## GitHub 設定方法（重要順序）
+
+以下是 GitHub Pages 使用 GitHub Actions 部署時，建議的設定順序（請依 1 -> 5）：
+
+1. `Repository visibility: Public`（倉庫可見度：公開）
+- GitHub Free 的 Pages 一般需公開倉庫才能啟用。
+
+2. `Settings > Pages > Build and deployment > Source: GitHub Actions`（設定 > Pages > 建置與部署 > 來源：GitHub Actions）
+- 這一步是告訴 GitHub：網站發布由 workflow 負責，不是 `Deploy from a branch`（由分支直接發布）。
+
+3. `Settings > Actions > General > Actions permissions: Allow all actions and reusable workflows`（設定 > Actions > 一般 > 動作權限：允許所有 actions 與可重用 workflows）
+- 若限制過嚴，`actions/checkout`、`actions/deploy-pages` 可能無法執行。
+
+4. `Settings > Actions > General > Workflow permissions: Read and write permissions`（設定 > Actions > 一般 > 工作流程權限：讀寫權限）
+- 讓 `GITHUB_TOKEN` 可建立 Pages deployment（Pages 發布記錄）。
+
+5. `Actions > Deploy static content to Pages > Run workflow / Re-run all jobs`（Actions > Deploy static content to Pages > 執行流程 / 重跑所有工作）
+- 建議每次修改 `deploy.yml` 後手動重跑一次確認。
+
+若出現：
+
+- `Resource not accessible by integration`（整合權限無法存取資源）
+- `Get Pages site failed`（取得 Pages 網站失敗）
+
+請優先檢查上面第 2、3、4 步是否正確。
+
 ## 部署說明
 
 ### 1) 前台靜態檔

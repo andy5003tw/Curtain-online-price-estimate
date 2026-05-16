@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteRule ^products/P001/?$ /products/custom-curtains/ [R=301,L]
+  RewriteRule ^products/P002/?$ /products/seamless-sheer-curtains/ [R=301,L]
+  RewriteRule ^products/P003/?$ /products/s-fold-curtains/ [R=301,L]
+  RewriteRule ^products/P004/?$ /products/roman-shades/ [R=301,L]
+  RewriteRule ^products/P005/?$ /products/roller-blinds/ [R=301,L]
+  RewriteRule ^products/P006/?$ /products/aluminum-blinds/ [R=301,L]
+  RewriteRule ^products/P007/?$ /products/wooden-blinds/ [R=301,L]
+  RewriteRule ^products/P008/?$ /products/bamboo-blinds/ [R=301,L]
+  RewriteRule ^products/P009/?$ /products/honeycomb-blinds/ [R=301,L]
+  RewriteRule ^products/P010/?$ /products/zebra-blinds/ [R=301,L]
+  RewriteRule ^products/P011/?$ /products/soft-sheer-blinds/ [R=301,L]
+  RewriteRule ^products/P012/?$ /products/hospital-curtains/ [R=301,L]
+  RewriteRule ^products/P013/?$ /products/vertical-blinds/ [R=301,L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

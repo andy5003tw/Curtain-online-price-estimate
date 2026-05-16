@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekly SOP KPI 報表總覽</title>
+  <style>
+    :root {
+      --bg: #f3f7fb;
+      --panel: #ffffff;
+      --text: #11324d;
+      --muted: #4c6780;
+      --line: #d4e2ef;
+      --btn: #eaf2fb;
+      --btn-hover: #dcebf9;
+      --btn-active: #cce2f7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(160deg, #f8fbff 0%, var(--bg) 100%);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.25;
+    }
+
+    .sub {
+      margin: 8px 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 12px;
+    }
+
+    .group {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .group-title {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #244763;
+      font-weight: 700;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid #c6d9ec;
+      background: var(--btn);
+      color: #133958;
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--btn-hover); }
+    button.active { background: var(--btn-active); border-color: #9ec4e7; }
+
+    .viewer {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .viewer-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+      background: #f8fbff;
+    }
+
+    iframe {
+      width: 100%;
+      height: calc(100vh - 270px);
+      border: 0;
+      background: #fff;
+      display: block;
+    }
+
+    @media (max-width: 920px) {
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+      iframe {
+        height: calc(100vh - 360px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Weekly SOP KPI 報表總覽</h1>
+    <p class="sub">直接切換 7天 / 28天 的查詢與網頁 HTML 報表。</p>
+
+    <section class="toolbar">
+      <div class="group">
+        <p class="group-title">7 天報表</p>
+        <div class="btn-row">
+          <button data-src="7d/gsc-query-kpi-diff-report(查詢-7天).html">7天查詢</button>
+          <button data-src="7d/gsc-page-kpi-diff-report(網頁-7天).html">7天網頁</button>
+        </div>
+      </div>
+      <div class="group">
+        <p class="group-title">28 天報表</p>
+        <div class="btn-row">
+          <button data-src="28d/gsc-query-kpi-diff-report(查詢-28天).html">28天查詢</button>
+          <button data-src="28d/gsc-page-kpi-diff-report(網頁-28天).html">28天網頁</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="viewer">
+      <div id="viewerTitle" class="viewer-head">目前顯示：7天查詢</div>
+      <iframe id="reportFrame" src="7d/gsc-query-kpi-diff-report(查詢-7天).html" title="Weekly SOP KPI Report"></iframe>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var frame = document.getElementById("reportFrame");
+      var title = document.getElementById("viewerTitle");
+      var allButtons = document.getElementsByTagName("button");
+      var buttons = [];
+
+      function hasClass(el, cls) {
+        return (" " + el.className + " ").indexOf(" " + cls + " ") > -1;
+      }
+
+      function addClass(el, cls) {
+        if (!hasClass(el, cls)) {
+          el.className = (el.className ? el.className + " " : "") + cls;
+        }
+      }
+
+      function removeClass(el, cls) {
+        var s = " " + el.className + " ";
+        while (s.indexOf(" " + cls + " ") > -1) {
+          s = s.replace(" " + cls + " ", " ");
+        }
+        el.className = s.replace(/^\s+|\s+$/g, "");
+      }
+
+      function buttonLabel(el) {
+        return (el.innerText || el.textContent || "").replace(/^\s+|\s+$/g, "");
+      }
+
+      function setActive(target) {
+        for (var i = 0; i < buttons.length; i++) {
+          if (buttons[i] === target) {
+            addClass(buttons[i], "active");
+          } else {
+            removeClass(buttons[i], "active");
+          }
+        }
+      }
+
+      function bindClick(el) {
+        var handler = function () {
+          var src = el.getAttribute("data-src");
+          frame.src = src;
+          title.innerText = "目前顯示：" + buttonLabel(el);
+          setActive(el);
+          return false;
+        };
+
+        if (el.addEventListener) {
+          el.addEventListener("click", handler, false);
+        } else {
+          el.onclick = handler;
+        }
+      }
+
+      for (var i = 0; i < allButtons.length; i++) {
+        if (allButtons[i].getAttribute("data-src")) {
+          buttons.push(allButtons[i]);
+          bindClick(allButtons[i]);
+        }
+      }
+
+      if (buttons.length > 0) {
+        setActive(buttons[0]);
+      }
+    })();
+  </script>
+</body>
+</html>

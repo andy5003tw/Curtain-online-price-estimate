@@ -1,0 +1,488 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="IE=edge">
+  <title>Weekly SOP 一鍵執行</title>
+  <hta:application
+    id="weeklySopLauncher"
+    applicationname="Weekly SOP Launcher"
+    border="thin"
+    caption="yes"
+    maximizebutton="no"
+    minimizebutton="yes"
+    sysmenu="yes"
+    scroll="no"
+    singleinstance="no"
+    windowstate="normal"
+  />
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 22px;
+      font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
+      color: #102a43;
+      background:
+        radial-gradient(circle at 15% 10%, #e2f3ff 0%, rgba(226, 243, 255, 0) 46%),
+        radial-gradient(circle at 88% 88%, #d8f6ea 0%, rgba(216, 246, 234, 0) 38%),
+        linear-gradient(140deg, #f8fbff 0%, #f2f7fb 100%);
+    }
+
+    .card {
+      width: 1040px;
+      max-width: 100%;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #d8e6f2;
+      border-radius: 20px;
+      padding: 24px 24px 18px;
+      box-shadow: 0 14px 34px rgba(16, 42, 67, 0.12);
+    }
+
+    .heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 27px;
+      letter-spacing: 0.4px;
+      color: #0b2f4a;
+    }
+
+    .tag {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.35px;
+      color: #0f5132;
+      background: #e8f8ef;
+      border: 1px solid #bde7cf;
+      border-radius: 999px;
+      padding: 5px 11px;
+      white-space: nowrap;
+    }
+
+    .intro {
+      margin: 8px 0 0;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #36536b;
+    }
+
+    .steps {
+      margin: 16px 0 0;
+      padding: 14px 16px 14px 32px;
+      background: #f8fbff;
+      border: 1px solid #d8e6f2;
+      border-radius: 14px;
+    }
+
+    .steps li {
+      margin: 6px 0;
+      font-size: 14px;
+      line-height: 1.65;
+      color: #183b56;
+    }
+
+    .steps code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #eaf2fa;
+      padding: 1px 5px;
+      border-radius: 6px;
+      color: #0b2f4a;
+    }
+
+    .actions {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .action-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    button {
+      border: 2px solid transparent;
+      border-radius: 999px;
+      padding: 11px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+      min-height: 46px;
+      width: 100%;
+      text-align: center;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.62;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .primary {
+      color: #0f2e46;
+      background: linear-gradient(160deg, #d8efe8 0%, #cfe6f5 100%);
+      border-color: #004b3d;
+      box-shadow: 0 8px 16px rgba(0, 79, 102, 0.2);
+    }
+
+    .secondary {
+      color: #163a56;
+      background: #eef5fc;
+    }
+
+    .btn-report {
+      color: #0f4f39;
+      background: #e7f8ed;
+      border-color: #2f9a64;
+      box-shadow: 0 4px 10px rgba(47, 154, 100, 0.15);
+    }
+
+    .btn-upload {
+      color: #0b4a36;
+      background: #dcf5e5;
+      border-color: #2b8e5f;
+      box-shadow: 0 4px 10px rgba(43, 142, 95, 0.16);
+    }
+
+    .btn-query {
+      color: #3e2962;
+      background: #f4efff;
+      border-color: #8f70d8;
+      box-shadow: 0 4px 10px rgba(143, 112, 216, 0.14);
+    }
+
+    .btn-query-report {
+      color: #4a2c66;
+      background: #f5f0ff;
+      border-color: #a57bd4;
+      box-shadow: 0 4px 10px rgba(165, 123, 212, 0.14);
+    }
+
+    .btn-window-7d {
+      color: #3e2962;
+      background: #f4efff;
+      border-color: #8f70d8;
+      box-shadow: 0 4px 10px rgba(143, 112, 216, 0.14);
+    }
+
+    .btn-window-28d {
+      color: #0b4a36;
+      background: #e7f8ed;
+      border-color: #2f9a64;
+      box-shadow: 0 4px 10px rgba(47, 154, 100, 0.15);
+    }
+
+    .status-wrap {
+      margin-top: 14px;
+      background: #f7fbff;
+      border: 1px solid #d8e6f2;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .status-head {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #274760;
+      background: #eef5fc;
+      border-bottom: 1px solid #d8e6f2;
+    }
+
+    .status-wrap.running .status-head {
+      color: #0b5f6d;
+      background: #e7f6f8;
+    }
+
+    .status-wrap.success .status-head {
+      color: #165d3e;
+      background: #eaf8f0;
+    }
+
+    .status-wrap.error .status-head {
+      color: #8d1b13;
+      background: #fdeceb;
+    }
+
+    #status {
+      padding: 11px 12px 12px;
+      font-size: 13px;
+      line-height: 1.58;
+      white-space: pre-wrap;
+      color: #2f4f67;
+      min-height: 58px;
+    }
+
+    .footer {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #54708a;
+      text-align: right;
+    }
+  </style>
+  <script type="text/javascript">
+    function getRootFolder() {
+      var raw = decodeURIComponent(window.location.pathname);
+      raw = raw.replace(/\//g, "\\");
+      if (/^\\[A-Za-z]:/.test(raw)) {
+        raw = raw.substring(1);
+      }
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      return fso.GetParentFolderName(raw);
+    }
+
+    function setStatus(msg, mode) {
+      document.getElementById("status").innerText = msg;
+      var wrap = document.getElementById("statusWrap");
+      wrap.className = "status-wrap";
+      if (mode) {
+        wrap.className += " " + mode;
+      }
+    }
+
+    function setButtonsBusy(isBusy) {
+      var ids = [
+        "btnRun7d",
+        "btnRun28d",
+        "btnReportDashboard",
+        "btn7dQueryReport",
+        "btn7dPageReport",
+        "btn28dQueryReport",
+        "btn28dPageReport"
+      ];
+      for (var i = 0; i < ids.length; i++) {
+        document.getElementById(ids[i]).disabled = isBusy;
+      }
+    }
+
+    function runWindowWithInput(inputPath, windowKey, modeLabel) {
+      var root = getRootFolder();
+      var shell = new ActiveXObject("WScript.Shell");
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var safePath = inputPath.replace(/"/g, '""');
+      var logDir = root + "\\latest";
+      if (!fso.FolderExists(logDir)) {
+        fso.CreateFolder(logDir);
+      }
+      var logPath = logDir + "\\weekly-sop-" + windowKey + "-last-run.log";
+      var safeLog = logPath.replace(/"/g, '""');
+      var cmd = 'cmd /c cd /d "' + root + '" && powershell -NoProfile -ExecutionPolicy Bypass -File "run-weekly-window.ps1" -Window "' + windowKey + '" -InputFile "' + safePath + '" > "' + safeLog + '" 2>&1';
+      setButtonsBusy(true);
+      setStatus("開始執行 Weekly SOP（" + modeLabel + "）...\n來源檔案：\n" + inputPath + "\n\n" + cmd, "running");
+      var code = shell.Run(cmd, 1, true);
+      var logText = "";
+      if (fso.FileExists(logPath)) {
+        var logFile = fso.OpenTextFile(logPath, 1, false, -1);
+        logText = logFile.ReadAll();
+        logFile.Close();
+      }
+      if (code === 0) {
+        setStatus("Weekly SOP 已完成（" + modeLabel + "）。\n已同時產生查詢與網頁報表，請點下方最新 HTML 報表查看。\n\n" + logText, "success");
+      } else {
+        setStatus("執行失敗（" + modeLabel + "），錯誤代碼：" + code + "\n請確認選的是 Search Performance ZIP，且日期區間與按鈕一致；Coverage ZIP 不能產生 KPI 對比報表。\n\n" + logText, "error");
+      }
+    }
+
+    function upload7dAndRun() {
+      try {
+        var file = pickInputFile("Select GSC Search Performance ZIP - 前 7 天");
+        if (!file) {
+          setStatus("已取消選檔。", "");
+          return;
+        }
+        runWindowWithInput(file, "7d", "7天觀察");
+      } catch (e) {
+        setStatus("上傳執行失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+      }
+    }
+
+    function upload28dAndRun() {
+      try {
+        var file = pickInputFile("Select GSC Search Performance ZIP - 前 28 天");
+        if (!file) {
+          setStatus("已取消選檔。", "");
+          return;
+        }
+        runWindowWithInput(file, "28d", "28天正式判定");
+      } catch (e) {
+        setStatus("上傳執行失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+      }
+    }
+
+    function openLatest7dQueryHtml() {
+      openReportWithFallback("gsc-query-kpi-diff-report(查詢-7天).html", "7天查詢", "7d");
+    }
+
+    function openLatest7dPageHtml() {
+      openReportWithFallback("gsc-page-kpi-diff-report(網頁-7天).html", "7天網頁", "7d");
+    }
+
+    function openLatest28dQueryHtml() {
+      openReportWithFallback("gsc-query-kpi-diff-report(查詢-28天).html", "28天查詢", "28d");
+    }
+
+    function openLatest28dPageHtml() {
+      openReportWithFallback("gsc-page-kpi-diff-report(網頁-28天).html", "28天網頁", "28d");
+    }
+
+    function openReportDashboard() {
+      try {
+        var root = getRootFolder();
+        var shell = new ActiveXObject("WScript.Shell");
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var target = root + "\\latest\\report-dashboard.html";
+        if (!fso.FileExists(target)) {
+          setStatus("找不到報表總覽頁：\n" + target + "\n請先確認 Weekly SOP\\latest\\report-dashboard.html 存在。", "error");
+          return;
+        }
+        shell.Run('cmd /c start "" "' + target + '"', 1, false);
+        setStatus("已開啟 KPI 報表總覽頁：\n" + target, "success");
+      } catch (e) {
+        setStatus("開啟 KPI 報表總覽頁失敗：" + e.message, "error");
+      }
+    }
+
+    function findLatestReport(root, reportFileName, windowKey) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var latestPath = root + "\\latest\\" + windowKey + "\\" + reportFileName;
+      if (fso.FileExists(latestPath)) {
+        return latestPath;
+      }
+
+      var reportsDir = root + "\\reports";
+      if (!fso.FolderExists(reportsDir)) {
+        return "";
+      }
+
+      var folder = fso.GetFolder(reportsDir);
+      var names = [];
+      var subFolders = new Enumerator(folder.SubFolders);
+      for (; !subFolders.atEnd(); subFolders.moveNext()) {
+        var sf = subFolders.item();
+        names.push(sf.Name);
+      }
+
+      names.sort();
+      names.reverse();
+
+      for (var i = 0; i < names.length; i++) {
+        if (names[i].indexOf("_" + windowKey) < 0) {
+          continue;
+        }
+        var candidate = reportsDir + "\\" + names[i] + "\\" + reportFileName;
+        if (fso.FileExists(candidate)) {
+          return candidate;
+        }
+      }
+
+      return "";
+    }
+
+    function openReportWithFallback(reportFileName, label, windowKey) {
+      try {
+        var root = getRootFolder();
+        var shell = new ActiveXObject("WScript.Shell");
+        var target = findLatestReport(root, reportFileName, windowKey);
+        if (!target) {
+          setStatus("找不到「" + label + "」HTML 報表。\n請先執行一次對應的 7天或 28天上傳流程。", "error");
+          return;
+        }
+        shell.Run('cmd /c start "" "' + target + '"', 1, false);
+        setStatus("已開啟最新「" + label + "」HTML 報表：\n" + target, "success");
+      } catch (e) {
+        setStatus("開啟「" + label + "」報表失敗：" + e.message, "error");
+      }
+    }
+
+    function pickInputFile(dialogTitle) {
+      var shell = new ActiveXObject("WScript.Shell");
+      var ps =
+        "$ErrorActionPreference='Stop';" +
+        "Add-Type -AssemblyName System.Windows.Forms;" +
+        "$dlg=New-Object System.Windows.Forms.OpenFileDialog;" +
+        "$dlg.Title='" + dialogTitle.replace(/'/g, "''") + "';" +
+        "$dlg.Filter='GSC Performance ZIP (*.zip)|*.zip';" +
+        "$dlg.Multiselect=$false;" +
+        "if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){Write-Output $dlg.FileName}";
+
+      var cmd = 'powershell -NoProfile -ExecutionPolicy Bypass -STA -Command "' + ps.replace(/"/g, '\\"') + '"';
+      var exec = shell.Exec(cmd);
+      var output = exec.StdOut.ReadAll();
+      var err = exec.StdErr.ReadAll();
+
+      if (exec.ExitCode !== 0) {
+        throw new Error(err || ("選檔失敗，錯誤代碼：" + exec.ExitCode));
+      }
+      var cleaned = output.replace(/\r?\n/g, "");
+      cleaned = cleaned.replace(/^\s+|\s+$/g, "");
+      return cleaned;
+    }
+
+  </script>
+</head>
+<body>
+  <div class="card">
+    <div class="heading">
+      <h1>Weekly SOP 一鍵執行</h1>
+      <span class="tag">7天觀察 / 28天判定</span>
+    </div>
+
+    <p class="intro">請上傳 Google Search Console「成效」ZIP。7天用來每週觀察微調，28天用來做 SEO / SGO 改版成效判定。</p>
+
+    <ol class="steps">
+      <li>從 GSC 成效報表匯出「前 7 天」或「前 28 天」ZIP。</li>
+      <li>依區間點選對應按鈕；系統會自動抓出「查詢.csv」與「網頁.csv」。</li>
+      <li>執行完成後會同時產生查詢與網頁 Markdown / HTML 報表。</li>
+    </ol>
+
+    <div class="actions">
+      <div class="action-col">
+        <button id="btnRun7d" class="secondary btn-window-7d" onclick="upload7dAndRun()">上傳 7天成效 ZIP 並產生報表</button>
+        <button id="btn7dQueryReport" class="secondary btn-window-7d" onclick="openLatest7dQueryHtml()">開啟最新 7天查詢 HTML</button>
+        <button id="btn7dPageReport" class="secondary btn-window-7d" onclick="openLatest7dPageHtml()">開啟最新 7天網頁 HTML</button>
+      </div>
+      <div class="action-col">
+        <button id="btnRun28d" class="secondary btn-window-28d" onclick="upload28dAndRun()">上傳 28天成效 ZIP 並產生報表</button>
+        <button id="btn28dQueryReport" class="secondary btn-window-28d" onclick="openLatest28dQueryHtml()">開啟最新 28天查詢 HTML</button>
+        <button id="btn28dPageReport" class="secondary btn-window-28d" onclick="openLatest28dPageHtml()">開啟最新 28天網頁 HTML</button>
+      </div>
+    </div>
+    <div style="margin-top: 12px;">
+      <button id="btnReportDashboard" class="btn-report" onclick="openReportDashboard()">開啟 KPI 報表總覽頁（7天 + 28天）</button>
+    </div>
+
+    <div class="status-wrap" id="statusWrap">
+      <div class="status-head">執行狀態</div>
+      <div id="status">待命中。</div>
+    </div>
+
+    <div class="footer">Weekly SOP Launcher</div>
+  </div>
+</body>
+</html>

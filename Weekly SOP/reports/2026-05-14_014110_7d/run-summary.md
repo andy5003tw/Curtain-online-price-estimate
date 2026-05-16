@@ -1,0 +1,27 @@
+﻿# Weekly SOP 7天 Run Summary
+
+- Run time: 2026-05-14 01:41:11
+- Window: 7d / 前 7 天
+- Tracking start date: 2026-05-14
+- Verdict mode: observation
+- SEO/GEO total rows: 32
+- SEO/GEO query rows: 21
+- SEO/GEO page rows: 11
+- Main detail min-impr: 1
+- Main detail limit: 30
+- Full detail min-impr: 1
+- Query same as current baseline: False
+- Page same as current baseline: False
+- Input mode: direct
+- Input file: https___online.hong-sen.com_-Performance-on-Search-2026-05-13.zip
+- Query CSV: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\_tmp_window_2026-05-14_014110\查詢.csv
+- Page CSV: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\_tmp_window_2026-05-14_014110\網頁.csv
+- Query baseline snapshot: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\reports\2026-05-14_014110_7d\before_query_baseline_7d.normalized.csv
+- Page baseline snapshot: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\reports\2026-05-14_014110_7d\before_page_baseline_7d.normalized.csv
+- Query baseline updated: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\history\7d\current_query_baseline.normalized.csv
+- Page baseline updated: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\history\7d\current_page_baseline.normalized.csv
+- Latest query HTML: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\latest\7d\gsc-query-kpi-diff-report(查詢-7天).html
+- Latest query full HTML: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\latest\7d\gsc-query-kpi-diff-report(查詢-7天)-full.html
+- Latest page HTML: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\latest\7d\gsc-page-kpi-diff-report(網頁-7天).html
+- Latest page full HTML: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\latest\7d\gsc-page-kpi-diff-report(網頁-7天)-full.html
+- Archived input: D:\ALL 程式設計\Antigravity\Curtain-online\Curtain-online-price-estimate\Weekly SOP\.\archive\2026-05-14\7d\2026-05-14_014110_https___online.hong-sen.com_-Performance-on-Search-2026-05-13.zip

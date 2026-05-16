@@ -5,5 +5,16 @@ dist/
 coverage/
 .DS_Store
 *.log
+*.pid
 .env*
 !.env.example
+private/users.php
+private/pricing-rules.php
+private/backups/*
+!private/backups/.gitkeep
+private/logs/*.log
+!private/logs/.gitkeep
+private/runtime/*.json
+!private/runtime/.gitkeep
+private/runtime/*.lock
+private/runtime/*.pid

@@ -129,3 +129,21 @@
 - [x] `out/` 全量 FTP 上傳至 `online.hong-sen.com/`（URL encode 路徑重跑，`TOTAL=916`、`FAIL=0`）。
 - [x] live 驗收完成（6 目標頁 `HTTP 200`、canonical、JSON-LD、sitemap 正常）。
 - [x] legacy 301 驗收完成（`P005 -> roller-blinds`、`P007 -> wooden-blinds`、`P010 -> zebra-blinds`）。
+
+## 本輪執行紀錄（2026-05-17，估價後台與安全上傳）
+
+- [x] 同網域估價後台骨架上線：`/admin/pricing/login.php`、`/admin/pricing/`、`/admin/pricing/users.php`、`/admin/pricing/logout.php`。
+- [x] 前台估價改為呼叫後端 API：`POST /api/calc.php`（前台不再持有公式計算邏輯）。
+- [x] 後台介面完成繁體中文化（登入、規則管理、人員管理、提示訊息）。
+- [x] 產品顯示補齊中英對照：`P001~P013` 於後台顯示 `英文（中文）`。
+- [x] `README.md` 已改為繁體中文版本，並更新部署與後台操作說明。
+- [x] 已完成 FTP 上線補檔（`admin/pricing/*`、`api/calc.php`、`private/lib/*`、`private/.htaccess`），並確認端點回應正常。
+
+## GitHub 安全上傳邊界（2026-05-17）
+
+- 敏感檔不上傳 GitHub：
+  - `private/users.php`（帳號與密碼雜湊）
+  - `private/pricing-rules.php`（實際商業計價規則）
+  - `private/runtime/*`、`private/logs/*.log`、`private/backups/*`
+- 已更新 `.gitignore` 強化排除規則（含 `*.pid` 與 `private/runtime/*.pid`）。
+- GitHub 僅提交「程式碼、後台頁面、API、文件與非敏感設定」。

@@ -6,6 +6,39 @@ require_once dirname(__DIR__, 2) . '/private/lib/storage.php';
 require_once dirname(__DIR__, 2) . '/private/lib/auth.php';
 require_once dirname(__DIR__, 2) . '/private/lib/audit.php';
 
+function hs_pricing_default_value(string $formulaType, string $field): float
+{
+    if ($field === 'base_installation_per_tai') {
+        return $formulaType === 'vertical_blind' ? 35.0 : 20.0;
+    }
+    if ($field === 'labor_per_tai') {
+        return 13.0;
+    }
+    return 0.0;
+}
+
+function hs_pricing_fields_for_formula(string $formulaType, array $pricing): array
+{
+    $formulaFields = [
+        'standard_track' => ['unit_price', 'track_price_per_ft', 'min_track_ft', 'sewing_fee', 'installation_fee'],
+        'seamless_sheer' => ['unit_price', 'track_price_per_ft', 'min_track_ft', 'sewing_fee', 'installation_fee'],
+        'snake_fold' => ['unit_price', 'track_price_per_ft', 'min_track_ft', 'sewing_fee', 'installation_fee'],
+        'roman_shade' => ['unit_price', 'track_price_per_ft', 'min_track_ft', 'sewing_fee', 'installation_fee'],
+        'hospital_curtain' => ['unit_price', 'track_price_per_ft', 'min_track_ft', 'sewing_fee', 'installation_fee'],
+        'roller_blind' => ['unit_price', 'min_per_tai', 'base_installation_per_tai', 'labor_per_tai'],
+        'area_based' => ['unit_price', 'min_per_tai', 'base_installation_per_tai', 'labor_per_tai'],
+        'vertical_blind' => ['unit_price', 'min_per_tai', 'base_installation_per_tai', 'labor_per_tai'],
+    ];
+
+    $fields = $formulaFields[$formulaType] ?? array_keys($pricing);
+    foreach (array_keys($pricing) as $existingField) {
+        if (!in_array($existingField, $fields, true)) {
+            $fields[] = $existingField;
+        }
+    }
+    return $fields;
+}
+
 hs_bootstrap_session();
 hs_require_login();
 
@@ -43,13 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_array($pricing)) {
                 return ['ok' => false, 'message' => '價格規則格式無效。'];
             }
+            $formulaType = (string) ($product['formula_type'] ?? '');
+            $editableFields = hs_pricing_fields_for_formula($formulaType, $pricing);
 
             $changes = [];
-            foreach ($pricing as $key => $oldValue) {
+            foreach ($editableFields as $key) {
                 $inputName = 'price_' . $key;
                 if (!array_key_exists($inputName, $_POST)) {
                     continue;
                 }
+                $oldValue = $pricing[$key] ?? hs_pricing_default_value($formulaType, $key);
 
                 $raw = trim((string) $_POST[$inputName]);
                 if ($raw === '' || !is_numeric($raw)) {
@@ -154,10 +190,10 @@ function hs_field_label(string $field): string
         'track_price_per_ft' => '軌道單價 / 尺',
         'min_track_ft' => '軌道最低尺數',
         'sewing_fee' => '車工費',
-        'installation_fee' => '安裝費',
-        'min_per_tai' => '每台最低計價',
-        'base_installation_per_tai' => '每台基本安裝費',
-        'labor_per_tai' => '每台施工費',
+        'installation_fee' => '安裝費 / 尺',
+        'min_per_tai' => '每才最低計價',
+        'base_installation_per_tai' => '每才基本安裝費',
+        'labor_per_tai' => '每才施工費',
     ];
     return $labels[$field] ?? $field;
 }
@@ -291,7 +327,12 @@ function hs_product_name_zh_by_id(string $productId): string
           <input type="hidden" name="action" value="save_product" />
           <input type="hidden" name="product_id" value="<?= htmlspecialchars((string) $productId, ENT_QUOTES, 'UTF-8') ?>" />
           <div class="grid">
-            <?php foreach ($pricing as $field => $value): ?>
+            <?php
+              $formulaType = (string) ($product['formula_type'] ?? '');
+              $editableFields = hs_pricing_fields_for_formula($formulaType, $pricing);
+            ?>
+            <?php foreach ($editableFields as $field): ?>
+              <?php $value = $pricing[$field] ?? hs_pricing_default_value($formulaType, $field); ?>
               <div>
                 <label for="<?= htmlspecialchars($productId . '-' . $field, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(hs_field_label((string) $field), ENT_QUOTES, 'UTF-8') ?></label>
                 <input

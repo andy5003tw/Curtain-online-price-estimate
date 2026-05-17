@@ -153,7 +153,7 @@
     "image_title": "捲簾展示",
     "formula_type": "roller_blind",
     "requires_track": false,
-    "pricing": { "unit_price": 64, "min_per_tai": 15, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 64, "min_per_tai": 15, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "台北與三重常見的高效率控光款式，操作直覺不佔空間，具備防潑水特性。",
     "seo": { "meta_title": "台北捲簾價格、三重捲簾價格｜捲簾訂製線上估價", "meta_description": "快速比較台北捲簾價格與三重捲簾價格，支援線上估價與到府丈量。", "keywords": ["台北捲簾價格", "三重捲簾價格", "捲簾線上估價"] }
   },
@@ -171,7 +171,7 @@
     "image_title": "鋁百葉窗簾展示",
     "formula_type": "area_based",
     "requires_track": false,
-    "pricing": { "unit_price": 56, "min_per_tai": 12, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 56, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "耐用防潮的鋁合金葉片設計，適合比較台北、三重鋁百葉窗價格與日常清潔便利度。",
     "seo": { "meta_title": "台北鋁百葉窗價格、三重鋁百葉窗價格｜鋁百葉窗簾訂製", "meta_description": "快速比較台北與三重鋁百葉窗價格，防潮、耐用、易清潔，適合浴室與廚房。", "keywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗簾訂製"] }
   },
@@ -189,7 +189,7 @@
     "image_title": "木百葉窗簾展示",
     "formula_type": "area_based",
     "requires_track": false,
-    "pricing": { "unit_price": 160, "min_per_tai": 12, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 160, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "天然木材打造溫暖質感，適合想比較台北、三重實木百葉窗價格的居家與商空。",
     "seo": { "meta_title": "台北實木百葉窗價格、三重實木百葉窗價格｜木百葉窗簾訂製", "meta_description": "查看台北與三重實木百葉窗價格區間，快速完成木百葉窗簾訂製評估。", "keywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "木百葉窗簾訂製"] }
   },
@@ -207,7 +207,7 @@
     "image_title": "竹簾展示",
     "formula_type": "area_based",
     "requires_track": false,
-    "pricing": { "unit_price": 77, "min_per_tai": 12, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 77, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "古樸東方韻味，透氣性極佳。",
     "seo": { "meta_title": "仿古自然竹簾", "meta_description": "日式禪風空間設計。", "keywords": ["竹簾"] }
   },
@@ -225,7 +225,7 @@
     "image_title": "風琴簾展示",
     "formula_type": "area_based",
     "requires_track": false,
-    "pricing": { "unit_price": 232, "min_per_tai": 20, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 232, "min_per_tai": 20, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "蜂巢中空結構強化隔熱節能，適合比較台北、三重風琴簾價格與西曬空間降溫需求。",
     "seo": { "meta_title": "台北風琴簾價格、三重風琴簾價格｜蜂巢簾節能估價", "meta_description": "查看台北與三重風琴簾價格，蜂巢簾隔熱節能、適合西曬與臥室控溫。", "keywords": ["台北風琴簾價格", "三重風琴簾價格", "蜂巢簾價格"] }
   },
@@ -243,7 +243,7 @@
     "image_title": "調光簾展示",
     "formula_type": "area_based",
     "requires_track": false,
-    "pricing": { "unit_price": 111, "min_per_tai": 15, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 111, "min_per_tai": 15, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "斑馬簾雙層交錯設計，可快速比較台北調光簾價格與三重調光簾價格。",
     "seo": { "meta_title": "台北調光簾價格、三重調光簾價格｜斑馬簾訂製估價", "meta_description": "支援台北、三重調光簾價格比較，快速評估斑馬簾訂製與安裝預算。", "keywords": ["台北調光簾價格", "三重調光簾價格", "斑馬簾訂製"] }
   },
@@ -261,7 +261,7 @@
     "image_title": "柔紗簾展示",
     "formula_type": "area_based",
     "requires_track": false,
-    "pricing": { "unit_price": 164, "min_per_tai": 15, "labor_per_tai": 13 },
+    "pricing": { "unit_price": 164, "min_per_tai": 15, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "葉片懸浮在兩層輕紗間，營造柔美感。",
     "seo": { "meta_title": "頂級柔紗簾訂製", "meta_description": "雲端般的柔和光影。", "keywords": ["柔紗簾"] }
   },

@@ -8,7 +8,7 @@
 
 ## 環境需求
 
-- Node.js 20 以上
+- Node.js 22 以上（建議；目前 GitHub Actions workflow 使用 Node 22）
 - npm（Windows 可使用 `npm.cmd`）
 - 可執行 PHP 的主機環境（建議 PHP 8.x）
 
@@ -62,31 +62,65 @@ npm.cmd run seo:check
 npm.cmd run seo:preflight
 ```
 
-## GitHub 設定方法（重要順序）
+## GitHub Pages 設定與部署重點（GitHub Actions）
 
-以下是 GitHub Pages 使用 GitHub Actions 部署時，建議的設定順序（請依 1 -> 5）：
+本專案使用 `.github/workflows/deploy.yml` 自動部署，請按以下順序設定：
 
 1. `Repository visibility: Public`（倉庫可見度：公開）
-- GitHub Free 的 Pages 一般需公開倉庫才能啟用。
+- GitHub Free 方案下，Pages 一般需公開倉庫才可啟用。
 
-2. `Settings > Pages > Build and deployment > Source: GitHub Actions`（設定 > Pages > 建置與部署 > 來源：GitHub Actions）
-- 這一步是告訴 GitHub：網站發布由 workflow 負責，不是 `Deploy from a branch`（由分支直接發布）。
+2. `Settings > Pages > Build and deployment > Source: GitHub Actions`
+- 必須選 `GitHub Actions`，不要選 `Deploy from a branch`。
 
-3. `Settings > Actions > General > Actions permissions: Allow all actions and reusable workflows`（設定 > Actions > 一般 > 動作權限：允許所有 actions 與可重用 workflows）
-- 若限制過嚴，`actions/checkout`、`actions/deploy-pages` 可能無法執行。
+3. `Settings > Actions > General > Actions permissions`
+- 建議選 `Allow all actions and reusable workflows`。
 
-4. `Settings > Actions > General > Workflow permissions: Read and write permissions`（設定 > Actions > 一般 > 工作流程權限：讀寫權限）
-- 讓 `GITHUB_TOKEN` 可建立 Pages deployment（Pages 發布記錄）。
+4. `Settings > Actions > General > Workflow permissions`
+- 必須選 `Read and write permissions`（讓 `GITHUB_TOKEN` 可建立 Pages deployment）。
 
-5. `Actions > Deploy static content to Pages > Run workflow / Re-run all jobs`（Actions > Deploy static content to Pages > 執行流程 / 重跑所有工作）
-- 建議每次修改 `deploy.yml` 後手動重跑一次確認。
+5. 手動觸發部署
+- 路徑：`Actions > Deploy static content to Pages`。
+- 點進工作流程頁後，右上角可按 `Run workflow`（分支選 `main`）。
+- 若已跑過一版，進入該次執行頁可用 `Re-run all jobs`。
 
-若出現：
+6. 若看不到 `Run workflow`，請依序檢查
+- 是否已點進特定 workflow 頁（不是 Actions 總覽）。
+- Actions 是否被關閉。
+- 目前帳號是否有寫入權限。
+- `.github/workflows/deploy.yml` 是否在 `main` 分支。
 
-- `Resource not accessible by integration`（整合權限無法存取資源）
-- `Get Pages site failed`（取得 Pages 網站失敗）
+7. 若你剛切換過公開/私有
+- 需重新跑一次 workflow；否則常見 `404 There isn't a GitHub Pages site here`。
 
-請優先檢查上面第 2、3、4 步是否正確。
+### 目前 workflow 版本（2026-05）
+
+- `actions/checkout@v6`
+- `actions/setup-node@v6`（`node-version: 22`）
+- `actions/configure-pages@v6`
+- `actions/upload-pages-artifact@v5`
+- `actions/deploy-pages@v5`
+- 並設定 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`（因應 Node 20 淘汰過渡期）
+
+### 常見錯誤快速排查
+
+- `Resource not accessible by integration`
+- `Get Pages site failed`
+- `There isn't a GitHub Pages site here`
+
+請先回頭檢查本段第 2、3、4、7 點。
+
+## GitHub Pages 限制（本專案）
+
+- GitHub Pages 是靜態主機，不支援 PHP。
+- 本專案估價 API 為 `POST /api/calc.php`（PHP），因此 GitHub Pages 上僅能當前台展示。
+- 真正可計算版本請使用正式站：`https://online.hong-sen.com/calculator/`
+
+## README 更新紀錄（部署段落整理）
+
+- 已合併原本重複的 Pages 設定描述為單一章節。
+- 已補上 `Run workflow` 實際路徑與找不到按鈕時的檢查清單。
+- 已補上 Node 20 淘汰後的 workflow 版本與 Node 24 過渡設定。
+- 已補上「GitHub Pages 不支援 PHP」限制，避免誤判為前端故障。
 
 ## 部署說明
 

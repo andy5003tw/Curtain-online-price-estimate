@@ -30,6 +30,8 @@ type CalcApiResponse = CalcApiSuccess | CalcApiError;
 function CalculatorForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isGitHubPages =
+    typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
   const selectedProduct = searchParams.get('product') || products[0].id;
   const selectedArea = searchParams.get('area') || undefined;
   const [width, setWidth] = useState<number | ''>('');
@@ -44,6 +46,13 @@ function CalculatorForm() {
     if (!selectedProduct || !widthValue || !heightValue) {
       setResult(null);
       setApiError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    if (isGitHubPages) {
+      setResult(null);
+      setApiError('此 GitHub Pages 展示站未啟用 PHP API，估價功能請到正式站使用。');
       setIsLoading(false);
       return;
     }
@@ -64,6 +73,10 @@ function CalculatorForm() {
       signal: controller.signal,
     })
       .then(async (res) => {
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('估價服務目前不可用，請改用正式站。');
+        }
         const payload = (await res.json()) as CalcApiResponse;
         if (!res.ok || !payload.ok) {
           const message = payload && !payload.ok ? payload.message : '目前無法計算，請稍後再試。';
@@ -81,7 +94,7 @@ function CalculatorForm() {
       .finally(() => setIsLoading(false));
 
     return () => controller.abort();
-  }, [width, height, selectedProduct, selectedArea]);
+  }, [width, height, selectedProduct, selectedArea, isGitHubPages]);
 
   const activeProduct = products.find((product) => product.id === selectedProduct);
 
@@ -194,10 +207,24 @@ function CalculatorForm() {
             <div className="result-empty">
               <Calculator size={48} style={{ opacity: 0.2 }} />
               <p>請輸入完整寬高尺寸後即可查看估價結果。</p>
+              {isGitHubPages && (
+                <p className="form-hint" style={{ marginTop: '0.75rem', color: 'var(--amber-700)' }}>
+                  GitHub Pages 為靜態展示環境，無法執行 PHP 後端估價 API。
+                </p>
+              )}
               {apiError && (
                 <p className="form-hint" style={{ marginTop: '0.75rem', color: 'var(--red-600)' }}>
                   {apiError}
                 </p>
+              )}
+              {isGitHubPages && (
+                <a
+                  href="https://online.hong-sen.com/calculator/"
+                  className="btn-outline"
+                  style={{ marginTop: '0.75rem' }}
+                >
+                  前往正式站估價
+                </a>
               )}
             </div>
           )}

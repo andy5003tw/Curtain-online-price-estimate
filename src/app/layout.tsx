@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingLineBtn from '@/components/FloatingLineBtn';
 import { absoluteUrl, CATALOG_URL, COMPANY_NAME, SITE_URL } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -93,7 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-TW">
       <head>
-        <link rel="preload" href="/banner_img/banner_01.webp" as="image" />
+        <link rel="preload" href={withBasePath('/banner_img/banner_01.webp')} as="image" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}

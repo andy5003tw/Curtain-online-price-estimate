@@ -7,7 +7,11 @@ const ghPagesPrefix = isGitHubActionsBuild && repoName ? `/${repoName}` : "";
 const nextConfig: NextConfig = {
   output: "export", // Static Site Generation for deployment
   trailingSlash: true,
+  basePath: ghPagesPrefix || undefined,
   assetPrefix: ghPagesPrefix || undefined,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: ghPagesPrefix,
+  },
   images: {
     unoptimized: true, // Required for static export
   },

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { constructionCases } from '@/data/constructionCases';
 import { absoluteUrl } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 import { MapPin, Tag, Calendar, Image as ImageIcon, Search, Filter, X, ChevronRight, ChevronLeft, XCircle } from 'lucide-react';
 
 const ALL_DISTRICTS = '所有地區';
@@ -25,6 +26,7 @@ const QUICK_LINKS = [
 function CaseCard({ c, onOpenLightbox }: { c: any, onOpenLightbox: (images: string[], index: number) => void }) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const caseImages = useMemo(() => c.images.map((img: string) => withBasePath(img)), [c.images]);
 
   const scrollLeft = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -40,11 +42,11 @@ function CaseCard({ c, onOpenLightbox }: { c: any, onOpenLightbox: (images: stri
     <article className="case-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'white', borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--stone-100)', transition: 'all 0.3s ease' }}>
       <div 
         className="case-card-img" 
-        onClick={() => onOpenLightbox(c.images, previewIndex)}
+        onClick={() => onOpenLightbox(caseImages, previewIndex)}
         style={{ position: 'relative', width: '100%', paddingTop: '75%', cursor: 'zoom-in', background: 'var(--stone-100)' }}
       >
         <img 
-          src={c.images[previewIndex] || c.images[0]} 
+          src={caseImages[previewIndex] || caseImages[0]} 
           alt={c.title} 
           loading="lazy" 
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
@@ -88,11 +90,11 @@ function CaseCard({ c, onOpenLightbox }: { c: any, onOpenLightbox: (images: stri
                   msOverflowStyle: 'none'  // IE
                 }}
               >
-                {c.images.map((img: string, idx: number) => (
+                {caseImages.map((img: string, idx: number) => (
                   <div 
                     key={idx} 
                     onMouseEnter={() => setPreviewIndex(idx)}
-                    onClick={() => onOpenLightbox(c.images, idx)}
+                    onClick={() => onOpenLightbox(caseImages, idx)}
                     style={{ 
                       flex: '0 0 auto', width: '30%', minWidth: '60px', aspectRatio: '1', position: 'relative', 
                       borderRadius: '0.3rem', overflow: 'hidden', cursor: 'pointer', 
@@ -117,7 +119,7 @@ function CaseCard({ c, onOpenLightbox }: { c: any, onOpenLightbox: (images: stri
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--stone-50)' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--stone-400)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Calendar size={12} /> {c.date}</span>
             <button 
-              onClick={() => onOpenLightbox(c.images, previewIndex)}
+              onClick={() => onOpenLightbox(caseImages, previewIndex)}
               style={{ background: 'none', border: 'none', color: 'var(--amber-600)', fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.1rem', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.25rem' }}
               onMouseOver={(e) => e.currentTarget.style.background = 'var(--amber-50)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'none'}

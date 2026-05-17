@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { products } from '@/data/products';
 import { getGeoExpansionPages } from '@/data/locationPages';
 import { absoluteUrl, buildCalculatorUrl, COMPANY_NAME, productPath } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 import { ChevronRight } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 
@@ -317,7 +318,7 @@ function ProductCard({ product }: { product: any }) {
     <article id={product.id} className="product-card" style={{ scrollMarginTop: '100px', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="product-card-img">
         <img
-          src={product.image}
+          src={withBasePath(product.image)}
           alt={product.image_alt || product.name}
           title={product.image_title || product.name}
           loading="lazy"

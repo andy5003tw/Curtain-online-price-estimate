@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { findProductBySlugOrId, products } from '@/data/products';
 import { getServiceAreasForProduct } from '@/data/locationPages';
 import { absoluteUrl, buildCalculatorUrl, COMPANY_NAME, productPath } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, CheckCircle2, Calculator, Star, BookOpen } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 import ProductImageGallery from '@/components/ProductImageGallery';
@@ -641,7 +642,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   const extras = productSeoExtras[product.id] || defaultSeoExtras;
   const v3 = productV3Data[product.id] || { faqs: [], material: '聚酯纖維', colorOptions: '多種顏色可選', comparisons: [], galleryDesc: '' };
-  const gallery = productGallery[product.id] || [];
+  const gallery = (productGallery[product.id] || []).map((item) => ({
+    ...item,
+    src: withBasePath(item.src),
+  }));
   const relatedProducts = products.filter(p => p.id !== product.id).slice(0, 4);
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
@@ -784,7 +788,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <div className="product-hero-grid" style={{ alignItems: 'start' }}>
             <div style={{ borderRadius: '1.25rem', overflow: 'hidden', background: 'var(--stone-100)', aspectRatio: '4/3' }}>
               <img
-                src={product.image}
+                src={withBasePath(product.image)}
                 alt={product.image_alt || product.name}
                 title={product.image_title || product.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -1100,7 +1104,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             {relatedProducts.map(p => (
               <article key={p.id} className="product-card">
                 <div className="product-card-img">
-                  <img src={p.image} alt={p.image_alt || p.name} loading="lazy" />
+                  <img src={withBasePath(p.image)} alt={p.image_alt || p.name} loading="lazy" />
                 </div>
                 <div className="product-card-body">
                   <h3>{p.name}</h3>

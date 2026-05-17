@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getLocationPageById, locationPages } from '@/data/locationPages';
 import { products } from '@/data/products';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, MapPin, CheckCircle2 } from 'lucide-react';
 
 export async function generateStaticParams() {
@@ -100,7 +101,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
         </div>
       </nav>
 
-      <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${pageData.heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${withBasePath(pageData.heroImage)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="section-container">
           <div className="tag" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto 1.5rem auto' }}>
             <MapPin size={16} /> 專屬在地服務
@@ -159,7 +160,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
           <div className="product-grid">
             {displayProducts.map(product => (
               <div key={product.id} style={{ background: 'white', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                <img src={product.image} alt={product.name} style={{ width: '100%', height: '220px', objectFit: 'cover' }} loading="lazy" />
+                <img src={withBasePath(product.image)} alt={product.name} style={{ width: '100%', height: '220px', objectFit: 'cover' }} loading="lazy" />
                 <div style={{ padding: '1.5rem' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>{product.name}</h3>
                   <p style={{ fontSize: '0.9rem', color: 'var(--stone-600)', marginBottom: '1rem', lineHeight: 1.6 }}>{product.description}</p>

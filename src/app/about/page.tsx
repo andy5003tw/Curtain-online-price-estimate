@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle2, Phone, MapPin, ShieldCheck, Factory, Clock, Calculator, ChevronRight } from 'lucide-react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 
 const ABOUT_TITLE = '關於我們 | 30年專業窗簾訂製・工廠直營・宏森開發';
 const ABOUT_DESCRIPTION = '宏森開發有限公司自1996年深耕窗簾市場，提供三重、新北市、台北地區專業窗簾訂製與施工。工廠直營保證價格實惠、品質嚴控，服務台大、立法院等指標客戶。';
@@ -113,8 +114,8 @@ export default function AboutPage() {
               </div>
             </div>
             <div className="about-imgs">
-              <img src="/Curtain installation_img/Curtain installation_01.webp" alt="宏森窗簾工廠直營品質監控" loading="lazy" />
-              <img src="/Curtain installation_img/Curtain installation_03.webp" alt="專業窗簾師傅現場施工" loading="lazy" />
+              <img src={withBasePath('/Curtain installation_img/Curtain installation_01.webp')} alt="宏森窗簾工廠直營品質監控" loading="lazy" />
+              <img src={withBasePath('/Curtain installation_img/Curtain installation_03.webp')} alt="專業窗簾師傅現場施工" loading="lazy" />
             </div>
           </div>
         </div>
@@ -152,15 +153,15 @@ export default function AboutPage() {
             {/* Image side - Sticky on desktop */}
             <div style={{ flex: '1 1 40%', position: 'sticky', top: '100px', display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingTop: '2rem' }}>
               <div style={{ position: 'relative', borderRadius: '1.5rem', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}>
-                <img src="/Curtain installation_img/Curtain installation_03.webp" alt="宏森專業安裝" loading="lazy" style={{ width: '100%', height: '500px', objectFit: 'cover', display: 'block' }} />
+                <img src={withBasePath('/Curtain installation_img/Curtain installation_03.webp')} alt="宏森專業安裝" loading="lazy" style={{ width: '100%', height: '500px', objectFit: 'cover', display: 'block' }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', padding: '3rem 2rem 2rem' }}>
                   <h4 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>專業安裝團隊</h4>
                   <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', margin: 0 }}>我們嚴格要求施工品質，絕不留下滿地粉塵，只留下美麗光影。</p>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <img src="/Construction Cases_img/LINE_ALBUM_板橋 龍昌診所_260414_5.webp" alt="龍昌診所案例" loading="lazy" style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
-                <img src="/Construction Cases_img/LINE_ALBUM_20240813三重介壽路-蛇形簾_260414_5.webp" alt="精緻居家窗簾" loading="lazy" style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
+                <img src={withBasePath('/Construction Cases_img/LINE_ALBUM_板橋 龍昌診所_260414_5.webp')} alt="龍昌診所案例" loading="lazy" style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
+                <img src={withBasePath('/Construction Cases_img/LINE_ALBUM_20240813三重介壽路-蛇形簾_260414_5.webp')} alt="精緻居家窗簾" loading="lazy" style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
               </div>
             </div>
           </div>
@@ -177,8 +178,8 @@ export default function AboutPage() {
         <div className="section-container">
           <div className="about-grid items-center">
             <div className="about-imgs">
-               <img src="/Curtain installation_img/Curtain installation_02.webp" alt="大型公共工程窗簾實錄" loading="lazy" />
-               <img src="/Curtain installation_img/Curtain installation_04.webp" alt="台大等指標客戶指定選用" loading="lazy" />
+               <img src={withBasePath('/Curtain installation_img/Curtain installation_02.webp')} alt="大型公共工程窗簾實錄" loading="lazy" />
+               <img src={withBasePath('/Curtain installation_img/Curtain installation_04.webp')} alt="台大等指標客戶指定選用" loading="lazy" />
             </div>
             <div className="about-text">
               <div className="tag">在地深耕・權威認證</div>

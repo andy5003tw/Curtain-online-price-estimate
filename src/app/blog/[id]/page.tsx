@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { knowledgePosts, knowledgeCategories } from '@/data/knowledgePosts';
 import { ChevronLeft, Calendar, Tag as TagIcon, Clock } from 'lucide-react';
 import { absoluteUrl, buildOgTwitterMeta, COMPANY_NAME } from '@/lib/seo';
+import { withBasePath, withBasePathInHtml } from '@/lib/base-path';
 
 export function generateStaticParams() {
   return knowledgePosts.map((post) => ({
@@ -127,7 +128,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             {/* Visual Header Image Placeholder */}
             <div style={{ width: '100%', paddingTop: '50%', position: 'relative', background: 'var(--stone-100)' }}>
               <img 
-                src={post.coverImage} 
+                src={withBasePath(post.coverImage)} 
                 alt={post.title} 
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
               />
@@ -136,7 +137,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             <div style={{ padding: '3rem 2.5rem' }}>
               <div 
                 className="blog-content" 
-                dangerouslySetInnerHTML={{ __html: post.contentHtml }} 
+                dangerouslySetInnerHTML={{ __html: withBasePathInHtml(post.contentHtml) }} 
                 style={{ 
                   lineHeight: 1.8, 
                   color: 'var(--stone-700)', 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { pillarPages } from '@/data/pillarPages';
 import { products } from '@/data/products';
 import { absoluteUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export async function generateStaticParams() {
@@ -85,7 +86,7 @@ export default async function PillarPage({ params }: { params: Promise<{ type: s
         </div>
       </nav>
 
-      <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${pageData.heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${withBasePath(pageData.heroImage)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="section-container">
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>主題選購指南</div>
           <h1>{pageData.title}</h1>
@@ -116,7 +117,7 @@ export default async function PillarPage({ params }: { params: Promise<{ type: s
             <div className="product-grid">
               {relatedProducts.map(product => (
                 <div key={product.id} style={{ background: 'white', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                  <img src={product.image} alt={product.name} style={{ width: '100%', height: '250px', objectFit: 'cover' }} loading="lazy" />
+                  <img src={withBasePath(product.image)} alt={product.name} style={{ width: '100%', height: '250px', objectFit: 'cover' }} loading="lazy" />
                   <div style={{ padding: '1.5rem' }}>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>{product.name}</h3>
                     <p style={{ fontSize: '0.9rem', color: 'var(--stone-600)', marginBottom: '1.5rem', lineHeight: 1.6 }}>{product.description}</p>

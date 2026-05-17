@@ -5,6 +5,7 @@ import FloatingCta from '@/components/FloatingCta';
 import { products } from '@/data/products';
 import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
+import { withBasePath } from '@/lib/base-path';
 
 const HOME_TITLE = '宏森窗簾 | 台北新北窗簾訂製與到府丈量';
 const HOME_DESCRIPTION = '宏森窗簾提供台北與新北窗簾訂製、免費到府丈量、安裝與售後調整，涵蓋布簾、調光簾、百葉簾與功能簾。';
@@ -148,7 +149,7 @@ export default function HomePage() {
       <FloatingCta />
 
       <section className="hero-section">
-        <img src="/banner_img/banner_01.webp" alt="宏森窗簾展示" className="hero-bg-img" fetchPriority="high" />
+        <img src={withBasePath('/banner_img/banner_01.webp')} alt="宏森窗簾展示" className="hero-bg-img" fetchPriority="high" />
         <div className="hero-content">
           <p
             style={{
@@ -271,7 +272,7 @@ export default function HomePage() {
             {products.map(product => (
               <article key={product.id} className="product-card">
                 <div className="product-card-img">
-                  <img src={product.image} alt={product.image_alt || product.name} title={product.image_title || product.name} loading="lazy" />
+                  <img src={withBasePath(product.image)} alt={product.image_alt || product.name} title={product.image_title || product.name} loading="lazy" />
                 </div>
                 <div className="product-card-body">
                   <h3>{product.name}</h3>

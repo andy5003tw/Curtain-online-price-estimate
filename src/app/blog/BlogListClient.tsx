@@ -3,6 +3,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { withBasePath } from '@/lib/base-path';
 
 function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }: any) {
   const searchParams = useSearchParams();
@@ -109,7 +110,7 @@ function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }:
                         {/* Thumbnail Image */}
                         <div style={{ flex: '1 1 200px', minHeight: '200px', position: 'relative', background: 'var(--stone-100)' }}>
                           <img 
-                            src={article.coverImage} 
+                            src={withBasePath(article.coverImage)} 
                             alt={article.title} 
                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}

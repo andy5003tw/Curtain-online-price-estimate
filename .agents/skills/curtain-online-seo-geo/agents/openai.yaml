@@ -1,0 +1,4 @@
+interface:
+  display_name: "Curtain Online SEO/GEO"
+  short_description: "Curtain SEO/GEO batch workflow"
+  default_prompt: "Use $curtain-online-seo-geo to plan or execute the next Curtain Online SEO/GEO/schema ranking batch."

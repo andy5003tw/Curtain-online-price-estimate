@@ -229,8 +229,8 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'curtain-price-guide-2026',
-    title: '2026 訂製窗簾價格懶人包：先看 4 品項行情，快速完成窗簾價格試算與安裝費用估算',
-    description: '想快速搞懂訂製窗簾價格、窗簾價格試算與窗簾安裝費用？本文用 4 大品項行情 + 估價流程，幫你先抓預算再安排丈量。',
+    title: '2026 窗簾價格指南：1 分鐘看懂 4 品項行情、窗簾價格試算與安裝費用',
+    description: '窗簾價格怎麼抓最準？本文整理 2026 捲簾、鋁百葉、風琴簾、布簾行情，附窗簾價格試算流程與安裝費用重點，先估價再丈量。',
     category: 'budgeting',
     tags: ['訂製窗簾價格', '窗簾價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
     date: '2026-05-21',
@@ -242,7 +242,7 @@ export const knowledgePosts: KnowledgePost[] = [
         answer: '同尺寸仍會因布料等級、五金配件、安裝難度與款式不同而有價差。建議先用估價工具抓區間，再由丈量確認細節。'
       },
       {
-        question: '窗簾報價前需要先準備哪些資訊？',
+        question: '窗簾價格試算前需要先準備哪些資訊？',
         answer: '至少準備窗戶寬高（公分）、預計款式與安裝區域，先完成線上估價後再安排到府丈量，報價會更快速且準確。'
       },
       {
@@ -280,7 +280,7 @@ export const knowledgePosts: KnowledgePost[] = [
       </ol>
 
       <h2>窗簾報價流程：先估價、再丈量、最後確認</h2>
-      <p>建議先用<strong><a href="/calculator/">窗簾計算機 / 窗簾估價工具</a></strong>輸入尺寸，先抓到訂做窗簾價格區間與安裝費用估算，再由師傅到府丈量確認窗型、配件與施工條件。若您在新北地區，也可先看<strong><a href="/location/banqiao/">板橋窗簾推薦</a></strong>與<strong><a href="/location/xinzhuang/">新莊窗簾推薦</a></strong>服務頁，快速了解在地丈量與施工流程。</p>
+      <p>建議先用<strong><a href="/calculator/">窗簾計算機 / 窗簾估價工具</a></strong>輸入尺寸，先抓到訂做窗簾價格區間與安裝費用估算，再由師傅到府丈量確認窗型、配件與施工條件。若您正在搜尋<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾推薦與價格試算</a></strong>；若在台北文教生活圈，也可看<strong><a href="/location/zhongzheng/">中正區窗簾價格試算</a></strong>服務頁，快速銜接在地丈量流程。</p>
     `
   },
   {

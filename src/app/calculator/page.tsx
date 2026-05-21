@@ -257,18 +257,18 @@ function CalculatorContent() {
       <div className="page-hero">
         <div className="section-container">
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-            窗簾估價工具
+            窗簾價格試算 / 線上估價
           </div>
-          <h1>輸入尺寸，快速估算窗簾價格區間</h1>
-          <p>支援多種窗簾品項，先做窗簾價格試算與窗簾安裝費用估算，再安排免費到府丈量與正式報價。</p>
+          <h1>1 分鐘完成窗簾價格試算與安裝費估算</h1>
+          <p>支援多種窗簾品項，先做窗簾線上估價與窗簾價格試算，再安排免費到府丈量與正式報價。</p>
         </div>
       </div>
 
       <section className="py-section bg-stone-50">
         <div className="section-container" style={{ maxWidth: '900px' }}>
           <div className="section-heading">
-            <h2>快速估算 + 現場確認，流程更省時</h2>
-            <p>先用線上工具掌握窗簾價格與安裝費用區間，再由專人到府確認窗型與施工條件。</p>
+            <h2>先試算，再丈量：窗簾報價流程一次完成</h2>
+            <p>先用線上工具掌握窗簾價格與安裝費用區間，再由專人到府確認窗型、配件與施工條件。</p>
           </div>
           <div style={{ marginBottom: '1.25rem', display: 'grid', gap: '0.5rem' }}>
             <Link href="/products/roller-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
@@ -283,11 +283,11 @@ function CalculatorContent() {
             <Link href="/blog/curtain-price-guide-2026/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               訂製窗簾價格、窗簾報價與安裝費用怎麼看？
             </Link>
-            <Link href="/location/banqiao/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              板橋窗簾推薦與線上估價入口
+            <Link href="/location/sanchong/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              三重窗簾推薦與三重窗簾價格試算入口
             </Link>
-            <Link href="/location/xinzhuang/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              新莊窗簾推薦與線上估價入口
+            <Link href="/location/zhongzheng/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              中正區窗簾推薦與中正區窗簾價格試算入口
             </Link>
           </div>
           <Suspense fallback={<div style={{ textAlign: 'center', padding: '3rem', color: 'var(--stone-400)' }}>載入中...</div>}>
@@ -306,6 +306,7 @@ function CalculatorContent() {
               '先輸入接近實際的寬高尺寸，可先抓窗簾價格區間，再由現場丈量微調。',
               '窗簾安裝費用會受窗型、配件與施工難度影響，估價頁可先看大方向預算。',
               '若要比較不同產品，建議切換同一尺寸再看價差，判斷更直覺。',
+              '若你正在搜尋「三重窗簾」或「中正區窗簾價格試算」，可直接從本頁快速切到對應地區頁比對在地方案。',
             ].map((text, index) => (
               <div key={index} style={{ padding: '1rem 1.25rem', background: 'var(--stone-50)', borderRadius: '0.75rem', border: '1px solid var(--stone-100)', color: 'var(--stone-700)', lineHeight: 1.75 }}>
                 {text}
@@ -322,8 +323,8 @@ function CalculatorContent() {
           </div>
           {[
             {
-              q: '線上估價和正式報價會差很多嗎？',
-              a: '通常差異不大，但窗型、配件與施工條件會影響最終金額，仍以現場丈量為準。',
+              q: '窗簾價格試算和正式報價會差很多嗎？',
+              a: '通常差異不大，但窗型、配件與施工條件會影響最終金額；建議先做窗簾價格試算，再以現場丈量確認正式報價。',
             },
             {
               q: '可以先估價再決定是否預約丈量嗎？',

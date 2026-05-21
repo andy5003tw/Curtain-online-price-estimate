@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 
-const CALCULATOR_TITLE = '窗簾計算機｜窗簾價格試算與窗簾安裝費用估價（台北、三重）';
-const CALCULATOR_DESCRIPTION = '使用宏森窗簾計算機快速完成窗簾價格試算與窗簾安裝費用估價。支援台北、三重地區線上估價，輸入寬高即可比較捲簾、鋁百葉、風琴簾等熱門品項價格。';
+const CALCULATOR_TITLE = '窗簾價格試算計算機｜1 分鐘線上估價窗簾價格與安裝費（台北、三重）';
+const CALCULATOR_DESCRIPTION = '使用宏森窗簾價格試算計算機，1 分鐘完成窗簾線上估價。輸入寬高即可比較捲簾、鋁百葉、風琴簾、布簾價格與安裝費用，適合台北、三重快速抓預算。';
 
 export const metadata: Metadata = {
   title: CALCULATOR_TITLE,
   description: CALCULATOR_DESCRIPTION,
-  keywords: ['窗簾計算機', '窗簾估價工具', '窗簾價格', '窗簾價格試算', '窗簾安裝費用', '台北窗簾線上估價', '三重窗簾線上估價', '台北捲簾價格', '三重調光簾價格', '台北實木百葉窗價格', '窗簾報價'],
+  keywords: ['窗簾價格試算計算機', '窗簾計算機', '窗簾線上估價', '窗簾估價工具', '窗簾價格', '窗簾價格試算', '窗簾安裝費用', '台北窗簾線上估價', '三重窗簾線上估價', '三重窗簾價格試算', '台北捲簾價格', '三重調光簾價格', '台北實木百葉窗價格', '窗簾報價'],
   ...buildOgTwitterMeta({
     title: CALCULATOR_TITLE,
     description: CALCULATOR_DESCRIPTION,
@@ -29,7 +29,7 @@ const calculatorSchema = {
     price: '0',
     priceCurrency: 'TWD'
   },
-  description: '宏森窗簾計算機可快速完成窗簾估價工具試算，輸入尺寸即可比較台北、三重常見窗簾品項價格與安裝預算。'
+  description: '宏森窗簾計算機可快速完成窗簾價格試算與窗簾線上估價，輸入尺寸即可比較台北、三重常見窗簾品項價格與安裝預算。'
 };
 
 const faqSchema = {

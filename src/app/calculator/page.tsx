@@ -239,8 +239,8 @@ function CalculatorContent() {
   const selectedProduct = searchParams.get('product') || products[0].id;
   const selectedArea = searchParams.get('area') || undefined;
   const menuBasePath = selectedArea
-    ? `/calculator?product={productId}&area=${encodeURIComponent(selectedArea)}`
-    : '/calculator?product={productId}';
+    ? `/calculator/?product={productId}&area=${encodeURIComponent(selectedArea)}`
+    : '/calculator/?product={productId}';
 
   return (
     <>
@@ -260,7 +260,7 @@ function CalculatorContent() {
             窗簾估價工具
           </div>
           <h1>輸入尺寸，快速估算窗簾價格區間</h1>
-          <p>支援多種窗簾品項，先抓預算，再安排免費到府丈量與正式報價。</p>
+          <p>支援多種窗簾品項，先做窗簾價格試算與窗簾安裝費用估算，再安排免費到府丈量與正式報價。</p>
         </div>
       </div>
 
@@ -268,7 +268,7 @@ function CalculatorContent() {
         <div className="section-container" style={{ maxWidth: '900px' }}>
           <div className="section-heading">
             <h2>快速估算 + 現場確認，流程更省時</h2>
-            <p>先用線上工具掌握預算範圍，再由專人到府確認窗型與施工條件。</p>
+            <p>先用線上工具掌握窗簾價格與安裝費用區間，再由專人到府確認窗型與施工條件。</p>
           </div>
           <div style={{ marginBottom: '1.25rem', display: 'grid', gap: '0.5rem' }}>
             <Link href="/products/roller-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
@@ -280,10 +280,38 @@ function CalculatorContent() {
             <Link href="/products/wooden-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               木百葉產品介紹
             </Link>
+            <Link href="/blog/curtain-price-guide-2026/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              訂製窗簾價格、窗簾報價與安裝費用怎麼看？
+            </Link>
+            <Link href="/location/banqiao/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              板橋窗簾推薦與線上估價入口
+            </Link>
+            <Link href="/location/xinzhuang/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              新莊窗簾推薦與線上估價入口
+            </Link>
           </div>
           <Suspense fallback={<div style={{ textAlign: 'center', padding: '3rem', color: 'var(--stone-400)' }}>載入中...</div>}>
             <CalculatorForm />
           </Suspense>
+        </div>
+      </section>
+
+      <section className="py-section bg-white border-t border-stone-200">
+        <div className="section-container" style={{ maxWidth: '900px' }}>
+          <div className="section-heading">
+            <h2>窗簾價格試算前，先看三個重點</h2>
+          </div>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {[
+              '先輸入接近實際的寬高尺寸，可先抓窗簾價格區間，再由現場丈量微調。',
+              '窗簾安裝費用會受窗型、配件與施工難度影響，估價頁可先看大方向預算。',
+              '若要比較不同產品，建議切換同一尺寸再看價差，判斷更直覺。',
+            ].map((text, index) => (
+              <div key={index} style={{ padding: '1rem 1.25rem', background: 'var(--stone-50)', borderRadius: '0.75rem', border: '1px solid var(--stone-100)', color: 'var(--stone-700)', lineHeight: 1.75 }}>
+                {text}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -304,6 +332,10 @@ function CalculatorContent() {
             {
               q: '估價結果會包含安裝費嗎？',
               a: '會。系統會依品項規則估算材料費與安裝費，並回傳總價。',
+            },
+            {
+              q: '窗簾價格試算後，多久可以拿到正式報價？',
+              a: '通常可先看線上試算結果，再安排丈量，丈量後即可提供更完整的正式報價與施工建議。',
             },
           ].map((item, index) => (
             <div key={index} style={{ marginBottom: '1rem', padding: '1rem 1.25rem', background: 'white', borderRadius: '0.75rem', border: '1px solid var(--stone-100)' }}>

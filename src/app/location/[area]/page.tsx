@@ -148,6 +148,23 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
               ))}
             </ul>
           </div>
+
+          <div style={{ marginTop: '1rem', background: 'white', borderRadius: '1rem', border: '1px solid var(--stone-200)', padding: '1.2rem' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.75rem' }}>
+              {pageData.areaName} 窗簾價格與估價快速入口
+            </h3>
+            <p style={{ margin: '0 0 0.85rem 0', color: 'var(--stone-600)', fontSize: '0.9rem', lineHeight: 1.7 }}>
+              先用線上工具做 {pageData.areaName} 窗簾價格試算，再用價格指南比對品項與安裝費用，最後安排丈量確認即可。
+            </p>
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ fontSize: '0.9rem' }}>
+                {pageData.areaName}線上估價
+              </Link>
+              <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
+                查看窗簾價格指南
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

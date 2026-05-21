@@ -201,7 +201,7 @@ const productSeoExtras: Record<string, {
       { label: '木百葉 (80×120 cm)', range: '約 NT$ 2,500 – 4,500 起' },
       { label: '木百葉 (150×180 cm)', range: '約 NT$ 4,500 – 8,000 起' },
     ],
-    lsiParagraph: '台北實木百葉窗價格與三重實木百葉窗價格會依木種、葉片寬度與表面處理方式變動。木百葉窗簾（Wood Venetian Blind）能同時提供自然木紋質感與精準調光效果，常用於客廳與書房。建議先用窗簾計算機抓估價範圍，再由丈量確認窗型與最適木種配置。',
+    lsiParagraph: '台北實木百葉窗價格與三重實木百葉窗價格會依木種、葉片寬度與表面處理方式變動。木百葉窗簾（Wood Venetian Blind）能同時提供自然木紋質感與精準調光效果，常用於客廳與書房。建議先用窗簾計算機完成實木百葉窗價格試算抓估價範圍，再由丈量確認窗型與最適木種配置。',
     relatedBlogIds: ['blog-001'],
   },
   P008: {
@@ -400,6 +400,7 @@ const productV3Data: Record<string, {
   P007: {
     faqs: [
       { q: '台北實木百葉窗價格、三重實木百葉窗價格差在哪裡？', a: '主要差異來自木種、葉片寬度、塗裝等級與施工環境。先線上估價抓範圍，再丈量確認規格最準確。' },
+      { q: '實木百葉窗價格試算和正式報價會差很多嗎？', a: '通常差異有限，但若有高窗、特殊配件或客製木種，仍會在丈量後微調。建議先試算，再確認現場條件。' },
       { q: '木百葉可以用在浴室嗎？', a: '天然實木不建議長期使用在高濕環境，浴室可優先考慮防潮材質；木百葉更適合客廳、書房等乾燥空間。' },
       { q: '木百葉的葉片可調整與保養嗎？', a: '可以調整葉片角度做精準控光。日常建議乾布除塵，遇到髒污以微濕布輕拭後立即擦乾。' },
     ],
@@ -652,7 +653,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const productHeroTitleMap: Record<string, string> = {
     P005: '台北捲簾價格、三重捲簾價格與捲簾訂製服務',
     P006: '台北鋁百葉窗價格、三重鋁百葉窗價格與鋁百葉訂製服務',
-    P007: '台北實木百葉窗價格、三重實木百葉窗價格與木百葉訂製',
+    P007: '台北實木百葉窗價格、三重實木百葉窗價格與實木百葉窗價格試算',
     P009: '台北風琴簾價格、三重風琴簾價格與蜂巢簾訂製服務',
     P010: '台北調光簾價格、三重調光簾價格與斑馬簾訂製服務',
   };
@@ -672,8 +673,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     P007: [
       { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾訂製服務' },
       { href: '/location/sanchong/', label: '三重窗簾推薦與三重窗簾訂製服務' },
-      { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾訂做價格與窗簾報價指南' },
-      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北實木百葉窗價格、三重實木百葉窗價格' },
+      { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾價格試算與安裝費用指南' },
+      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北實木百葉窗價格、三重實木百葉窗價格（含試算）' },
     ],
     P009: [
       { href: '/location/banqiao/', label: '板橋窗簾推薦與板橋窗簾訂製服務' },

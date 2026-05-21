@@ -13,7 +13,7 @@ const HOME_DESCRIPTION = '宏森窗簾提供台北與新北窗簾訂製、免費
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  keywords: ['窗簾訂製', '台北窗簾', '新北窗簾', '到府丈量', '窗簾安裝'],
+  keywords: ['窗簾訂製', '台北窗簾', '新北窗簾', '到府丈量', '窗簾安裝', '窗簾價格', '窗簾價格試算', '窗簾估價工具'],
   ...buildOgTwitterMeta({
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
@@ -176,6 +176,12 @@ export default function HomePage() {
               查看全部產品 <ChevronRight size={18} />
             </Link>
           </div>
+          <p style={{ marginTop: '0.85rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)' }}>
+            先看
+            <Link href="/blog/curtain-price-guide-2026/" style={{ marginLeft: '0.25rem', color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              窗簾價格試算與安裝費用指南
+            </Link>
+          </p>
         </div>
       </section>
 

@@ -229,11 +229,11 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'curtain-price-guide-2026',
-    title: '2026 訂製窗簾價格懶人包：窗簾訂做價格、訂做窗簾價格與窗簾報價怎麼看？',
-    description: '想搞懂訂製窗簾價格與窗簾訂做價格？本文整理 2026 常見品項行情、窗簾報價流程與估價重點，幫你先抓預算再安排丈量。',
+    title: '2026 訂製窗簾價格懶人包：先看 4 品項行情，快速完成窗簾價格試算與安裝費用估算',
+    description: '想快速搞懂訂製窗簾價格、窗簾價格試算與窗簾安裝費用？本文用 4 大品項行情 + 估價流程，幫你先抓預算再安排丈量。',
     category: 'budgeting',
-    tags: ['訂製窗簾價格', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
-    date: '2026-05-16',
+    tags: ['訂製窗簾價格', '窗簾價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
+    date: '2026-05-21',
     readMin: 6,
     coverImage: '/blog/curtain-price-guide-2026.webp',
     faqs: [
@@ -244,6 +244,10 @@ export const knowledgePosts: KnowledgePost[] = [
       {
         question: '窗簾報價前需要先準備哪些資訊？',
         answer: '至少準備窗戶寬高（公分）、預計款式與安裝區域，先完成線上估價後再安排到府丈量，報價會更快速且準確。'
+      },
+      {
+        question: '窗簾安裝費用會另外加嗎？',
+        answer: '多數品項會把基本安裝費用納入估價，但若遇到高樓特殊施工、偏遠區或客製配件，仍可能有額外費用，需丈量後確認。'
       }
     ],
     contentHtml: `
@@ -258,8 +262,25 @@ export const knowledgePosts: KnowledgePost[] = [
         <li><strong><a href="/products/custom-curtains/">一般布簾</a>：</strong> 常以幅寬與車工計價，客廳一窗約 $5,000~$15,000 不等。</li>
       </ul>
 
+      <h2>窗簾價格總覽（快速對照）</h2>
+      <p>如果你只想先抓預算，建議先記住這個順序：<strong>捲簾/鋁百葉（入門） → 一般布簾（中段） → 風琴簾/高規功能簾（進階）</strong>。再依照你的採光需求與空間用途微調，會比一開始就挑花色有效率。</p>
+
+      <h2>窗簾價格試算怎麼做最快？</h2>
+      <ol>
+        <li>先量「寬 x 高」公分，輸入到<strong><a href="/calculator/">窗簾計算機</a></strong>。</li>
+        <li>同尺寸切換 2~3 種品項（例如捲簾、鋁百葉、風琴簾）比較價差。</li>
+        <li>最後再決定是否要升級材質或追加配件，避免一開始就過度客製。</li>
+      </ol>
+
+      <h2>窗簾安裝費用怎麼看？三個常見影響因子</h2>
+      <ol>
+        <li><strong>窗型與施工難度：</strong> 轉角窗、高窗、特殊牆面固定條件，通常會提高施工時間與安裝成本。</li>
+        <li><strong>配件與五金：</strong> 軌道等級、支架數量、附加五金與拆舊需求，會影響最後安裝費用。</li>
+        <li><strong>地區與時段：</strong> 偏遠區、特殊時段施工或社區管理限制，可能產生額外施工成本。</li>
+      </ol>
+
       <h2>窗簾報價流程：先估價、再丈量、最後確認</h2>
-      <p>建議先用<strong><a href="/calculator/">窗簾計算機 / 窗簾估價工具</a></strong>輸入尺寸，先抓到訂做窗簾價格區間，再由師傅到府丈量確認窗型、配件與安裝條件。若您在新北地區，也可先看<strong><a href="/location/banqiao/">板橋窗簾推薦</a></strong>與<strong><a href="/location/xinzhuang/">新莊窗簾推薦</a></strong>服務頁，快速了解在地丈量與施工流程。</p>
+      <p>建議先用<strong><a href="/calculator/">窗簾計算機 / 窗簾估價工具</a></strong>輸入尺寸，先抓到訂做窗簾價格區間與安裝費用估算，再由師傅到府丈量確認窗型、配件與施工條件。若您在新北地區，也可先看<strong><a href="/location/banqiao/">板橋窗簾推薦</a></strong>與<strong><a href="/location/xinzhuang/">新莊窗簾推薦</a></strong>服務頁，快速了解在地丈量與施工流程。</p>
     `
   },
   {

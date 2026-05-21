@@ -163,8 +163,8 @@
     "slug": "aluminum-blinds",
     "canonicalSlug": "aluminum-blinds",
     "primaryKeyword": "鋁百葉窗簾",
-    "secondaryKeywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗簾訂製", "防潮窗簾"],
-    "updatedAt": "2026-05-16",
+    "secondaryKeywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗價格試算", "鋁百葉窗簾訂製", "防潮窗簾"],
+    "updatedAt": "2026-05-21",
     "name": "鋁百葉窗簾",
     "image": "/images/P006_Aluminum blinds.webp",
     "image_alt": "耐用鋁百葉窗簾 - 衛浴防潮調光",
@@ -173,7 +173,7 @@
     "requires_track": false,
     "pricing": { "unit_price": 56, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "耐用防潮的鋁合金葉片設計，適合比較台北、三重鋁百葉窗價格與日常清潔便利度。",
-    "seo": { "meta_title": "台北鋁百葉窗價格、三重鋁百葉窗價格｜鋁百葉窗簾訂製", "meta_description": "快速比較台北與三重鋁百葉窗價格，防潮、耐用、易清潔，適合浴室與廚房。", "keywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗簾訂製"] }
+    "seo": { "meta_title": "台北鋁百葉窗價格、三重鋁百葉窗價格｜鋁百葉窗價格試算", "meta_description": "快速比較台北與三重鋁百葉窗價格，支援鋁百葉窗價格試算，防潮、耐用、易清潔，適合浴室與廚房。", "keywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗價格試算", "鋁百葉窗簾訂製"] }
   },
   {
     "id": "P007",
@@ -181,8 +181,8 @@
     "slug": "wooden-blinds",
     "canonicalSlug": "wooden-blinds",
     "primaryKeyword": "木百葉窗簾",
-    "secondaryKeywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "木百葉窗簾訂製", "書房窗簾"],
-    "updatedAt": "2026-05-16",
+    "secondaryKeywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "實木百葉窗價格試算", "木百葉窗簾訂製", "書房窗簾"],
+    "updatedAt": "2026-05-21",
     "name": "木百葉窗簾",
     "image": "/images/P007_Log blinds.webp",
     "image_alt": "實木百葉窗簾 - 天然溫潤木質紋理",
@@ -190,8 +190,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 160, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "天然木材打造溫暖質感，適合想比較台北、三重實木百葉窗價格的居家與商空。",
-    "seo": { "meta_title": "台北實木百葉窗價格、三重實木百葉窗價格｜木百葉窗簾訂製", "meta_description": "查看台北與三重實木百葉窗價格區間，快速完成木百葉窗簾訂製評估。", "keywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "木百葉窗簾訂製"] }
+    "description": "天然木材打造溫暖質感，適合想比較台北、三重實木百葉窗價格與實木百葉窗價格試算的居家與商空。",
+    "seo": { "meta_title": "台北實木百葉窗價格、三重實木百葉窗價格｜實木百葉窗價格試算", "meta_description": "查看台北與三重實木百葉窗價格區間，支援實木百葉窗價格試算，快速完成木百葉窗簾訂製評估。", "keywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "實木百葉窗價格試算", "木百葉窗簾訂製"] }
   },
   {
     "id": "P008",
@@ -217,8 +217,8 @@
     "slug": "honeycomb-blinds",
     "canonicalSlug": "honeycomb-blinds",
     "primaryKeyword": "風琴簾",
-    "secondaryKeywords": ["台北風琴簾價格", "三重風琴簾價格", "蜂巢簾價格", "節能窗簾"],
-    "updatedAt": "2026-05-16",
+    "secondaryKeywords": ["台北風琴簾價格", "三重風琴簾價格", "風琴簾價格試算", "蜂巢簾價格", "節能窗簾"],
+    "updatedAt": "2026-05-21",
     "name": "風琴簾",
     "image": "/images/P009_accordion curtain.webp",
     "image_alt": "美感風琴簾 - 蜂巢結構節能隔熱",
@@ -227,7 +227,7 @@
     "requires_track": false,
     "pricing": { "unit_price": 232, "min_per_tai": 20, "base_installation_per_tai": 20, "labor_per_tai": 13 },
     "description": "蜂巢中空結構強化隔熱節能，適合比較台北、三重風琴簾價格與西曬空間降溫需求。",
-    "seo": { "meta_title": "台北風琴簾價格、三重風琴簾價格｜蜂巢簾節能估價", "meta_description": "查看台北與三重風琴簾價格，蜂巢簾隔熱節能、適合西曬與臥室控溫。", "keywords": ["台北風琴簾價格", "三重風琴簾價格", "蜂巢簾價格"] }
+    "seo": { "meta_title": "台北風琴簾價格、三重風琴簾價格｜風琴簾價格試算", "meta_description": "查看台北與三重風琴簾價格，支援風琴簾價格試算，蜂巢簾隔熱節能、適合西曬與臥室控溫。", "keywords": ["台北風琴簾價格", "三重風琴簾價格", "風琴簾價格試算", "蜂巢簾價格"] }
   },
   {
     "id": "P010",

@@ -32,7 +32,7 @@ export function buildCalculatorUrl(productId?: string, areaId?: string): string 
     params.set('area', areaId);
   }
   const query = params.toString();
-  return query ? `/calculator?${query}` : '/calculator';
+  return query ? `/calculator/?${query}` : '/calculator/';
 }
 
 type OgTwitterInput = {

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { pillarPages } from '@/data/pillarPages';
 import { products } from '@/data/products';
-import { absoluteUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
+import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, CheckCircle2 } from 'lucide-react';
 
@@ -104,6 +104,26 @@ export default async function PillarPage({ params }: { params: Promise<{ type: s
               </div>
             </div>
           ))}
+
+          <div style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '1rem', padding: '1.25rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.6rem' }}>
+              {pageData.shortTitle}價格與估價入口
+            </h3>
+            <p style={{ margin: '0 0 0.9rem 0', color: 'var(--stone-600)', lineHeight: 1.75, fontSize: '0.92rem' }}>
+              建議先看價格指南抓預算，再用線上估價工具輸入尺寸比較各品項價差，最後安排丈量確認施工條件。
+            </p>
+            <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
+              <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
+                查看窗簾價格指南
+              </Link>
+              <Link href={buildCalculatorUrl()} className="btn-primary" style={{ fontSize: '0.9rem' }}>
+                線上快速估價
+              </Link>
+              <Link href="/location/sanchong/" className="btn-secondary" style={{ fontSize: '0.9rem' }}>
+                三重窗簾在地服務
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -154,7 +174,7 @@ export default async function PillarPage({ params }: { params: Promise<{ type: s
           <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.75rem' }}>準備好升級您的居家空間了嗎？</h2>
           <p style={{ color: 'var(--stone-300)', marginBottom: '2.5rem', fontSize: '1.05rem' }}>立即預約免費到府丈量，大台北地區專人服務。</p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <Link href="/calculator" className="btn-primary" style={{ background: 'var(--amber-600)' }}>線上快速估價 <ChevronRight size={18} /></Link>
+            <Link href={buildCalculatorUrl()} className="btn-primary" style={{ background: 'var(--amber-600)' }}>線上快速估價 <ChevronRight size={18} /></Link>
             <a href="https://line.me/ti/p/fDWxUXkiZb" className="btn-secondary" style={{ background: '#06C755', borderColor: '#06C755', color: 'white' }}>加 LINE 預約丈量</a>
           </div>
         </div>

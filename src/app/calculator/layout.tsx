@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 
-const CALCULATOR_TITLE = '窗簾計算機｜窗簾估價工具（台北、三重線上價格試算）';
-const CALCULATOR_DESCRIPTION = '使用宏森窗簾計算機快速完成窗簾估價工具試算。支援台北、三重地區線上估價，輸入寬高即可比較捲簾、鋁百葉、風琴簾等熱門品項價格。';
+const CALCULATOR_TITLE = '窗簾計算機｜窗簾價格試算與窗簾安裝費用估價（台北、三重）';
+const CALCULATOR_DESCRIPTION = '使用宏森窗簾計算機快速完成窗簾價格試算與窗簾安裝費用估價。支援台北、三重地區線上估價，輸入寬高即可比較捲簾、鋁百葉、風琴簾等熱門品項價格。';
 
 export const metadata: Metadata = {
   title: CALCULATOR_TITLE,
   description: CALCULATOR_DESCRIPTION,
-  keywords: ['窗簾計算機', '窗簾估價工具', '窗簾價格試算', '台北窗簾線上估價', '三重窗簾線上估價', '台北捲簾價格', '三重調光簾價格', '台北實木百葉窗價格', '窗簾報價'],
+  keywords: ['窗簾計算機', '窗簾估價工具', '窗簾價格', '窗簾價格試算', '窗簾安裝費用', '台北窗簾線上估價', '三重窗簾線上估價', '台北捲簾價格', '三重調光簾價格', '台北實木百葉窗價格', '窗簾報價'],
   ...buildOgTwitterMeta({
     title: CALCULATOR_TITLE,
     description: CALCULATOR_DESCRIPTION,
@@ -50,6 +50,14 @@ const faqSchema = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: '是的，線上估價已包含基本施工費，但不含偏遠區或特殊高風險施工的加價項目。'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: '窗簾安裝費用怎麼計算？',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: '安裝費用會依產品類型、尺寸、才數與施工條件計算。系統會先回傳估算金額，最終仍以現場丈量後確認。'
       }
     },
     {

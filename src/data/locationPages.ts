@@ -20,12 +20,12 @@ export type LocationPage = {
 export const locationPages: LocationPage[] = [
   {
     id: 'taipei',
-    title: '台北窗簾推薦與台北窗簾訂製：免費到府丈量與線上估價',
+    title: '台北窗簾推薦與台北窗簾價格試算：台北窗簾訂製免費到府丈量',
     areaName: '台北市',
-    shortDescription: '想找台北窗簾推薦店家與台北窗簾訂製服務？宏森開發提供台北窗簾線上估價，並依不同窗型規劃調光簾、捲簾與實木百葉窗方案。',
+    shortDescription: '想找台北窗簾推薦店家與台北窗簾訂製服務？宏森開發提供台北窗簾線上估價與台北窗簾價格試算，快速比較調光簾、捲簾與實木百葉窗方案。',
     heroImage: '/banner_img/banner_01.webp',
-    lastModified: '2026-05-16',
-    keywords: ['台北窗簾推薦', '台北窗簾訂製', '台北窗簾線上估價', '台北捲簾價格', '台北調光簾價格', '台北實木百葉窗價格'],
+    lastModified: '2026-05-21',
+    keywords: ['台北窗簾推薦', '台北窗簾訂製', '台北窗簾線上估價', '台北窗簾價格試算', '台北窗簾價格', '台北捲簾價格', '台北調光簾價格', '台北實木百葉窗價格'],
     featuredProductIds: ['P010', 'P005', 'P007', 'P003'],
     serviceHighlights: [
       '先用台北窗簾線上估價快速抓預算，再安排到府丈量確認窗型細節。',
@@ -48,12 +48,16 @@ export const locationPages: LocationPage[] = [
         a: '若重視彈性調光可先看調光簾，重視好清潔可先看捲簾，想要木質風格可先看實木百葉窗，再依實際採光挑選，並先用線上估價抓價格區間。',
       },
       {
+        q: '台北窗簾線上估價後多久可安排丈量？',
+        a: '多數案件可在估價後 1-2 天內安排到府丈量；若遇到週末熱門時段，建議先完成線上估價再提早預約。',
+      },
+      {
         q: '台北市從丈量到安裝通常多久？',
         a: '常規款式約 5-7 個工作天，特殊材質或大面積案件約 7-14 個工作天，確認訂單時會提供明確交期。',
       },
     ],
     cityGroup: 'taipei',
-    relatedAreaIds: ['xinyi', 'songshan', 'zhongzheng'],
+    relatedAreaIds: ['sanchong', 'zhongzheng', 'xinyi'],
   },
   {
     id: 'sanchong',

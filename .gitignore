@@ -27,6 +27,7 @@ credentials.*
 
 # Weekly SOP: local operational data (do not upload to GitHub)
 Weekly SOP/
+plan.md
 
 private/users.php
 private/pricing-rules.php

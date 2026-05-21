@@ -7,13 +7,13 @@ import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '宏森窗簾 | 台北新北窗簾訂製與到府丈量';
-const HOME_DESCRIPTION = '宏森窗簾提供台北與新北窗簾訂製、免費到府丈量、安裝與售後調整，涵蓋布簾、調光簾、百葉簾與功能簾。';
+const HOME_TITLE = '窗簾價格試算與窗簾線上估價｜台北新北窗簾訂製推薦';
+const HOME_DESCRIPTION = '宏森窗簾提供台北與新北窗簾價格試算、免費到府丈量與安裝服務。先用窗簾估價工具 1 分鐘抓預算，再安排窗簾訂製與施工。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  keywords: ['窗簾訂製', '台北窗簾', '新北窗簾', '到府丈量', '窗簾安裝', '窗簾價格', '窗簾價格試算', '窗簾估價工具'],
+  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '窗簾訂製', '台北窗簾', '新北窗簾', '窗簾安裝', '到府丈量', '台北窗簾價格'],
   ...buildOgTwitterMeta({
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
@@ -55,8 +55,8 @@ const homepageFaq = [
     a: '有，台北與新北主要服務區域提供免費到府丈量與初步配置建議。',
   },
   {
-    q: '窗簾估價大約多久可以拿到？',
-    a: '一般在丈量後可提供初步報價，特殊材質或大面積案件會再補充細項。',
+    q: '窗簾價格試算後多久可正式報價？',
+    a: '先用窗簾線上估價輸入尺寸後，通常可立即看到預算區間；安排到府丈量後即可確認正式報價，特殊材質與大面積案件會再補充細項。',
   },
   {
     q: '可以同時比較多種窗簾款式嗎？',
@@ -165,21 +165,33 @@ export default function HomePage() {
           >
             台北新北窗簾訂製專家
           </p>
-          <h1>窗簾規劃、丈量、安裝一次到位</h1>
-          <p>從布簾、調光簾到功能簾，依採光、隱私與預算需求提供最適合的配置建議。</p>
+          <h1>窗簾價格試算、丈量、安裝一次到位</h1>
+          <p>先用窗簾估價工具 1 分鐘抓預算，再從布簾、調光簾到功能簾依採光與隱私需求完成訂製配置。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />
-              線上快速估價
+              1 分鐘線上估價
             </Link>
             <Link href="/products" className="btn-secondary">
               查看全部產品 <ChevronRight size={18} />
             </Link>
           </div>
           <p style={{ marginTop: '0.85rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)' }}>
-            先看
-            <Link href="/blog/curtain-price-guide-2026/" style={{ marginLeft: '0.25rem', color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
-              窗簾價格試算與安裝費用指南
+            常用入口：
+            <Link href="/calculator/" style={{ marginLeft: '0.25rem', color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              窗簾價格試算
+            </Link>
+            {' · '}
+            <Link href="/location/sanchong/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              三重窗簾價格試算
+            </Link>
+            {' · '}
+            <Link href="/location/taipei/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              台北窗簾推薦
+            </Link>
+            {' · '}
+            <Link href="/blog/curtain-price-guide-2026/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              窗簾價格指南
             </Link>
           </p>
         </div>

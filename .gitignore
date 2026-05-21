@@ -8,8 +8,26 @@ coverage/
 *.log
 *.pid
 .upload-out-files.txt
+
+# Local environment and secrets
 .env*
 !.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.jks
+*.keystore
+*.secret
+*.secrets
+secrets.*
+credentials.*
+*.token
+
+# Weekly SOP: local operational data (do not upload to GitHub)
+Weekly SOP/
+
 private/users.php
 private/pricing-rules.php
 private/backups/*

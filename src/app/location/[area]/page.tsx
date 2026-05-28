@@ -46,6 +46,22 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
     .map(productId => products.find(product => product.id === productId))
     .filter((product): product is (typeof products)[number] => Boolean(product));
 
+  const ownerBoostLinksByArea: Record<string, Array<{ href: string; label: string }>> = {
+    taipei: [
+      { href: '/location/sanchong/', label: '三重窗簾比價入口' },
+      { href: buildCalculatorUrl('P007', 'taipei'), label: '台北實木百葉窗價格試算' },
+    ],
+    sanchong: [
+      { href: buildCalculatorUrl('P007', 'sanchong'), label: '三重實木百葉窗價格試算' },
+      { href: '/products/wooden-blinds/', label: '實木百葉窗產品與價格重點' },
+    ],
+    zhongzheng: [
+      { href: buildCalculatorUrl('P010', 'zhongzheng'), label: '中正區調光簾價格試算' },
+      { href: '/products/zebra-blinds/', label: '調光簾產品與價格重點' },
+    ],
+  };
+  const ownerBoostLinks = ownerBoostLinksByArea[pageData.id] ?? [];
+
   const localBusinessSchema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -163,6 +179,11 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
               <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
                 查看窗簾價格指南
               </Link>
+              {ownerBoostLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="btn-outline" style={{ fontSize: '0.9rem' }}>
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

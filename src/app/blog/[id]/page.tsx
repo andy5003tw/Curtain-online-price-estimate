@@ -6,6 +6,34 @@ import { ChevronLeft, Calendar, Tag as TagIcon, Clock } from 'lucide-react';
 import { absoluteUrl, buildOgTwitterMeta, COMPANY_NAME } from '@/lib/seo';
 import { withBasePath, withBasePathInHtml } from '@/lib/base-path';
 
+const PRICE_GUIDE_SNIPPET_VARIANTS = {
+  A: {
+    title: '2026 窗簾價格指南：1 分鐘看懂窗簾價格試算、三重窗簾比價與安裝費',
+    description:
+      '想做窗簾價格試算嗎？本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉窗價格試算與安裝費重點，並附三重窗簾比價流程。',
+  },
+  B: {
+    title: '窗簾價格試算攻略：2026 三重窗簾比價、實木百葉窗價格與安裝費',
+    description:
+      '先做窗簾價格試算，再比三重窗簾與實木百葉窗價格。本文整理 2026 常見品項報價區間、安裝費與比價步驟。',
+  },
+} as const;
+
+const BLOG_KNOWLEDGE_SUFFIX = ' | 宏森開發窗簾知識';
+
+function resolveBlogSnippet(post: (typeof knowledgePosts)[number]) {
+  if (post.id !== 'curtain-price-guide-2026') {
+    return {
+      title: post.title,
+      description: post.description,
+    };
+  }
+
+  const variant = process.env.SEO_SNIPPET_VARIANT === 'B' ? 'B' : 'A';
+  return PRICE_GUIDE_SNIPPET_VARIANTS[variant];
+}
+
+
 export function generateStaticParams() {
   return knowledgePosts.map((post) => ({
     id: post.id,
@@ -16,14 +44,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const post = knowledgePosts.find((p) => p.id === id);
   if (!post) return { title: '找不到文章' };
+  const snippet = resolveBlogSnippet(post);
+  const metadataTitle = `${snippet.title}${BLOG_KNOWLEDGE_SUFFIX}`;
 
   return {
-    title: `${post.title} | 宏森開發窗簾知識`,
-    description: post.description,
+    title: metadataTitle,
+    description: snippet.description,
     keywords: post.tags,
     ...buildOgTwitterMeta({
-      title: `${post.title} | 宏森開發窗簾知識`,
-      description: post.description,
+      title: metadataTitle,
+      description: snippet.description,
       path: `/blog/${post.id}/`,
       image: post.coverImage,
       imageAlt: post.title,

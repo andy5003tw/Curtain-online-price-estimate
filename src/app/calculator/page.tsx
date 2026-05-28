@@ -278,7 +278,7 @@ function CalculatorContent() {
               調光簾產品介紹
             </Link>
             <Link href="/products/wooden-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              木百葉產品介紹
+              實木百葉窗價格試算入口
             </Link>
             <Link href="/blog/curtain-price-guide-2026/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               訂製窗簾價格、窗簾報價與安裝費用怎麼看？
@@ -288,6 +288,9 @@ function CalculatorContent() {
             </Link>
             <Link href="/location/zhongzheng/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               中正區窗簾推薦與中正區窗簾價格試算入口
+            </Link>
+            <Link href={buildCalculatorUrl('P007', 'sanchong')} style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              三重實木百葉窗價格試算（快速入口）
             </Link>
           </div>
           <Suspense fallback={<div style={{ textAlign: 'center', padding: '3rem', color: 'var(--stone-400)' }}>載入中...</div>}>
@@ -306,6 +309,7 @@ function CalculatorContent() {
               '先輸入接近實際的寬高尺寸，可先抓窗簾價格區間，再由現場丈量微調。',
               '窗簾安裝費用會受窗型、配件與施工難度影響，估價頁可先看大方向預算。',
               '若要比較不同產品，建議切換同一尺寸再看價差，判斷更直覺。',
+              '若你想先衝「實木百葉窗價格試算」，可先切換木百葉品項再套用三重區域，會更接近實際報價條件。',
               '若你正在搜尋「三重窗簾」或「中正區窗簾價格試算」，可直接從本頁快速切到對應地區頁比對在地方案。',
             ].map((text, index) => (
               <div key={index} style={{ padding: '1rem 1.25rem', background: 'var(--stone-50)', borderRadius: '0.75rem', border: '1px solid var(--stone-100)', color: 'var(--stone-700)', lineHeight: 1.75 }}>
@@ -329,6 +333,10 @@ function CalculatorContent() {
             {
               q: '可以先估價再決定是否預約丈量嗎？',
               a: '可以，建議先完成線上估價再聯絡，溝通效率會更高。',
+            },
+            {
+              q: '三重窗簾價格試算後如何比價最有效率？',
+              a: '建議固定同一尺寸比較捲簾、調光簾、實木百葉窗三個品項，再切到三重區域參數，最後安排丈量確認正式報價。',
             },
             {
               q: '估價結果會包含安裝費嗎？',

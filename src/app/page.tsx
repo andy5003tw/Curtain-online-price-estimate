@@ -7,13 +7,13 @@ import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '窗簾價格試算與窗簾線上估價｜台北新北窗簾訂製推薦';
-const HOME_DESCRIPTION = '宏森窗簾提供台北與新北窗簾價格試算、免費到府丈量與安裝服務。先用窗簾估價工具 1 分鐘抓預算，再安排窗簾訂製與施工。';
+const HOME_TITLE = '窗簾價格試算｜三重窗簾與台北窗簾線上估價推薦';
+const HOME_DESCRIPTION = '宏森窗簾提供窗簾價格試算、三重窗簾在地比價與台北窗簾到府丈量。先用線上估價工具 1 分鐘抓預算，再安排窗簾訂製與施工。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '窗簾訂製', '台北窗簾', '新北窗簾', '窗簾安裝', '到府丈量', '台北窗簾價格'],
+  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '三重窗簾', '實木百葉窗價格試算', '窗簾訂製', '台北窗簾', '新北窗簾', '窗簾安裝', '到府丈量', '台北窗簾價格'],
   ...buildOgTwitterMeta({
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
@@ -57,6 +57,10 @@ const homepageFaq = [
   {
     q: '窗簾價格試算後多久可正式報價？',
     a: '先用窗簾線上估價輸入尺寸後，通常可立即看到預算區間；安排到府丈量後即可確認正式報價，特殊材質與大面積案件會再補充細項。',
+  },
+  {
+    q: '三重窗簾要先估價還是先丈量？',
+    a: '建議先用窗簾價格試算抓預算，再看三重窗簾服務頁與實木百葉窗價格試算內容，比對品項後再預約丈量，決策會更快。',
   },
   {
     q: '可以同時比較多種窗簾款式嗎？',
@@ -187,11 +191,15 @@ export default function HomePage() {
             </Link>
             {' · '}
             <Link href="/location/taipei/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
-              台北窗簾推薦
+              台北窗簾價格試算
             </Link>
             {' · '}
             <Link href="/blog/curtain-price-guide-2026/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
               窗簾價格指南
+            </Link>
+            {' · '}
+            <Link href="/products/wooden-blinds/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              實木百葉窗價格試算
             </Link>
           </p>
         </div>

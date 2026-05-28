@@ -20,11 +20,11 @@ export type LocationPage = {
 export const locationPages: LocationPage[] = [
   {
     id: 'taipei',
-    title: '台北窗簾推薦與台北窗簾價格試算：台北窗簾訂製免費到府丈量',
+    title: '台北窗簾推薦與台北窗簾價格試算：搜尋台北窗簾先做線上估價',
     areaName: '台北市',
     shortDescription: '想找台北窗簾推薦店家與台北窗簾訂製服務？宏森開發提供台北窗簾線上估價與台北窗簾價格試算，快速比較調光簾、捲簾與實木百葉窗方案。',
     heroImage: '/banner_img/banner_01.webp',
-    lastModified: '2026-05-21',
+    lastModified: '2026-05-28',
     keywords: ['台北窗簾推薦', '台北窗簾訂製', '台北窗簾線上估價', '台北窗簾價格試算', '台北窗簾價格', '台北捲簾價格', '台北調光簾價格', '台北實木百葉窗價格'],
     featuredProductIds: ['P010', 'P005', 'P007', 'P003'],
     serviceHighlights: [
@@ -48,7 +48,7 @@ export const locationPages: LocationPage[] = [
         a: '若重視彈性調光可先看調光簾，重視好清潔可先看捲簾，想要木質風格可先看實木百葉窗，再依實際採光挑選，並先用線上估價抓價格區間。',
       },
       {
-        q: '台北窗簾線上估價後多久可安排丈量？',
+        q: '台北窗簾線上估價後多久可丈量？',
         a: '多數案件可在估價後 1-2 天內安排到府丈量；若遇到週末熱門時段，建議先完成線上估價再提早預約。',
       },
       {
@@ -61,11 +61,11 @@ export const locationPages: LocationPage[] = [
   },
   {
     id: 'sanchong',
-    title: '三重窗簾推薦與三重窗簾價格試算：搜尋「三重窗簾」先看線上估價',
+    title: '三重窗簾推薦與三重窗簾價格試算：先比價再丈量的在地流程',
     areaName: '三重區',
     shortDescription: '找三重窗簾推薦與三重窗簾訂製服務？宏森開發位於三重在地，提供三重窗簾線上估價與三重窗簾價格試算，快速比較捲簾、調光簾與實木百葉窗價格。',
     heroImage: '/banner_img/banner_01.webp',
-    lastModified: '2026-05-21',
+    lastModified: '2026-05-28',
     keywords: ['三重窗簾', '三重 窗簾', '三重窗簾推薦', '三重窗簾價格', '三重窗簾價格試算', '三重窗簾訂製', '三重窗簾線上估價', '三重捲簾價格', '三重調光簾價格', '三重實木百葉窗價格'],
     featuredProductIds: ['P005', 'P010', 'P007', 'P003'],
     serviceHighlights: [
@@ -99,7 +99,7 @@ export const locationPages: LocationPage[] = [
         a: '通常不會差太多，但仍會依窗型、配件與施工條件微調；建議先線上估價，再透過丈量確認最終報價。',
       },
       {
-        q: '搜尋「三重 窗簾」後，如何最快完成比價？',
+        q: '搜尋三重窗簾後最快比價流程是什麼？',
         a: '建議先在本頁做三重窗簾價格試算，再切換捲簾、調光簾、實木百葉窗同尺寸比較，最後安排丈量確認正式報價。',
       },
     ],
@@ -330,11 +330,11 @@ export const locationPages: LocationPage[] = [
   },
   {
     id: 'zhongzheng',
-    title: '中正區窗簾推薦與中正區窗簾價格試算：學區宅與辦公空間專業配置',
+    title: '中正區窗簾推薦與中正區窗簾價格試算：先比較三品項再丈量',
     areaName: '中正區',
     shortDescription: '中正區集合學區住宅、辦公空間與老屋改造需求。宏森提供中正區窗簾丈量、線上估價與中正區窗簾價格試算建議，兼顧閱讀採光、隔熱與日常清潔便利。',
     heroImage: '/banner_img/banner_01.webp',
-    lastModified: '2026-05-21',
+    lastModified: '2026-05-28',
     keywords: ['中正區窗簾', '中正區窗簾推薦', '中正區窗簾價格', '中正區窗簾價格試算', '中正區窗簾線上估價', '中正區窗簾安裝費用', '中正區窗簾估價工具', '台北學區窗簾', '中正區調光簾'],
     featuredProductIds: ['P004', 'P006', 'P009', 'P012'],
     serviceHighlights: [
@@ -367,7 +367,7 @@ export const locationPages: LocationPage[] = [
         a: '可以，先輸入尺寸取得初步估價與安裝費用區間，再透過到府丈量確認最終報價。',
       },
       {
-        q: '中正區窗簾價格試算適合先比較哪些品項？',
+        q: '中正區先比較哪三種品項最有效率？',
         a: '可先以同尺寸比較調光簾、鋁百葉與捲簾的估價差異，再依採光與清潔需求決定最終品項。',
       },
     ],

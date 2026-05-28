@@ -72,7 +72,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P007: {
     features: ['天然木材質感溫潤', '提升空間高級感', '自然紋理獨一無二', '多種木種與色系'],
     useCases: ['客廳', '書房', '餐廳'],
-    fullDesc: '若你正在比較台北實木百葉窗價格或三重實木百葉窗價格，木百葉是兼顧設計感與控光功能的高質感選擇。天然實木葉片在日照下會呈現溫潤木紋層次，可依空間風格挑選木種與色系，打造更完整的居家質感。',
+    fullDesc: '若你正在比較台北實木百葉窗價格或三重實木百葉窗價格，木百葉是兼顧設計感與控光功能的高質感選擇。建議先做窗簾線上估價與實木百葉窗價格試算，再依空間風格挑選木種與色系。天然實木葉片在日照下會呈現溫潤木紋層次，能同時提升居家質感與日常控光效率。',
   },
   P008: {
     features: ['古樸東方韻味', '透氣性極佳', '輕盈自然材質', '環保天然'],
@@ -201,7 +201,7 @@ const productSeoExtras: Record<string, {
       { label: '木百葉 (80×120 cm)', range: '約 NT$ 2,500 – 4,500 起' },
       { label: '木百葉 (150×180 cm)', range: '約 NT$ 4,500 – 8,000 起' },
     ],
-    lsiParagraph: '台北實木百葉窗價格與三重實木百葉窗價格會依木種、葉片寬度與表面處理方式變動。木百葉窗簾（Wood Venetian Blind）能同時提供自然木紋質感與精準調光效果，常用於客廳與書房。建議先用窗簾計算機完成實木百葉窗價格試算抓估價範圍，再由丈量確認窗型與最適木種配置。',
+    lsiParagraph: '台北實木百葉窗價格與三重實木百葉窗價格會依木種、葉片寬度與表面處理方式變動。木百葉窗簾（Wood Venetian Blind）能同時提供自然木紋質感與精準調光效果，常用於客廳與書房。若您在板橋或新莊，也可先做在地窗簾線上估價，再由丈量確認窗型與最適木種配置，讓實木百葉窗價格試算更貼近實際施工條件。',
     relatedBlogIds: ['blog-001'],
   },
   P008: {
@@ -662,38 +662,38 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾訂製服務' },
       { href: '/location/sanchong/', label: '三重窗簾推薦與三重窗簾訂製服務' },
       { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾訂做價格與窗簾報價指南' },
-      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北捲簾價格、三重捲簾價格' },
+      { href: '/calculator/', label: '立即進入窗簾線上估價，試算捲簾價格與安裝費' },
     ],
     P006: [
       { href: '/location/banqiao/', label: '板橋窗簾推薦與板橋窗簾訂製服務' },
       { href: '/location/xinzhuang/', label: '新莊窗簾推薦與新莊窗簾訂製服務' },
       { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾訂做價格與窗簾報價指南' },
-      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北鋁百葉窗價格、三重鋁百葉窗價格' },
+      { href: '/calculator/', label: '立即進入窗簾線上估價，試算鋁百葉窗價格與安裝費' },
     ],
     P007: [
-      { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾訂製服務' },
-      { href: '/location/sanchong/', label: '三重窗簾推薦與三重窗簾訂製服務' },
+      { href: '/location/banqiao/', label: '板橋窗簾推薦與板橋窗簾價格試算入口' },
+      { href: '/location/xinzhuang/', label: '新莊窗簾推薦與新莊窗簾價格試算入口' },
       { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾價格試算與安裝費用指南' },
-      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北實木百葉窗價格、三重實木百葉窗價格（含試算）' },
+      { href: '/calculator/', label: '立即進入窗簾線上估價，試算實木百葉窗價格與安裝費' },
     ],
     P009: [
       { href: '/location/banqiao/', label: '板橋窗簾推薦與板橋窗簾訂製服務' },
       { href: '/location/xinzhuang/', label: '新莊窗簾推薦與新莊窗簾訂製服務' },
       { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾訂做價格與窗簾報價指南' },
-      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北風琴簾價格、三重風琴簾價格' },
+      { href: '/calculator/', label: '立即進入窗簾線上估價，試算風琴簾價格與安裝費' },
     ],
     P010: [
       { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾訂製服務' },
       { href: '/location/sanchong/', label: '三重窗簾推薦與三重窗簾訂製服務' },
       { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、窗簾訂做價格與窗簾報價指南' },
-      { href: buildCalculatorUrl(product.id, primaryAreaId), label: '立即估算台北調光簾價格、三重調光簾價格' },
+      { href: '/calculator/', label: '立即進入窗簾線上估價，試算調光簾價格與安裝費' },
     ],
   };
   const productHeroTitle = productHeroTitleMap[product.id] || `宏森${product.name}訂製服務`;
   const internalLinks = productInternalLinksMap[product.id] || [
     { href: '/blog', label: '如何挑選適合自己家的窗簾款式？完整指南' },
     { href: '/blog', label: '窗簾材質大比較：布簾、捲簾、百葉窗哪個適合你？' },
-    { href: buildCalculatorUrl(product.id, primaryAreaId), label: `立即使用線上估價工具計算我的${product.name}費用` },
+    { href: '/calculator/', label: `立即使用線上估價工具計算${product.name}預算` },
   ];
 
   const imageObjectSchema = gallery.map((img, i) => ({

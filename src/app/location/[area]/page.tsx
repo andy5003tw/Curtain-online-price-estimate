@@ -157,7 +157,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
               先用線上工具做 {pageData.areaName} 窗簾價格試算，再用價格指南比對品項與安裝費用，最後安排丈量確認即可。
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ fontSize: '0.9rem' }}>
+              <Link href={buildCalculatorUrl()} className="btn-primary" style={{ fontSize: '0.9rem' }}>
                 {pageData.areaName}線上估價
               </Link>
               <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
@@ -256,7 +256,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
             專人攜帶樣本到府，依據您的現場採光、裝潢風格給予最專業的配置建議，量尺與報價完全免費！
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>線上快速估價 <ChevronRight size={20} /></Link>
+            <Link href={buildCalculatorUrl()} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>線上快速估價 <ChevronRight size={20} /></Link>
             <a href="https://line.me/ti/p/fDWxUXkiZb" className="btn-secondary" style={{ background: '#06C755', borderColor: '#06C755', color: 'white', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>加 LINE 立即預約</a>
           </div>
         </div>

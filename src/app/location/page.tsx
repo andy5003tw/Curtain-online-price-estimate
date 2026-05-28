@@ -173,8 +173,8 @@ export default function LocationHubPage() {
                       <Link href={`/location/${page.id}/`} className="btn-outline" style={{ flex: 1, justifyContent: 'center' }}>
                         查看地區頁
                       </Link>
-                      <Link href={buildCalculatorUrl(undefined, page.id)} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                        帶入地區估價
+                      <Link href={buildCalculatorUrl()} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                        前往估價頁
                       </Link>
                     </div>
                   </article>

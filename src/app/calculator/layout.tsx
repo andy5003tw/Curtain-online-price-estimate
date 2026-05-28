@@ -2,8 +2,22 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 
-const CALCULATOR_TITLE = '窗簾價格試算計算機｜1 分鐘線上估價窗簾價格與安裝費（台北、三重）';
-const CALCULATOR_DESCRIPTION = '使用宏森窗簾價格試算計算機，1 分鐘完成窗簾線上估價。輸入寬高即可比較捲簾、鋁百葉、風琴簾、布簾價格與安裝費用，適合台北、三重快速抓預算。';
+const CALCULATOR_SNIPPET_VARIANTS = {
+  A: {
+    title: '窗簾線上估價｜1 分鐘窗簾價格試算與安裝費（台北、新北）',
+    description:
+      '想找窗簾線上估價？輸入寬高即可完成窗簾價格試算，比較捲簾、鋁百葉、風琴簾、布簾與安裝費，先估價再安排丈量。',
+  },
+  B: {
+    title: '1 分鐘窗簾線上估價：窗簾價格試算與安裝費用總覽',
+    description:
+      '快速完成窗簾線上估價，支援捲簾、鋁百葉、風琴簾、布簾價格試算與安裝費比較，適合台北、新北先抓預算再丈量。',
+  },
+} as const;
+
+const calculatorSnippetVariant = process.env.SEO_SNIPPET_VARIANT === 'B' ? 'B' : 'A';
+const CALCULATOR_TITLE = CALCULATOR_SNIPPET_VARIANTS[calculatorSnippetVariant].title;
+const CALCULATOR_DESCRIPTION = CALCULATOR_SNIPPET_VARIANTS[calculatorSnippetVariant].description;
 
 export const metadata: Metadata = {
   title: CALCULATOR_TITLE,

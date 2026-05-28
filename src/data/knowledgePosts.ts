@@ -229,8 +229,8 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'curtain-price-guide-2026',
-    title: '2026 窗簾價格指南：1 分鐘看懂 4 品項行情、窗簾價格試算與安裝費用',
-    description: '窗簾價格怎麼抓最準？本文整理 2026 捲簾、鋁百葉、風琴簾、布簾行情，附窗簾價格試算流程與安裝費用重點，先估價再丈量。',
+    title: '2026 窗簾線上估價指南：1 分鐘看懂 4 品項行情、價格試算與安裝費用',
+    description: '搜尋窗簾線上估價嗎？本文整理 2026 捲簾、鋁百葉、風琴簾、布簾行情，附 1 分鐘價格試算流程與安裝費用重點，先估價再丈量。',
     category: 'budgeting',
     tags: ['訂製窗簾價格', '窗簾價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
     date: '2026-05-21',
@@ -251,6 +251,8 @@ export const knowledgePosts: KnowledgePost[] = [
       }
     ],
     contentHtml: `
+      <p>若你是從<strong>窗簾線上估價</strong>搜尋進來，建議先開啟<strong><a href="/calculator/">窗簾計算機</a></strong>輸入尺寸，再回來對照本文行情。需要在地服務時，也可先看<strong><a href="/location/banqiao/">板橋窗簾價格試算</a></strong>或<strong><a href="/location/xinzhuang/">新莊窗簾價格試算</a></strong>入口。</p>
+
       <h2>訂製窗簾價格怎麼算？先看「才數」與起計規則</h2>
       <p>台灣窗簾常以「才」計價（1 才 = 30x30cm）。基本公式為：寬(cm) x 高(cm) / 900 = 才數。由於小窗仍有固定工序，多數品項會有基本起計才數，因此窗簾訂做價格不只看面積，還要看款式與施工條件。</p>
 

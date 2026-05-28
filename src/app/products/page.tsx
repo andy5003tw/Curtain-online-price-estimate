@@ -274,8 +274,8 @@ export default function ProductsPage() {
                     <Link href={`/location/${area.id}/`} className="btn-outline" style={{ flex: 1, justifyContent: 'center' }}>
                       查看地區頁
                     </Link>
-                    <Link href={buildCalculatorUrl(undefined, area.id)} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                      帶入估價
+                    <Link href={buildCalculatorUrl()} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                      前往估價頁
                     </Link>
                   </div>
                 </article>
@@ -338,7 +338,7 @@ function ProductCard({ product }: { product: any }) {
             了解更多
           </Link>
           <Link
-            href={buildCalculatorUrl(product.id)}
+            href={buildCalculatorUrl()}
             className="btn-primary"
             style={{ flex: 1, justifyContent: 'center', fontSize: '0.85rem', padding: '0.6rem 0.75rem' }}
           >

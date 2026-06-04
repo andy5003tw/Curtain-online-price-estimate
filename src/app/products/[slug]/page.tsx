@@ -47,7 +47,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P002: {
     features: ['無縫設計、視覺更純淨', '透光不透人的遮蔽效果', '輕薄飄逸，極具美感', '適合搭配遮光布簾使用'],
     useCases: ['客廳', '餐廳', '書房'],
-    fullDesc: '無縫紗簾採用特殊的無縫工藝，消除傳統紗簾因拼接造成的縫合線，讓整片紗簾呈現極致純淨的美感。輕薄透光的紗料在日光下如薄霧般飄逸，既保有隱私又不遮擋光線，是現代簡約裝潢的最佳搭配。',
+    fullDesc: '無縫紗簾適合想兼顧透光不透人、空間通透感與雙層窗簾搭配的人。透過整幅布料減少接縫干擾，白天能柔化採光、保留隱私，夜晚再搭配遮光布簾補足遮蔽效果，特別適合客廳、書房與落地窗場景先比較風格與預算。',
   },
   P003: {
     features: ['獨特 S 型曲線設計', '布料垂墜感極佳', '適合落地窗使用', '展現現代奢華風格'],
@@ -72,7 +72,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P007: {
     features: ['天然木材質感溫潤', '提升空間高級感', '自然紋理獨一無二', '多種木種與色系'],
     useCases: ['客廳', '書房', '餐廳'],
-    fullDesc: '想衝「實木百葉窗價格試算」排名時，建議先比較台北實木百葉窗價格與三重實木百葉窗價格，再依木種、葉片寬度與窗型縮小選項。先用窗簾線上估價抓預算區間，再安排丈量確認安裝條件，實木百葉窗價格試算會更接近正式報價。',
+    fullDesc: '實木百葉窗價格試算建議先輸入窗戶尺寸，再比較台北實木百葉窗價格、三重實木百葉窗價格與安裝費差異。影響報價的重點包含木種、葉片寬度、表面塗裝、窗型與安裝高度；先用線上估價抓預算區間，再安排丈量確認條件，會更接近正式報價。',
   },
   P008: {
     features: ['古樸東方韻味', '透氣性極佳', '輕盈自然材質', '環保天然'],
@@ -136,7 +136,7 @@ const productSeoExtras: Record<string, {
       { label: '標準半腰窗紗簾 (150×150 cm)', range: '約 NT$ 1,200 – 2,000 起' },
       { label: '落地窗紗簾 (200×240 cm)', range: '約 NT$ 2,200 – 3,800 起' },
     ],
-    lsiParagraph: '無縫紗簾是近年來深受現代簡約風格愛好者青睞的窗簾款式。因採用無縫工藝，整片紗簾沒有縫合線，呈現最純淨的視覺效果。透光不透人的特性讓白天自然光可以柔和透入，同時保有隱私。非常適合搭配同一軌道上的遮光布簾，形成雙層窗簾系統，白天拉紗簾、夜晚拉遮光布，功能性極佳。台北市、新北市各區均可提供免費到府量尺服務。',
+    lsiParagraph: '無縫紗簾是近年來很受歡迎的透光不透人窗簾款式，尤其適合想保留自然光、又不希望白天室內被一眼看穿的家庭。若你正在比較紗簾推薦、雙層窗簾搭配或客廳紗簾價格，重點不只在布料本身，也包含軌道長度、垂墜高度、是否搭配遮光布簾與現場安裝條件。建議先確認想要的採光感，再安排到府丈量，整體報價會更接近實際需求。',
     relatedBlogIds: ['blog-001'],
   },
   P003: {
@@ -200,8 +200,10 @@ const productSeoExtras: Record<string, {
     priceTable: [
       { label: '木百葉 (80×120 cm)', range: '約 NT$ 2,500 – 4,500 起' },
       { label: '木百葉 (150×180 cm)', range: '約 NT$ 4,500 – 8,000 起' },
+      { label: '實木百葉窗價格試算 (200×180 cm)', range: '約 NT$ 6,500 – 11,000 起' },
+      { label: '三重 / 台北到府丈量與基本安裝', range: '依窗型與施工條件確認' },
     ],
-    lsiParagraph: '實木百葉窗價格試算最常受木種、葉片寬度、表面塗裝與施工條件影響。台北實木百葉窗價格與三重實木百葉窗價格不一定誰高誰低，重點在窗型與配件是否一致。建議先用窗簾計算機以同尺寸試算，再到府丈量確認窗型、安裝高度與五金規格，讓實木百葉窗價格試算與正式報價更貼近。',
+    lsiParagraph: '實木百葉窗價格試算最常受木種、葉片寬度、表面塗裝與施工條件影響。台北實木百葉窗價格與三重實木百葉窗價格不一定誰高誰低，重點在窗型、配件與安裝高度是否一致。建議先用窗簾計算機以同尺寸試算木百葉，再查看三重窗簾與台北窗簾地區頁的丈量流程，最後由現場確認五金規格與施工條件，讓實木百葉窗價格試算與正式報價更貼近。',
     relatedBlogIds: ['blog-001'],
   },
   P008: {
@@ -319,9 +321,10 @@ const productV3Data: Record<string, {
   },
   P002: {
     faqs: [
-      { q: '紗簾可以單獨使用嗎？', a: '可以。單獨使用紗簾時，白天採光充足、視覺通透，適合客廳或書房。如需夜晚隱私，建議搭配遮光布簾形成雙層系統，功能性更完整。' },
-      { q: '無縫紗簾和一般縫合紗簾有什麼差別？', a: '一般紗簾在拼接處有縫合線，在強光照射下會顯現接縫痕跡，視覺較不美觀。無縫紗簾採用整幅布料，沒有接縫，在任何角度光線下都呈現均勻純淨的效果。' },
-      { q: '紗簾容易褪色嗎？', a: '宏森選用的紗簾布料均經過UV防褪色處理，在正常室內使用情況下，顏色可穩定維持3-5年以上。避免長期曝曬強烈直射陽光可延長使用壽命。' },
+      { q: '無縫紗簾可以單獨使用嗎？', a: '可以。單獨使用時，白天採光充足、視覺通透，適合客廳或書房；若夜晚也需要完整隱私，建議搭配遮光布簾形成雙層窗簾系統。' },
+      { q: '無縫紗簾和一般縫合紗簾有什麼差別？', a: '一般紗簾在拼接處會有縫合線，強光照射下較容易看出接縫。無縫紗簾採用整幅布料，視覺更乾淨，對大面窗與落地窗特別有感。' },
+      { q: '搜尋無縫紗簾推薦，該先確認哪些重點？', a: '建議先確認白天採光需求、是否需要透光不透人效果、夜間是否搭配遮光布簾，以及整體窗高與軌道條件，這樣更容易判斷適合的款式與預算。' },
+      { q: '無縫紗簾適合搭配哪些空間？', a: '客廳、書房、臥室外層與落地窗都是常見搭配場景。若想保留通透感又不希望空間太空，可以再搭配布簾、蛇形簾或木百葉做分層配置。' },
     ],
     material: '聚酯纖維超細纖維（無縫工藝）',
     colorOptions: '白色、米白、象牙、淡灰、淡粉等20種色系',
@@ -401,6 +404,8 @@ const productV3Data: Record<string, {
     faqs: [
       { q: '實木百葉窗價格試算要先看哪 3 個變數？', a: '先看木種、葉片寬度與窗型施工條件。三個變數一致時，台北實木百葉窗價格與三重實木百葉窗價格才有可比性。建議先用線上估價工具輸入尺寸，再安排丈量確認。' },
       { q: '台北實木百葉窗價格、三重實木百葉窗價格差在哪裡？', a: '主要差在木種等級、塗裝與現場施工條件（例如高窗、轉角窗、特殊五金）。先做實木百葉窗價格試算，再比同規格報價，判斷會更準確。' },
+      { q: '實木百葉窗價格試算會包含安裝費嗎？', a: '線上估價會先納入基本安裝費，正式報價仍會依安裝高度、窗框條件、五金配件與是否需要特殊施工微調。' },
+      { q: '實木百葉窗價格試算要輸入哪一種尺寸？', a: '建議輸入接近實際的寬度與高度（公分），同一尺寸先比較木百葉、鋁百葉與捲簾，較能判斷實木百葉升級後的預算差距。' },
       { q: '木百葉可以用在浴室嗎？', a: '天然實木不建議長期使用在高濕環境，浴室可優先考慮防潮材質；木百葉更適合客廳、書房等乾燥空間。' },
       { q: '木百葉的葉片可調整與保養嗎？', a: '可以調整葉片角度做精準控光。日常建議乾布除塵，遇到髒污以微濕布輕拭後立即擦乾。' },
     ],
@@ -651,6 +656,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
   const productHeroTitleMap: Record<string, string> = {
+    P002: '無縫紗簾推薦｜透光不透人、雙層窗簾搭配與到府丈量',
     P005: '台北捲簾價格、三重捲簾價格與捲簾訂製服務',
     P006: '台北鋁百葉窗價格、三重鋁百葉窗價格與鋁百葉訂製服務',
     P007: '實木百葉窗價格試算｜台北實木百葉窗價格、三重實木百葉窗價格與安裝費',
@@ -658,6 +664,12 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     P010: '台北調光簾價格、三重調光簾價格與斑馬簾訂製服務',
   };
   const productInternalLinksMap: Record<string, Array<{ href: string; label: string }>> = {
+    P002: [
+      { href: '/blog/curtain-price-guide-2026/', label: '訂製窗簾價格、雙層窗簾搭配與窗簾報價指南' },
+      { href: '/calculator/', label: '立即進入窗簾線上估價，先抓紗簾與安裝費預算' },
+      { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾價格試算入口' },
+      { href: '/location/zhongzheng/', label: '中正區窗簾推薦與中正區窗簾價格試算入口' },
+    ],
     P005: [
       { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾訂製服務' },
       { href: '/location/sanchong/', label: '三重窗簾推薦與三重窗簾訂製服務' },
@@ -673,6 +685,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     P007: [
       { href: '/location/sanchong/', label: '三重窗簾價格試算入口：對照實木百葉窗價格' },
       { href: '/location/taipei/', label: '台北窗簾價格試算入口：對照實木百葉窗價格' },
+      { href: '/calculator/?product=P007&area=sanchong', label: '三重實木百葉窗價格試算：直接帶入木百葉品項' },
       { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南：實木百葉窗價格試算與安裝費' },
       { href: '/calculator/?product=P007', label: '木百葉專屬估價：立即做實木百葉窗價格試算' },
     ],
@@ -824,7 +837,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
                   <Calculator size={16} />
-                  立即估價
+                  {product.id === 'P007' ? '立即做實木百葉窗價格試算' : '立即估價'}
                 </Link>
                 <a href="tel:0289727322" className="btn-outline">
                   致電諮詢
@@ -898,7 +911,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--stone-400)', textAlign: 'center' }}>✦ 大台北地區免費到府丈量 · 報價當場確認無隱藏費用</p>
           <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
             <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
-              <Calculator size={16} /> 直接線上估算我的費用
+              <Calculator size={16} /> {product.id === 'P007' ? '直接做實木百葉窗價格試算' : '直接線上估算我的費用'}
             </Link>
           </div>
         </div>

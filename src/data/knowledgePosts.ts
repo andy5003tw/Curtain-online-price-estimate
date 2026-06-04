@@ -229,10 +229,10 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'curtain-price-guide-2026',
-    title: '2026 窗簾價格指南：1 分鐘看懂窗簾價格試算、三重窗簾比價與安裝費',
-    description: '想做窗簾價格試算嗎？本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉窗價格試算與安裝費重點，並附三重窗簾比價流程。',
+    title: '2026 窗簾價格試算表｜捲簾、百葉窗、實木百葉安裝費一次看',
+    description: '先看 2026 窗簾價格區間，再用線上估價試算捲簾、百葉窗與實木百葉。含安裝費、三重窗簾比價與到府丈量重點。',
     category: 'budgeting',
-    tags: ['訂製窗簾價格', '窗簾價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
+    tags: ['訂製窗簾價格', '窗簾價格試算', '百葉窗價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
     date: '2026-05-21',
     readMin: 6,
     coverImage: '/blog/curtain-price-guide-2026.webp',
@@ -252,10 +252,15 @@ export const knowledgePosts: KnowledgePost[] = [
       {
         question: '實木百葉窗價格試算適合用在哪些空間？',
         answer: '常見於客廳、書房與西曬窗。建議先在同尺寸下對比實木百葉與捲簾、調光簾，再決定是否升級材質與配件。'
+      },
+      {
+        question: '百葉窗價格試算和窗簾價格試算要看哪一頁？',
+        answer: '若要先比較捲簾、鋁百葉、風琴簾與實木百葉，建議先看本篇價格表抓行情，再到窗簾計算機輸入尺寸試算。'
       }
     ],
     contentHtml: `
-      <p>若你是從<strong>窗簾價格試算</strong>搜尋進來，建議先開啟<strong><a href="/calculator/">窗簾計算機</a></strong>輸入尺寸，再回來對照本文行情。若你正在比價<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾價格試算入口</a></strong>；若在台北市，也可先看<strong><a href="/location/taipei/">台北窗簾價格試算入口</a></strong>，再決定丈量順序。</p>
+      <p><strong>窗簾價格試算先看每才行情，再用尺寸確認預算。</strong>本文整理 2026 捲簾、鋁百葉、風琴簾與實木百葉窗價格區間，並標出安裝費與丈量時最容易影響報價的條件。</p>
+      <p>若你是從<strong>窗簾價格試算</strong>或<strong>百葉窗價格試算</strong>搜尋進來，建議先看下方價格表，再開啟<strong><a href="/calculator/">窗簾計算機</a></strong>輸入尺寸。若你正在比價<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾價格試算入口</a></strong>；若要評估木質窗型，可直接看<strong><a href="/products/wooden-blinds/">實木百葉窗價格試算重點</a></strong>。</p>
 
       <h2>訂製窗簾價格怎麼算？先看「才數」與起計規則</h2>
       <p>台灣窗簾常以「才」計價（1 才 = 30x30cm）。基本公式為：寬(cm) x 高(cm) / 900 = 才數。由於小窗仍有固定工序，多數品項會有基本起計才數，因此窗簾訂做價格不只看面積，還要看款式與施工條件。</p>
@@ -263,7 +268,7 @@ export const knowledgePosts: KnowledgePost[] = [
       <h2>2026 常見窗簾訂做價格行情（連工帶料）</h2>
       <ul>
         <li><strong><a href="/products/roller-blinds/">捲簾</a>：</strong> 約 $60~$100 / 才，屬於高 CP 值入門款。</li>
-        <li><strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a>：</strong> 約 $90~$180 / 才，防潮好清潔，常用於廚房與衛浴。</li>
+        <li><strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a>：</strong> 約 $90~$180 / 才，防潮好清潔，適合先做百葉窗價格試算再確認材質。</li>
         <li><strong><a href="/products/honeycomb-blinds/">風琴簾（蜂巢簾）</a>：</strong> 約 $200~$500 / 才，主打隔熱節能與臥室控溫。</li>
         <li><strong><a href="/products/wooden-blinds/">實木百葉窗</a>：</strong> 可先做實木百葉窗價格試算，再依木種與葉片規格確認正式報價。</li>
         <li><strong><a href="/products/custom-curtains/">一般布簾</a>：</strong> 常以幅寬與車工計價，客廳一窗約 $5,000~$15,000 不等。</li>

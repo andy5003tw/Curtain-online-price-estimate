@@ -5,7 +5,7 @@ import { pillarPages } from '@/data/pillarPages';
 import { products } from '@/data/products';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
-import { ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 export async function generateStaticParams() {
   return pillarPages.map(page => ({ type: page.id }));
@@ -41,6 +41,11 @@ export default async function PillarPage({ params }: { params: Promise<{ type: s
   if (!pageData) notFound();
 
   const relatedProducts = products.filter(p => pageData.relatedProductIds.includes(p.id));
+  const quickLinks = pageData.quickLinks ?? [
+    { href: '/blog/curtain-price-guide-2026/', label: '查看窗簾價格指南' },
+    { href: buildCalculatorUrl(), label: '線上快速估價' },
+    { href: '/location/sanchong/', label: '三重窗簾在地服務' },
+  ];
 
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -110,18 +115,19 @@ export default async function PillarPage({ params }: { params: Promise<{ type: s
               {pageData.shortTitle}價格與估價入口
             </h3>
             <p style={{ margin: '0 0 0.9rem 0', color: 'var(--stone-600)', lineHeight: 1.75, fontSize: '0.92rem' }}>
-              建議先看價格指南抓預算，再用線上估價工具輸入尺寸比較各品項價差，最後安排丈量確認施工條件。
+              {pageData.estimateSummary ?? '建議先看價格指南抓預算，再用線上估價工具輸入尺寸比較各品項價差，最後安排丈量確認施工條件。'}
             </p>
             <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
-              <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
-                查看窗簾價格指南
-              </Link>
-              <Link href={buildCalculatorUrl()} className="btn-primary" style={{ fontSize: '0.9rem' }}>
-                線上快速估價
-              </Link>
-              <Link href="/location/sanchong/" className="btn-secondary" style={{ fontSize: '0.9rem' }}>
-                三重窗簾在地服務
-              </Link>
+              {quickLinks.map((link, index) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={index === 1 ? 'btn-primary' : index === 2 ? 'btn-secondary' : 'btn-outline'}
+                  style={{ fontSize: '0.9rem' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

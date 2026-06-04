@@ -2,10 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { products } from '@/data/products';
 import { productPath } from '@/lib/seo';
 
-type Product = typeof products[0];
+type Product = {
+  id: string;
+  name: string;
+  slug?: string;
+  canonicalSlug?: string;
+};
 
 interface ProductScrollMenuProps {
   products: Product[];

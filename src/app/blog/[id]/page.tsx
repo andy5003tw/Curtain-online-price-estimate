@@ -8,14 +8,14 @@ import { withBasePath, withBasePathInHtml } from '@/lib/base-path';
 
 const PRICE_GUIDE_SNIPPET_VARIANTS = {
   A: {
-    title: '2026 窗簾價格指南：1 分鐘看懂窗簾價格試算、三重窗簾比價與安裝費',
+    title: '2026 窗簾價格試算表｜捲簾、百葉窗、實木百葉安裝費一次看',
     description:
-      '想做窗簾價格試算嗎？本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉窗價格試算與安裝費重點，並附三重窗簾比價流程。',
+      '先看 2026 窗簾價格區間，再用線上估價試算捲簾、百葉窗與實木百葉。含安裝費、三重窗簾比價與到府丈量重點。',
   },
   B: {
-    title: '窗簾價格試算攻略：2026 三重窗簾比價、實木百葉窗價格與安裝費',
+    title: '窗簾價格試算怎麼看｜2026 百葉窗價格、三重窗簾比價與安裝費',
     description:
-      '先做窗簾價格試算，再比三重窗簾與實木百葉窗價格。本文整理 2026 常見品項報價區間、安裝費與比價步驟。',
+      '查窗簾價格先看每才行情與安裝條件，再進估價工具。整理百葉窗價格試算、三重窗簾比價、實木百葉與丈量流程。',
   },
 } as const;
 
@@ -66,14 +66,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const post = knowledgePosts.find((p) => p.id === id);
   if (!post) notFound();
+  const snippet = resolveBlogSnippet(post);
+  const displayTitle = post.id === 'curtain-price-guide-2026' ? snippet.title : post.title;
+  const displayDescription = post.id === 'curtain-price-guide-2026' ? snippet.description : post.description;
 
   const categoryName = knowledgeCategories.find(c => c.id === post.category)?.name || '未分類';
 
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: post.title,
-    description: post.description,
+    headline: displayTitle,
+    description: displayDescription,
     datePublished: `${post.date}T08:00:00+08:00`,
     author: { 
       '@type': 'Organization', 
@@ -108,7 +111,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: '首頁', item: absoluteUrl('/') },
       { '@type': 'ListItem', position: 2, name: '窗簾知識', item: absoluteUrl('/blog/') },
-      { '@type': 'ListItem', position: 3, name: post.title, item: absoluteUrl(`/blog/${post.id}/`) },
+      { '@type': 'ListItem', position: 3, name: displayTitle, item: absoluteUrl(`/blog/${post.id}/`) },
     ],
   };
 
@@ -146,8 +149,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          <h1 className="responsive-title" style={{ fontWeight: 700, lineHeight: 1.3, margin: '0 0 1.5rem', letterSpacing: '-0.02em' }}>{post.title}</h1>
-          <p className="responsive-desc" style={{ color: 'var(--stone-300)', lineHeight: 1.6 }}>{post.description}</p>
+          <h1 className="responsive-title" style={{ fontWeight: 700, lineHeight: 1.3, margin: '0 0 1.5rem', letterSpacing: '-0.02em' }}>{displayTitle}</h1>
+          <p className="responsive-desc" style={{ color: 'var(--stone-300)', lineHeight: 1.6 }}>{displayDescription}</p>
         </div>
       </div>
 
@@ -159,7 +162,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
             <div style={{ width: '100%', paddingTop: '50%', position: 'relative', background: 'var(--stone-100)' }}>
               <img 
                 src={withBasePath(post.coverImage)} 
-                alt={post.title} 
+                alt={displayTitle} 
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
               />
             </div>

@@ -7,13 +7,13 @@ import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '窗簾價格試算｜三重窗簾與台北窗簾線上估價推薦';
-const HOME_DESCRIPTION = '宏森窗簾提供窗簾價格試算、三重窗簾在地比價與台北窗簾到府丈量。先用線上估價工具 1 分鐘抓預算，再安排窗簾訂製與施工。';
+const HOME_TITLE = '窗簾價格試算｜線上估價、三重窗簾推薦與到府丈量';
+const HOME_DESCRIPTION = '想先抓窗簾價格？宏森提供窗簾價格試算與線上估價，支援三重窗簾、台北新北到府丈量，1 分鐘比較捲簾、百葉窗與實木百葉預算。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '三重窗簾', '實木百葉窗價格試算', '窗簾訂製', '台北窗簾', '新北窗簾', '窗簾安裝', '到府丈量', '台北窗簾價格'],
+  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '三重窗簾', '三重窗簾推薦', '三重窗簾價格試算', '實木百葉窗價格試算', '窗簾訂製', '台北窗簾', '新北窗簾', '窗簾安裝', '到府丈量', '台北窗簾價格'],
   ...buildOgTwitterMeta({
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
@@ -34,7 +34,7 @@ const features = [
   },
   {
     title: '工廠直營報價',
-    desc: '流程透明、價格清楚，減少中間成本並保留彈性選配。',
+    desc: '先用窗簾價格試算抓區間，再由丈量確認材質、配件與安裝費。',
   },
   {
     title: '多品類一次比較',
@@ -167,18 +167,46 @@ export default function HomePage() {
               marginBottom: '1rem',
             }}
           >
-            台北新北窗簾訂製專家
+            三重窗簾・線上估價・免費丈量
           </p>
-          <h1>窗簾價格試算、丈量、安裝一次到位</h1>
-          <p>先用窗簾估價工具 1 分鐘抓預算，再從布簾、調光簾到功能簾依採光與隱私需求完成訂製配置。</p>
+          <h1>窗簾價格試算與線上估價，三重窗簾快速抓預算</h1>
+          <p>輸入尺寸先比較捲簾、百葉窗與實木百葉價格區間；三重、台北、新北可再安排到府丈量，確認窗型、布料與安裝費。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />
-              1 分鐘線上估價
+              立即做窗簾價格試算
             </Link>
-            <Link href="/products" className="btn-secondary">
-              查看全部產品 <ChevronRight size={18} />
+            <Link href="/location/sanchong/" className="btn-secondary">
+              三重窗簾服務 <ChevronRight size={18} />
             </Link>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+              marginTop: '1rem',
+              color: 'rgba(255,255,255,0.9)',
+              fontSize: '0.9rem',
+            }}
+          >
+            {['1 分鐘線上估價', '三重到府丈量', '捲簾與百葉窗同步比較'].map(item => (
+              <span
+                key={item}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.35rem 0.65rem',
+                  border: '1px solid rgba(255,255,255,0.28)',
+                  borderRadius: '999px',
+                  background: 'rgba(0,0,0,0.22)',
+                }}
+              >
+                <CheckCircle2 size={14} />
+                {item}
+              </span>
+            ))}
           </div>
           <p style={{ marginTop: '0.85rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)' }}>
             常用入口：

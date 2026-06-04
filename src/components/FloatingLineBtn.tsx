@@ -15,13 +15,13 @@ export default function FloatingLineBtn() {
         </div>
         <div className="qr-box">
           <div className="qr-title">專員一 0980</div>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://line.me/ti/p/fDWxUXkiZb" alt="LINE QR 0980" />
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://line.me/ti/p/fDWxUXkiZb" alt="LINE QR 0980" loading="lazy" decoding="async" />
           <a href="https://line.me/ti/p/fDWxUXkiZb" target="_blank" rel="noopener noreferrer">用電腦版開啟</a>
         </div>
         <div className="qr-divider"></div>
         <div className="qr-box">
           <div className="qr-title">專員二 0973</div>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://line.me/ti/p/nS1XQ4-flk" alt="LINE QR 0973" />
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://line.me/ti/p/nS1XQ4-flk" alt="LINE QR 0973" loading="lazy" decoding="async" />
           <a href="https://line.me/ti/p/nS1XQ4-flk" target="_blank" rel="noopener noreferrer">用電腦版開啟</a>
         </div>
       </div>

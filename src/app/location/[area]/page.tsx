@@ -47,9 +47,15 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
     .filter((product): product is (typeof products)[number] => Boolean(product));
 
   const ownerBoostLinksByArea: Record<string, Array<{ href: string; label: string }>> = {
+    banqiao: [
+      { href: buildCalculatorUrl('P009', 'banqiao'), label: '板橋風琴簾價格試算與線上估價' },
+      { href: '/blog/curtain-price-guide-2026/', label: '先看 2026 窗簾價格指南再安排丈量' },
+      { href: '/products/custom-curtains/', label: '板橋布簾訂製與全室搭配重點' },
+    ],
     taipei: [
-      { href: '/location/sanchong/', label: '三重窗簾比價入口' },
+      { href: buildCalculatorUrl('P010', 'taipei'), label: '台北調光簾價格試算' },
       { href: buildCalculatorUrl('P007', 'taipei'), label: '台北實木百葉窗價格試算' },
+      { href: '/location/zhongzheng/', label: '中正區窗簾價格試算入口' },
     ],
     sanchong: [
       { href: buildCalculatorUrl('P007', 'sanchong'), label: '三重實木百葉窗價格試算' },
@@ -57,6 +63,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
     ],
     zhongzheng: [
       { href: buildCalculatorUrl('P010', 'zhongzheng'), label: '中正區調光簾價格試算' },
+      { href: buildCalculatorUrl('P006', 'zhongzheng'), label: '中正區鋁百葉窗價格試算' },
       { href: '/products/zebra-blinds/', label: '調光簾產品與價格重點' },
     ],
   };
@@ -173,7 +180,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
               先用線上工具做 {pageData.areaName} 窗簾價格試算，再用價格指南比對品項與安裝費用，最後安排丈量確認即可。
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-              <Link href={buildCalculatorUrl()} className="btn-primary" style={{ fontSize: '0.9rem' }}>
+              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ fontSize: '0.9rem' }}>
                 {pageData.areaName}線上估價
               </Link>
               <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
@@ -277,7 +284,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
             專人攜帶樣本到府，依據您的現場採光、裝潢風格給予最專業的配置建議，量尺與報價完全免費！
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href={buildCalculatorUrl()} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>線上快速估價 <ChevronRight size={20} /></Link>
+            <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>線上快速估價 <ChevronRight size={20} /></Link>
             <a href="https://line.me/ti/p/fDWxUXkiZb" className="btn-secondary" style={{ background: '#06C755', borderColor: '#06C755', color: 'white', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>加 LINE 立即預約</a>
           </div>
         </div>

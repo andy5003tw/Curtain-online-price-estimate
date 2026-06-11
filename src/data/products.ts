@@ -4,9 +4,9 @@
     "legacyId": "P001",
     "slug": "custom-curtains",
     "canonicalSlug": "custom-curtains",
-    "primaryKeyword": "一般窗簾",
-    "secondaryKeywords": ["窗簾訂製", "遮光窗簾", "布簾訂製", "台北窗簾"],
-    "updatedAt": "2026-05-12",
+    "primaryKeyword": "窗簾訂製",
+    "secondaryKeywords": ["訂製窗簾價格", "窗簾訂製價格", "遮光窗簾", "布簾訂製", "客廳布簾", "台北窗簾", "窗簾訂做"],
+    "updatedAt": "2026-06-11",
     "name": "一般窗簾",
     "image": "/images/P001_curtain.webp",
     "image_alt": "宏森一般窗簾 - 優質遮光布簾實景",
@@ -20,11 +20,11 @@
       "sewing_fee": 200,
       "installation_fee": 70
     },
-    "description": "經典不敗的居家首選，具備優異的遮光與隔音效果。",
+    "description": "窗簾訂製與遮光窗簾的主力選擇，適合客廳主窗、臥室與書房，先比較訂製窗簾價格、遮光等級、雙層搭配、軌道與安裝費，再安排到府丈量。",
     "seo": {
-      "meta_title": "精選一般窗簾 - 專業訂製遮光布簾 | 宏森開發",
-      "meta_description": "提供高品質一般窗簾訂製，具備強大遮光與隔絕噪音功能。",
-      "keywords": ["一般窗簾", "遮光布簾", "窗簾訂製"]
+      "meta_title": "窗簾訂製價格試算｜訂製窗簾價格、遮光窗簾與客廳布簾",
+      "meta_description": "想做窗簾訂製、查訂製窗簾價格或比較遮光窗簾？先看布料等級、雙層搭配、軌道與安裝費，再進線上估價安排到府丈量。",
+      "keywords": ["窗簾訂製", "訂製窗簾價格", "窗簾訂製價格", "窗簾訂做", "遮光窗簾", "遮光布簾", "客廳布簾", "台北窗簾", "窗簾價格試算"]
     }
   },
   {
@@ -34,7 +34,7 @@
     "canonicalSlug": "seamless-sheer-curtains",
     "primaryKeyword": "無縫紗簾",
     "secondaryKeywords": ["紗簾訂製", "透光不透人窗簾", "雙層窗簾", "台北紗簾"],
-    "updatedAt": "2026-06-04",
+    "updatedAt": "2026-06-10",
     "name": "無縫紗簾",
     "image": "/images/P002_screening.webp",
     "image_alt": "輕奢無縫紗簾 - 透光不透人設計",
@@ -48,11 +48,11 @@
       "sewing_fee": 672,
       "installation_fee": 70
     },
-    "description": "無縫紗簾適合先比較透光不透人效果、雙層搭配方式與到府丈量流程，快速評估客廳與書房的採光與隱私方案。",
+    "description": "無縫紗簾推薦先看客廳透光不透人效果、雙層窗簾搭配與無縫紗簾價格試算，再安排台北、中正區或士林到府丈量確認預算。",
     "seo": {
-      "meta_title": "無縫紗簾推薦｜透光不透人、雙層窗簾搭配與價格重點",
-      "meta_description": "想找無縫紗簾推薦？先看透光不透人效果、雙層窗簾搭配與價格重點，再安排到府丈量比較客廳與書房採光方案。",
-      "keywords": ["無縫紗簾", "透光不透人", "輕柔紗簾", "雙層窗簾", "紗簾推薦"]
+      "meta_title": "無縫紗簾推薦｜客廳透光不透人、雙層窗簾與價格試算",
+      "meta_description": "想找無縫紗簾推薦或客廳透光不透人窗簾？先看雙層窗簾搭配、無縫紗簾價格試算與台北中正區士林丈量流程，再安排到府看樣。",
+      "keywords": ["無縫紗簾", "透光不透人", "透光不透人紗簾", "客廳紗簾", "雙層窗簾", "無縫紗簾價格", "紗簾推薦", "客廳透光不透人窗簾", "紗簾價格試算"]
     }
   },
   {
@@ -145,8 +145,8 @@
     "slug": "roller-blinds",
     "canonicalSlug": "roller-blinds",
     "primaryKeyword": "捲簾",
-    "secondaryKeywords": ["台北捲簾價格", "三重捲簾價格", "捲簾線上估價", "防水捲簾"],
-    "updatedAt": "2026-05-16",
+    "secondaryKeywords": ["捲簾價格試算", "捲簾安裝價格", "台北捲簾價格", "三重捲簾價格", "捲簾線上估價", "遮光捲簾"],
+    "updatedAt": "2026-06-11",
     "name": "捲簾",
     "image": "/images/P005_roller blind.webp",
     "image_alt": "極簡時尚捲簾 - 辦公空間首選",
@@ -154,17 +154,17 @@
     "formula_type": "roller_blind",
     "requires_track": false,
     "pricing": { "unit_price": 64, "min_per_tai": 15, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "台北與三重常見的高效率控光款式，操作直覺不佔空間，具備防潑水特性。",
-    "seo": { "meta_title": "台北捲簾價格、三重捲簾價格｜捲簾訂製線上估價", "meta_description": "快速比較台北捲簾價格與三重捲簾價格，支援線上估價與到府丈量。", "keywords": ["台北捲簾價格", "三重捲簾價格", "捲簾線上估價"] }
+    "description": "捲簾價格試算的入門主力，適合租屋、辦公室、廚房與書房，先比較遮光等級、透光布料、捲簾安裝價格、遮光捲簾與現場條件，再安排到府丈量。",
+    "seo": { "meta_title": "捲簾價格試算｜捲簾安裝價格、遮光捲簾與線上估價", "meta_description": "想查捲簾價格試算、捲簾安裝價格或遮光捲簾？先比較透光、半遮光、全遮光捲簾與安裝條件，再用同尺寸線上估價。", "keywords": ["捲簾價格試算", "捲簾價格", "捲簾安裝價格", "台北捲簾價格", "三重捲簾價格", "捲簾線上估價", "遮光捲簾", "捲簾安裝費"] }
   },
   {
     "id": "P006",
     "legacyId": "P006",
     "slug": "aluminum-blinds",
     "canonicalSlug": "aluminum-blinds",
-    "primaryKeyword": "鋁百葉窗簾",
-    "secondaryKeywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗價格試算", "鋁百葉窗簾訂製", "防潮窗簾"],
-    "updatedAt": "2026-05-21",
+    "primaryKeyword": "百葉窗價格試算",
+    "secondaryKeywords": ["鋁百葉窗價格", "百葉窗簾價格", "台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗價格試算", "鋁百葉窗簾訂製", "防潮窗簾"],
+    "updatedAt": "2026-06-11",
     "name": "鋁百葉窗簾",
     "image": "/images/P006_Aluminum blinds.webp",
     "image_alt": "耐用鋁百葉窗簾 - 衛浴防潮調光",
@@ -172,8 +172,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 56, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "耐用防潮的鋁合金葉片設計，適合比較台北、三重鋁百葉窗價格與日常清潔便利度。",
-    "seo": { "meta_title": "台北鋁百葉窗價格、三重鋁百葉窗價格｜鋁百葉窗價格試算", "meta_description": "快速比較台北與三重鋁百葉窗價格，支援鋁百葉窗價格試算，防潮、耐用、易清潔，適合浴室與廚房。", "keywords": ["台北鋁百葉窗價格", "三重鋁百葉窗價格", "鋁百葉窗價格試算", "鋁百葉窗簾訂製"] }
+    "description": "百葉窗價格試算適合先用同尺寸比較鋁百葉、實木百葉與風琴簾，再看百葉窗價格、鋁百葉窗價格、百葉窗簾價格、葉片寬度與安裝費。",
+    "seo": { "meta_title": "百葉窗價格試算｜百葉窗價格、鋁百葉窗價格與安裝費", "meta_description": "想查百葉窗價格、百葉窗價格試算或鋁百葉窗價格？先比較百葉窗簾價格、葉片寬度、防潮耐用度與安裝費，再用同尺寸線上估價。", "keywords": ["百葉窗價格試算", "鋁百葉窗價格", "百葉窗價格", "百葉窗簾價格", "台北鋁百葉窗價格", "三重鋁百葉窗價格", "新莊鋁百葉窗價格", "鋁百葉窗簾訂製", "百葉窗安裝費"] }
   },
   {
     "id": "P007",
@@ -182,7 +182,7 @@
     "canonicalSlug": "wooden-blinds",
     "primaryKeyword": "木百葉窗簾",
     "secondaryKeywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "實木百葉窗價格試算", "木百葉窗簾訂製", "書房窗簾"],
-    "updatedAt": "2026-05-21",
+    "updatedAt": "2026-06-11",
     "name": "木百葉窗簾",
     "image": "/images/P007_Log blinds.webp",
     "image_alt": "實木百葉窗簾 - 天然溫潤木質紋理",
@@ -190,8 +190,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 160, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "天然木材打造溫暖質感，適合先輸入尺寸做實木百葉窗價格試算，再比較台北、三重實木百葉窗價格與安裝費的居家與商空。",
-    "seo": { "meta_title": "實木百葉窗價格試算｜台北、三重實木百葉窗價格與安裝費", "meta_description": "輸入尺寸先做實木百葉窗價格試算，快速比較台北與三重實木百葉窗價格、木種、葉片寬度與安裝費，再安排到府丈量。", "keywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "實木百葉窗價格試算", "木百葉窗簾訂製", "實木百葉窗安裝費"] }
+    "description": "實木百葉窗價格試算適合先比較木種、葉片寬度、客廳落地窗搭配與安裝費，再對照台北、板橋與中正區丈量流程，確認木百葉窗簾價格。",
+    "seo": { "meta_title": "實木百葉窗價格試算｜木百葉窗簾價格、客廳搭配與安裝費", "meta_description": "想知道實木百葉價格怎麼算？先看木種、葉片寬度、客廳落地窗搭配、安裝費與窗型條件，再比較台北、板橋與中正區丈量流程。", "keywords": ["台北實木百葉窗價格", "三重實木百葉窗價格", "板橋實木百葉窗價格", "實木百葉窗價格試算", "木百葉窗簾價格", "木百葉窗簾訂製", "實木百葉窗安裝費", "客廳木百葉"] }
   },
   {
     "id": "P008",
@@ -199,8 +199,8 @@
     "slug": "bamboo-blinds",
     "canonicalSlug": "bamboo-blinds",
     "primaryKeyword": "竹簾",
-    "secondaryKeywords": ["竹簾訂製", "日式窗簾", "和室窗簾", "天然竹簾"],
-    "updatedAt": "2026-05-12",
+    "secondaryKeywords": ["竹簾訂製", "和室窗簾", "日式窗簾", "天然竹簾", "竹簾價格"],
+    "updatedAt": "2026-06-11",
     "name": "竹簾",
     "image": "/images/P008_Bamboo curtain.webp",
     "image_alt": "東方韻味竹簾 - 自然透氣隔間",
@@ -208,8 +208,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 77, "min_per_tai": 12, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "古樸東方韻味，透氣性極佳。",
-    "seo": { "meta_title": "仿古自然竹簾", "meta_description": "日式禪風空間設計。", "keywords": ["竹簾"] }
+    "description": "竹簾與竹簾訂製適合和室窗簾、日式窗簾與自然通風空間，先比較竹材編織密度、透光程度、竹簾價格與安裝位置，再安排線上估價與到府丈量。",
+    "seo": { "meta_title": "竹簾訂製｜竹簾、和室窗簾、日式窗簾與價格試算", "meta_description": "想找竹簾、竹簾訂製、和室窗簾或日式窗簾？先比較天然竹簾的透光通風、編織密度、竹簾價格與安裝位置，再安排線上估價與到府丈量。", "keywords": ["竹簾", "竹簾訂製", "和室窗簾", "日式窗簾", "天然竹簾", "竹簾價格"] }
   },
   {
     "id": "P009",
@@ -217,8 +217,8 @@
     "slug": "honeycomb-blinds",
     "canonicalSlug": "honeycomb-blinds",
     "primaryKeyword": "風琴簾",
-    "secondaryKeywords": ["台北風琴簾價格", "三重風琴簾價格", "風琴簾價格試算", "蜂巢簾價格", "節能窗簾"],
-    "updatedAt": "2026-05-21",
+    "secondaryKeywords": ["台北風琴簾價格", "三重風琴簾價格", "風琴簾價格試算", "蜂巢簾價格", "蜂巢簾價格試算", "節能窗簾", "隔熱窗簾", "西曬窗簾"],
+    "updatedAt": "2026-06-11",
     "name": "風琴簾",
     "image": "/images/P009_accordion curtain.webp",
     "image_alt": "美感風琴簾 - 蜂巢結構節能隔熱",
@@ -226,8 +226,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 232, "min_per_tai": 20, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "蜂巢中空結構強化隔熱節能，適合比較台北、三重風琴簾價格與西曬空間降溫需求。",
-    "seo": { "meta_title": "台北風琴簾價格、三重風琴簾價格｜風琴簾價格試算", "meta_description": "查看台北與三重風琴簾價格，支援風琴簾價格試算，蜂巢簾隔熱節能、適合西曬與臥室控溫。", "keywords": ["台北風琴簾價格", "三重風琴簾價格", "風琴簾價格試算", "蜂巢簾價格"] }
+    "description": "風琴簾價格試算適合先拿來比西曬隔熱、臥室控溫、蜂巢簾價格試算與透天高窗情境，先比較台北、士林、新莊常見安裝條件再安排丈量。",
+    "seo": { "meta_title": "風琴簾價格試算｜蜂巢簾價格、隔熱窗簾與臥室控溫", "meta_description": "想看風琴簾價格試算或蜂巢簾價格？先比較隔熱窗簾效果、台北士林新莊常見安裝情境、透光等級與控制配件，再做線上估價。", "keywords": ["風琴簾價格試算", "蜂巢簾價格", "蜂巢簾價格試算", "台北風琴簾價格", "三重風琴簾價格", "士林風琴簾", "新莊風琴簾", "隔熱窗簾", "西曬窗簾"] }
   },
   {
     "id": "P010",
@@ -235,8 +235,8 @@
     "slug": "zebra-blinds",
     "canonicalSlug": "zebra-blinds",
     "primaryKeyword": "調光簾",
-    "secondaryKeywords": ["台北調光簾價格", "三重調光簾價格", "調光簾線上估價", "現代窗簾"],
-    "updatedAt": "2026-05-16",
+    "secondaryKeywords": ["調光簾價格試算", "調光簾一才價格", "台北調光簾價格", "三重調光簾價格", "調光簾線上估價", "斑馬簾價格"],
+    "updatedAt": "2026-06-11",
     "name": "調光簾",
     "image": "/images/P010_dimming curtain.webp",
     "image_alt": "實用調光簾 - 斑馬簾光影自由切換",
@@ -244,8 +244,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 111, "min_per_tai": 15, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "斑馬簾雙層交錯設計，可快速比較台北調光簾價格與三重調光簾價格。",
-    "seo": { "meta_title": "台北調光簾價格、三重調光簾價格｜斑馬簾訂製估價", "meta_description": "支援台北、三重調光簾價格比較，快速評估斑馬簾訂製與安裝預算。", "keywords": ["台北調光簾價格", "三重調光簾價格", "斑馬簾訂製"] }
+    "description": "調光簾價格試算適合先比日夜控光、隱私切換、斑馬簾條紋寬度與調光簾一才價格，常用於客廳、臥室與景觀宅的快速估價。",
+    "seo": { "meta_title": "調光簾價格試算｜斑馬簾價格、客廳控光與安裝費", "meta_description": "想做調光簾價格試算或查調光簾一才價格？先比較斑馬簾條紋寬度、遮光等級、客廳控光與安裝費，再進線上估價。", "keywords": ["調光簾價格試算", "調光簾價格", "調光簾一才價格", "台北調光簾價格", "三重調光簾價格", "新莊調光簾", "斑馬簾價格", "調光簾安裝費"] }
   },
   {
     "id": "P011",
@@ -253,8 +253,8 @@
     "slug": "soft-sheer-blinds",
     "canonicalSlug": "soft-sheer-blinds",
     "primaryKeyword": "柔紗簾",
-    "secondaryKeywords": ["柔紗簾訂製", "高級窗簾", "精品窗簾", "透光窗簾"],
-    "updatedAt": "2026-05-12",
+    "secondaryKeywords": ["柔紗簾價格", "柔紗簾價格試算", "柔紗簾訂製", "精品窗簾", "透光窗簾"],
+    "updatedAt": "2026-06-11",
     "name": "柔紗簾",
     "image": "/images/P011_Soft gauze curtains.webp",
     "image_alt": "浪漫柔紗簾 - 唯美柔化室內光線",
@@ -262,8 +262,8 @@
     "formula_type": "area_based",
     "requires_track": false,
     "pricing": { "unit_price": 164, "min_per_tai": 15, "base_installation_per_tai": 20, "labor_per_tai": 13 },
-    "description": "葉片懸浮在兩層輕紗間，營造柔美感。",
-    "seo": { "meta_title": "頂級柔紗簾訂製", "meta_description": "雲端般的柔和光影。", "keywords": ["柔紗簾"] }
+    "description": "柔紗簾價格試算適合先比較透光柔化、葉片角度、隱私與高端住宅搭配，常用於主臥、客廳與精品飯店風空間。",
+    "seo": { "meta_title": "柔紗簾價格試算｜柔紗簾訂製、透光窗簾與精品住宅搭配", "meta_description": "想看柔紗簾價格或柔紗簾訂製？先比較透光柔化、葉片角度、隱私需求與安裝費，再用線上估價安排到府丈量。", "keywords": ["柔紗簾", "柔紗簾價格", "柔紗簾價格試算", "柔紗簾訂製", "透光窗簾", "精品窗簾", "高級窗簾"] }
   },
   {
     "id": "P013",

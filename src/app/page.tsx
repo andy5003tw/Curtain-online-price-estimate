@@ -1,19 +1,19 @@
 ﻿import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Calculator, ChevronRight, CheckCircle2, MapPin, Star } from 'lucide-react';
+import { Calculator, ChevronRight, CheckCircle2, Star } from 'lucide-react';
 import FloatingCta from '@/components/FloatingCta';
 import { products } from '@/data/products';
 import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '窗簾價格試算｜線上估價、三重窗簾推薦與到府丈量';
-const HOME_DESCRIPTION = '想先抓窗簾價格？宏森提供窗簾價格試算與線上估價，支援三重窗簾、台北新北到府丈量，1 分鐘比較捲簾、百葉窗與實木百葉預算。';
+const HOME_TITLE = '窗簾價格試算｜窗簾線上估價、百葉窗價格試算與地區入口';
+const HOME_DESCRIPTION = '想先做窗簾價格試算、百葉窗價格試算或看台北、三重、板橋窗簾入口？宏森提供 1 分鐘線上估價、價格指南與地區服務頁，先抓預算再安排丈量。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '三重窗簾', '三重窗簾推薦', '三重窗簾價格試算', '實木百葉窗價格試算', '窗簾訂製', '台北窗簾', '新北窗簾', '窗簾安裝', '到府丈量', '台北窗簾價格'],
+  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '百葉窗價格試算', '工廠直營窗簾', '三重窗簾', '三重窗簾推薦', '板橋窗簾推薦', '台北窗簾價格試算', '鶯歌窗簾推薦', '中正區窗簾價格試算', '無縫紗簾', '實木百葉窗價格試算', '窗簾訂製', '窗簾安裝', '到府丈量'],
   ...buildOgTwitterMeta({
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
@@ -61,6 +61,18 @@ const homepageFaq = [
   {
     q: '三重窗簾要先估價還是先丈量？',
     a: '建議先用窗簾價格試算抓預算，再看三重窗簾服務頁與實木百葉窗價格試算內容，比對品項後再預約丈量，決策會更快。',
+  },
+  {
+      q: '板橋、台北或鶯歌窗簾也可以先做線上估價嗎？',
+      a: '可以，先用窗簾價格試算輸入尺寸，再切到台北、板橋或鶯歌地區頁確認到府丈量流程，能更快收斂到正式報價；若要先比行情，也可先看窗簾價格指南。',
+  },
+  {
+    q: '百葉窗價格試算適合先比哪幾種？',
+    a: '建議先用同一尺寸比較鋁百葉、實木百葉與風琴簾，再依防潮、木質感、隔熱與安裝條件縮小到 1 到 2 個方案。',
+  },
+  {
+    q: '窗簾訂製或遮光窗簾，首頁先從哪個入口開始最快？',
+    a: '若你先想抓預算，可直接進窗簾價格試算帶入一般窗簾或捲簾；若想先看窗簾價格、百葉窗價格與安裝費差異，可先讀價格指南，再回到試算器比較。',
   },
   {
     q: '可以同時比較多種窗簾款式嗎？',
@@ -167,17 +179,17 @@ export default function HomePage() {
               marginBottom: '1rem',
             }}
           >
-            三重窗簾・線上估價・免費丈量
+            窗簾價格試算・百葉窗價格試算・台北新北地區入口
           </p>
-          <h1>窗簾價格試算與線上估價，三重窗簾快速抓預算</h1>
-          <p>輸入尺寸先比較捲簾、百葉窗與實木百葉價格區間；三重、台北、新北可再安排到府丈量，確認窗型、布料與安裝費。</p>
+          <h1>窗簾價格試算與百葉窗價格試算入口</h1>
+          <p>輸入尺寸先比較窗簾訂製、遮光窗簾、鋁百葉、捲簾、無縫紗簾與實木百葉價格區間；再依台北、三重、板橋、鶯歌、士林或中正區服務頁安排丈量，確認窗型、布料與安裝費。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />
               立即做窗簾價格試算
             </Link>
-            <Link href="/location/sanchong/" className="btn-secondary">
-              三重窗簾服務 <ChevronRight size={18} />
+            <Link href="/blog/curtain-price-guide-2026/" className="btn-secondary">
+              先看窗簾價格指南 <ChevronRight size={18} />
             </Link>
           </div>
           <div
@@ -190,7 +202,7 @@ export default function HomePage() {
               fontSize: '0.9rem',
             }}
           >
-            {['1 分鐘線上估價', '三重到府丈量', '捲簾與百葉窗同步比較'].map(item => (
+                {['1 分鐘線上估價', '台北三重板橋鶯歌士林中正區丈量', '價格指南與地區入口同步比較'].map(item => (
               <span
                 key={item}
                 style={{
@@ -222,12 +234,52 @@ export default function HomePage() {
               台北窗簾價格試算
             </Link>
             {' · '}
+            <Link href="/location/banqiao/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              板橋窗簾推薦
+            </Link>
+            {' · '}
+            <Link href="/location/yingge/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              鶯歌窗簾推薦
+            </Link>
+            {' · '}
+            <Link href="/location/shilin/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              士林窗簾推薦
+            </Link>
+            {' · '}
+            <Link href="/location/zhongzheng/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              中正區窗簾價格試算
+            </Link>
+            {' · '}
             <Link href="/blog/curtain-price-guide-2026/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
               窗簾價格指南
             </Link>
             {' · '}
+            <Link href="/products/custom-curtains/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              窗簾訂製與遮光布簾
+            </Link>
+            {' · '}
+            <Link href="/curtain/blackout/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              遮光窗簾推薦
+            </Link>
+            {' · '}
+            <Link href="/products/seamless-sheer-curtains/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              無縫紗簾推薦
+            </Link>
+            {' · '}
             <Link href="/products/wooden-blinds/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
               實木百葉窗價格試算
+            </Link>
+            {' · '}
+            <Link href="/products/aluminum-blinds/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              百葉窗價格試算
+            </Link>
+            {' · '}
+            <Link href="/products/bamboo-blinds/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              竹簾訂製
+            </Link>
+            {' · '}
+            <Link href="/about/" style={{ color: '#FCD34D', fontWeight: 700, textDecoration: 'underline' }}>
+              工廠直營窗簾與品牌服務
             </Link>
           </p>
         </div>
@@ -270,7 +322,7 @@ export default function HomePage() {
           <div className="section-heading">
             <div className="tag">雙北熱門服務區域</div>
             <h2>24 區服務入口快速導覽</h2>
-            <p>首頁與產品頁同步擴充到 24 個 GEO 入口，依六組波次快速找到對應地區頁。</p>
+            <p>首頁與產品頁同步擴充到 24 個 GEO 入口，依六組波次快速找到對應地區頁，並直接導回價格試算與價格指南。</p>
           </div>
 
           {geoGroups.map((group, index) => {
@@ -368,17 +420,17 @@ export default function HomePage() {
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--stone-200)' }}>快速估價</div>
           <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.4rem)', fontWeight: 700, marginBottom: '1rem' }}>立即預約到府丈量</h2>
           <p style={{ color: 'var(--stone-300)', marginBottom: '2rem', maxWidth: '520px', margin: '0 auto 2rem' }}>
-            先估價、再安排丈量，流程清楚，快速確認你的窗簾方案。
+            先估價、再看價格指南與服務區入口，流程清楚，快速確認你的窗簾方案。
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
             <Link href={buildCalculatorUrl()} className="btn-primary" style={{ display: 'inline-flex', background: 'var(--amber-600)', fontSize: '1rem', padding: '0.9rem 2rem' }}>
               <Calculator size={20} />
               前往線上估價
             </Link>
-            <a href="tel:0289727322" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.9rem 2rem' }}>
-              <MapPin size={18} />
-              立即來電
-            </a>
+            <Link href="/blog/curtain-price-guide-2026/" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.9rem 2rem' }}>
+              <ChevronRight size={18} />
+              先看價格指南
+            </Link>
           </div>
         </div>
       </section>

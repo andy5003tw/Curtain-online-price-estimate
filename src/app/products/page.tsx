@@ -7,28 +7,32 @@ import { products } from '@/data/products';
 import { withBasePath } from '@/lib/base-path';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 
-const PRODUCTS_TITLE = '窗簾產品總覽｜熱門款式比較、窗簾價格試算與線上估價';
+const PRODUCTS_TITLE = '窗簾產品總覽｜窗簾訂製、捲簾價格試算、風琴簾與百葉窗比較';
 const PRODUCTS_DESCRIPTION =
-  '想先比較窗簾款式？這頁整理一般窗簾、無縫紗簾、捲簾、鋁百葉、木百葉、風琴簾與調光簾，方便先看產品重點，再進入窗簾價格試算與線上估價。';
+  '想比較窗簾訂製、捲簾價格試算、風琴簾價格試算或百葉窗價格試算？先看布簾、捲簾、鋁百葉、風琴簾、調光簾與柔紗簾差異，再回到線上估價用同尺寸比較。';
 
 type ProductItem = (typeof products)[number];
 
 const faqItems = [
   {
     q: '第一次挑窗簾，先看產品總覽還是直接估價？',
-    a: '若還在比較款式，建議先看產品總覽縮小到 2 到 3 個品項，再用同尺寸做窗簾價格試算，判斷預算會更直覺。',
+    a: '若還在比較款式，建議先看產品總覽，把窗簾訂製、捲簾或風琴簾先縮小到 2 到 3 個品項，再用同尺寸做價格試算，判斷預算會更直覺。',
   },
   {
-    q: '產品總覽頁適合先比較哪幾種熱門窗簾？',
-    a: '多數住家可先比較一般窗簾、捲簾、木百葉與風琴簾，再依採光、清潔與預算需求決定後續丈量方向。',
+    q: '產品總覽頁先比哪三種，最容易找到 owner page？',
+    a: '若你偏一般住家主窗，可先比窗簾訂製、捲簾與風琴簾；若偏防潮與控光，可改比鋁百葉、實木百葉與調光簾，再往對應產品頁深入。',
   },
   {
-    q: '看完產品頁後，可以直接進入線上估價嗎？',
-    a: '可以。每個產品卡與頁面底部都可直接導向估價頁，先用接近實際的寬高尺寸抓預算區間，再安排到府丈量。',
+    q: '窗簾訂製、捲簾價格試算與風琴簾價格試算要怎麼分流？',
+    a: '若你重視垂墜感、遮光等級與客廳主窗搭配，可先看窗簾訂製；若重視價格親和、好清潔與快速估價，可先看捲簾；若你在意西曬隔熱與臥室控溫，就先看風琴簾價格試算。',
   },
   {
-    q: '產品總覽頁的估價會包含安裝費嗎？',
-    a: '線上估價會先納入基本安裝費，正式報價仍會依窗型、配件與施工條件微調。',
+    q: '產品總覽看完後，怎麼最快得到窗簾報價？',
+    a: '可以從產品卡直接進入線上估價，先用接近實際的寬高尺寸抓預算區間，再保留試算結果安排士林、台北或新北地區的到府丈量。',
+  },
+  {
+    q: '遮光窗簾需求，產品總覽後要先看哪一頁？',
+    a: '若你是臥室補眠、西曬隔熱或租屋遮光需求，建議先看遮光窗簾推薦頁，再對照窗簾訂製、遮光捲簾與風琴簾三條路線做同尺寸試算。',
   },
 ];
 
@@ -43,7 +47,7 @@ const microTags: Record<string, string[]> = {
   P008: ['日式自然', '通風透氣', '和室空間'],
   P009: ['隔熱節能', '蜂巢結構', '西曬降溫'],
   P010: ['柔和調光', '隱私兼顧', '日夜切換'],
-  P011: ['輕柔層次', '透光柔化', '臥室客廳'],
+  P011: ['柔紗價格', '透光柔化', '精品住宅'],
   P012: ['醫療空間', '防焰抗菌', '專業施工'],
   P013: ['大片窗面', '商空隔間', '直立開闔'],
 };
@@ -54,8 +58,13 @@ const functionProducts = ['P009', 'P012', 'P013', 'P008'];
 
 const quickLinks = [
   { href: '/calculator/', label: '先做窗簾價格試算與線上估價' },
+  { href: '/products/custom-curtains/', label: '窗簾訂製價格試算：遮光布簾、客廳主窗與雙層搭配' },
+  { href: '/products/roller-blinds/', label: '捲簾價格試算：租屋、辦公室、廚房與遮光入口' },
+  { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬隔熱、臥室控溫與蜂巢簾比較' },
+  { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：先看鋁百葉與防潮方案' },
+  { href: '/curtain/blackout/', label: '遮光窗簾推薦：補眠、西曬與隔熱方案整理' },
+  { href: '/location/shilin/', label: '士林窗簾推薦：天母客廳、遮光與到府丈量入口' },
   { href: '/products/wooden-blinds/', label: '實木百葉窗價格試算與產品重點' },
-  { href: '/products/seamless-sheer-curtains/', label: '無縫紗簾推薦與透光不透人重點' },
   { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南與安裝費說明' },
 ];
 
@@ -65,12 +74,16 @@ export const metadata: Metadata = {
   keywords: [
     '窗簾產品總覽',
     '窗簾產品比較',
+    '窗簾訂製',
     '窗簾價格試算',
+    '百葉窗價格試算',
+    '捲簾價格試算',
+    '風琴簾價格試算',
+    '調光簾價格試算',
+    '遮光窗簾推薦',
     '窗簾線上估價',
-    '捲簾',
-    '木百葉窗簾',
-    '無縫紗簾',
-    '風琴簾',
+    '訂製窗簾價格',
+    '鋁百葉窗價格',
   ],
   ...buildOgTwitterMeta({
     title: PRODUCTS_TITLE,
@@ -142,12 +155,12 @@ export default function ProductsPage() {
       <section className="py-section bg-white">
         <div className="section-container" style={{ maxWidth: '880px', margin: '0 auto' }}>
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-            產品比較 / 價格試算 / 線上估價
+            產品總覽 / 窗簾訂製 / 捲簾價格試算 / 風琴簾比較
           </div>
-          <h1>先比較熱門窗簾款式，再進入價格試算</h1>
+          <h1>先比較窗簾訂製、捲簾、風琴簾與百葉窗，再做價格試算</h1>
           <p style={{ lineHeight: 1.85 }}>
-            這裡整理宏森常見的布簾、紗簾、捲簾、百葉窗與功能型窗簾，方便先看各品項的使用情境、風格差異與估價方向。若已經有尺寸，
-            可直接切到估價頁做窗簾價格試算；若還在比較款式，也能先從熱門產品頁與價格指南縮小選擇範圍。
+            這裡整理宏森常見的窗簾訂製、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾，方便先看各品項的使用情境、價格差異與估價方向。若你正在找
+            訂製窗簾價格、捲簾價格試算、風琴簾價格試算、百葉窗價格試算或遮光窗簾推薦，可先從對應 owner page 縮小到 2 到 3 個方向，再回到估價頁輸入同尺寸比較。
           </p>
           <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.55rem' }}>
             {quickLinks.map(link => (
@@ -174,13 +187,13 @@ export default function ProductsPage() {
           <CategorySection
             tag="Hard Treatments"
             title="百葉與硬式控光產品"
-            description="適合需要防潮、好清潔、葉片調光或木質感空間的案件，常見於廚房、浴室、書房與辦公空間。"
+            description="適合需要百葉窗價格試算、防潮、好清潔、葉片調光或木質感空間的案件，常見於廚房、浴室、書房與辦公空間。"
             products={getProductsByIds(hardProducts)}
           />
           <CategorySection
             tag="Functional"
             title="隔熱、商空與特殊功能產品"
-            description="如果你在意節能、西曬降溫、醫療空間或大面窗隔間，可先從功能型產品比較，再安排估價與丈量。"
+            description="如果你在意風琴簾價格、西曬降溫、醫療空間或大面窗隔間，可先從功能型產品比較，再安排估價與丈量。"
             products={getProductsByIds(functionProducts)}
             compact
           />
@@ -216,7 +229,7 @@ export default function ProductsPage() {
           <div className="section-container" style={{ maxWidth: '1000px' }}>
             <div className="section-heading">
               <h2>地區頁與估價入口</h2>
-              <p>如果你已經有區域需求，可直接從地區頁看丈量流程，再帶入估價頁快速抓預算。</p>
+              <p>如果你已經有區域需求，可直接從地區頁看丈量流程，再帶入估價頁快速抓窗簾訂製、捲簾或風琴簾預算。</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
               {geoQuickAreas.map(area => (

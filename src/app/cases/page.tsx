@@ -23,6 +23,41 @@ const QUICK_LINKS = [
   { label: '台北市南京西路', keyword: '南京西路' }
 ];
 
+const CASE_OWNER_LINKS = [
+  { href: '/calculator/', label: '窗簾價格試算：先帶尺寸做線上估價' },
+  { href: '/products/custom-curtains/', label: '窗簾訂製推薦：先看客廳主窗與雙層布簾' },
+  { href: '/curtain/living-room/', label: '客廳窗簾推薦：先比落地窗、紗簾與雙層搭配' },
+  { href: '/curtain/blackout/', label: '遮光窗簾推薦：先比補眠、西曬與隔熱方案' },
+  { href: '/products/roller-blinds/', label: '捲簾價格試算：書房、租屋與小窗預算入口' },
+  { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬與隔熱窗面怎麼抓' },
+  { href: '/products/seamless-sheer-curtains/', label: '無縫紗簾推薦：客廳透光不透人方案' },
+  { href: '/blog/budget-allocation-for-curtains/', label: '窗簾預算分配：先看客廳主窗與功能窗怎麼抓' },
+  { href: '/location/shilin/', label: '士林窗簾價格試算入口' },
+];
+
+const CASE_FAQS = [
+  {
+    q: '看窗簾施工案例時，先比哪三件事最有效率？',
+    a: '建議先比窗型、款式和採光需求，再看是否需要遮光、透光不透人或雙層搭配。這樣回到線上估價工具時，比價會更接近正式報價。',
+  },
+  {
+    q: '施工案例能幫我判斷客廳窗簾要選無縫紗簾還是調光簾嗎？',
+    a: '可以。若重視柔和採光與空間通透感，可先看無縫紗簾與雙層窗簾案例；若希望快速切換透光與隱私，可優先看調光簾案例，再帶同尺寸去做價格試算。',
+  },
+  {
+    q: '看完案例後，下一步是先估價還是先約丈量？',
+    a: '若還在比預算，建議先做窗簾價格試算；若已經鎖定 1 到 2 種款式，就可以直接切到對應地區頁安排丈量與看樣，流程會更快。',
+  },
+  {
+    q: '三重、板橋、新莊、台北的施工案例可以對照同一種產品嗎？',
+    a: '可以，案例頁很適合先看同款產品在不同窗型與空間中的呈現，再用同一組尺寸切到地區頁或產品頁做比價，避免只看單一照片就下決定。',
+  },
+  {
+    q: '看完施工案例後，可以順便判斷窗簾預算怎麼分配嗎？',
+    a: '可以。先把客廳主窗、主臥遮光與西曬窗面列為優先，再把小窗交給捲簾或鋁百葉控制成本，接著用線上估價工具輸入同尺寸比較，就能快速抓出大概預算。',
+  },
+];
+
 function CaseCard({ c, onOpenLightbox }: { c: any, onOpenLightbox: (images: string[], index: number) => void }) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -248,11 +283,28 @@ export default function CasesPage() {
     })),
   };
 
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: CASE_FAQS.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.a,
+      },
+    })),
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(caseListSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       
       <style dangerouslySetInnerHTML={{__html: `
@@ -335,14 +387,34 @@ export default function CasesPage() {
 
       <div className="page-hero">
         <div className="section-container">
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>實景拍攝</div>
-          <h1>施工案例精選</h1>
-          <p>累積超過三十年，大台北地區上萬件施作經驗。這裡記錄了我們對每一窗細節的堅持。</p>
+          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>窗簾施工案例 / 客廳窗簾實景 / 價格試算前先看</div>
+          <h1>窗簾施工案例｜客廳窗簾實景、遮光搭配與估價入口</h1>
+          <p>先看三重、板橋、新莊、台北與士林的客廳窗簾、遮光窗簾、捲簾與無縫紗簾實景，再帶同一組尺寸接到窗簾價格試算、產品頁與地區丈量安排。</p>
         </div>
       </div>
 
       <section className="py-section bg-stone-50">
         <div className="section-container">
+          <div style={{ marginBottom: '2rem', background: 'white', border: '1px solid var(--stone-200)', borderRadius: '1rem', padding: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.75rem' }}>
+              AI 短答案：看完案例後，怎麼最快走到正式報價？
+            </h2>
+            <p style={{ margin: '0 0 1rem 0', color: 'var(--stone-600)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              先用施工案例確認想比的窗型、採光需求與款式，再把同一組尺寸帶進價格試算工具。若你已經鎖定客廳窗簾、遮光窗簾、捲簾或風琴簾，可直接切到對應產品頁與預算分配文章，讓估價與丈量流程接得更順。
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+              {CASE_OWNER_LINKS.map((link, index) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={index === 0 ? 'btn-primary' : 'btn-outline'}
+                  style={{ fontSize: '0.9rem' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
           
           {/* Filters */}
           <div className="filters-row" id="cases-filter-section" style={{ marginBottom: '3rem', background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid var(--stone-200)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
@@ -474,14 +546,31 @@ export default function CasesPage() {
         </div>
       </section>
 
+      <section className="py-section bg-white border-t border-stone-200">
+        <div className="section-container" style={{ maxWidth: '900px' }}>
+          <div className="section-heading">
+            <h2>施工案例常見問題</h2>
+            <p>先看案例、再抓預算、再估價與丈量，流程會更容易收斂。</p>
+          </div>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {CASE_FAQS.map((faq, index) => (
+              <details key={index} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                <summary style={{ padding: '1rem 1.25rem', fontWeight: 700, cursor: 'pointer', listStyle: 'none' }}>{faq.q}</summary>
+                <div style={{ padding: '0 1.25rem 1rem', color: 'var(--stone-600)', lineHeight: 1.75 }}>{faq.a}</div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section style={{ background: 'var(--stone-900)', color: 'white', padding: '5rem 0', textAlign: 'center' }}>
         <div className="section-container">
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>讓專業師傅到府為您規劃</h2>
-          <p style={{ color: 'var(--stone-400)', marginBottom: '3rem', fontSize: '1.1rem' }}>不限區域，台北市及新北市提供免費丈量服務。</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>看完案例後，直接帶尺寸做線上估價</h2>
+          <p style={{ color: 'var(--stone-400)', marginBottom: '3rem', fontSize: '1.1rem' }}>先抓到窗簾價格區間，再回頭比客廳主窗、遮光窗與功能窗的預算配置，正式報價會更快收斂。</p>
           <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/calculator" className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2.5rem' }}>立即線上估價</Link>
-            <a href="tel:0289727322" className="btn-secondary" style={{ padding: '1rem 2.5rem', background: 'rgba(255,255,255,0.1)' }}>預約到府量尺 02-8972-7322</a>
+            <Link href="/blog/budget-allocation-for-curtains/" className="btn-secondary" style={{ padding: '1rem 2.5rem', background: 'rgba(255,255,255,0.1)' }}>先看窗簾預算怎麼分配</Link>
           </div>
         </div>
       </section>

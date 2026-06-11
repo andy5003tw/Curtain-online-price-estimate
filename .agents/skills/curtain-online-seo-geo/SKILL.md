@@ -1,13 +1,13 @@
 ---
 name: curtain-online-seo-geo
-description: Use for Curtain Online / Curtain-online-price-estimate SEO, GEO, schema, GSC 7d/28d ranking batches, keyword-owner mapping, Next.js static export validation, and out/ deploy-boundary checks. Also use for Chinese requests mentioning 窗簾SEO, 關鍵字詞池, 主攻詞, 綁定主頁, 排名前10, 6頁批次, 詞頁對齊, GSC 7/28天, 上線驗收. Guides Codex to inspect minimal project truth sources, use shared SEO helpers, run build/seo checks, and keep plan.md/Phase*.md governance.
+description: Use for Curtain Online / Curtain-online-price-estimate SEO, GEO, schema, GSC 7d/28d ranking batches, keyword-owner mapping, Next.js static export validation, FTP upload/deploy SOP, Windows sandbox troubleshooting, and out/ deploy-boundary checks. Also use for Chinese requests mentioning 窗簾SEO, 關鍵字詞池, 主攻詞, 綁定主頁, 排名前10, 6頁批次, 詞頁對齊, GSC 7/28天, 上線驗收, 上傳, FTP, 部署, sandbox, PowerShell sandbox, CreateProcessAsUserW 1312, os error 740. Guides Codex to inspect minimal project truth sources, use shared SEO helpers, run build/seo checks, follow quick/delta FTP deploy, handle known Windows sandbox failures, and keep plan.md/Phase*.md governance.
 ---
 
 # Curtain Online SEO/GEO
 
 Use this skill to work on `Curtain-online-price-estimate` SEO, GEO, schema, ranking batches, and deploy validation without re-learning the project each time.
 
-中文任務若提到窗簾網站、SEO/GEO/schema、關鍵字排名、詞池、主攻詞、綁定主頁、GSC 7/28 天、6 頁優化、詞頁對齊、上線驗收，也使用此 skill。
+中文任務若提到窗簾網站、SEO/GEO/schema、關鍵字排名、詞池、主攻詞、綁定主頁、GSC 7/28 天、6 頁優化、詞頁對齊、上線驗收、上傳、FTP、部署、sandbox 或 PowerShell sandbox，也使用此 skill。
 
 ## Fast Start
 
@@ -23,7 +23,8 @@ Use this skill to work on `Curtain-online-price-estimate` SEO, GEO, schema, rank
 - Project map and ownership: read `references/repo-map.md`.
 - GSC, keyword-owner, and 6-page ranking batch work: read `references/seo-batch-workflow.md`.
 - Content, FAQ, AI-answer, and schema alignment: read `references/content-schema-standards.md`.
-- Build, SEO check, export, deploy, and live verification: read `references/validation-deploy.md`.
+- Build, SEO check, FTP upload SOP, export, deploy, and live verification: read `references/validation-deploy.md`.
+- Windows sandbox failures such as `os error 740` or `CreateProcessAsUserW failed: 1312`: read `references/windows-sandbox-troubleshooting.md`.
 
 ## Core Rules
 
@@ -34,6 +35,8 @@ Use this skill to work on `Curtain-online-price-estimate` SEO, GEO, schema, rank
 - Edit source files only. Do not edit generated `out/` files directly.
 - Do not add unrelated UI, libraries, pages, or schema types while performing SEO/GEO/schema work.
 - On Windows, use `npm.cmd`, not `npm`, when running project scripts.
+- For upload/deploy requests, follow the FTP quick/delta SOP in `references/validation-deploy.md`; default to `npm.cmd run deploy:ftp`, not a full 916-file reupload.
+- If non-escalated shell commands fail with Windows sandbox setup/runner errors, follow `references/windows-sandbox-troubleshooting.md`; after repeated `1312`, continue project work with `sandbox_permissions: "require_escalated"` instead of retrying the broken sandbox.
 
 ## Boundaries
 
@@ -58,3 +61,12 @@ npm.cmd run seo:check
 ```
 
 If deployment is included, upload only the contents of `out/` for the static site and verify live HTTP 200, canonical, JSON-LD, sitemap, and legacy product redirects.
+
+For FTP upload, use the project deploy script:
+
+```powershell
+npm.cmd run deploy:ftp:dry
+npm.cmd run deploy:ftp
+```
+
+Use `deploy:ftp:all` only when a full asset refresh is explicitly needed. Use `scripts/deploy-ftp.ps1 -Mode paths` for small page-only corrections.

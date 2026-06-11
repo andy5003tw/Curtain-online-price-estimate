@@ -97,26 +97,57 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'budget-allocation-for-curtains',
-    title: '窗簾價格大解析：從平價到頂級，如何聰明分配窗簾預算？',
-    description: '裝潢到了最後階段，窗簾預算該怎麼抓？本文公開宏森工廠直營的透明報價邏輯，教您如何根據空間重要性，精準分配捲簾、百葉窗到布簾的預算。',
+    title: '窗簾預算怎麼抓？訂製窗簾價格、捲簾與風琴簾分配一次看',
+    description: '想抓窗簾預算、訂製窗簾價格或捲簾價格試算？先用客廳主窗、遮光窗與功能窗分配預算，再比較捲簾、風琴簾與一般窗簾。',
     category: 'budgeting',
-    tags: ['捲簾', '鋁百葉窗簾', '一般窗簾', '客廳窗簾'],
+    tags: ['窗簾預算', '窗簾價格', '窗簾價格試算', '百葉窗價格試算', '窗簾訂製', '捲簾', '鋁百葉窗簾', '客廳窗簾'],
     date: '2024-04-05',
     readMin: 5,
     coverImage: '/blog/price-guide-cover.webp',
     faqs: [
       {
-        question: '預算有限時該選擇什麼窗簾？',
-        answer: '若預算有限，推薦使用捲簾或鋁百葉窗簾，它們計價平實且耐用度高，是高 CP 值的首選。'
-      }
+        question: '窗簾預算有限時，先做哪幾個空間？',
+        answer: '建議先做客廳主窗、主臥遮光與西曬最嚴重的窗面，其餘小窗可先用捲簾或鋁百葉控制預算。'
+      },
+      {
+        question: '捲簾和鋁百葉哪個比較省預算？',
+        answer: '兩者都屬於預算友善款。捲簾適合辦公室、租屋與廚房；鋁百葉適合浴室、廚房與需要防潮的窗面。'
+      },
+      {
+        question: '客廳窗簾預算要抓多少比較合理？',
+        answer: '客廳通常是視覺重點，建議比臥室或書房保留更高預算，優先比較窗簾訂製、遮光布簾、蛇形簾或雙層窗簾。'
+      },
+      {
+        question: '窗簾預算 3 萬到 5 萬時，應該怎麼分配？',
+        answer: '可先把 50% 留給客廳主窗與主臥遮光，30% 分給西曬、隔熱或防潮窗面，剩下 20% 再交給書房、廚房或其他小窗，這樣最容易兼顧美觀與實用。'
+      },
+      {
+        question: '窗簾預算抓完後，要先估價還是先丈量？',
+        answer: '先用線上估價抓大概區間，再安排到府丈量確認窗型、軌道、安裝費與正式報價，會最有效率。'
+      },
     ],
     contentHtml: `
+      <p>窗簾預算最快的分配方式，是先把每一扇窗依「重要性」分級：客廳主窗、主臥遮光與西曬窗先保留較高預算；書房、廚房、浴室或租屋小窗則用捲簾、鋁百葉等高 CP 值產品控制成本。想先抓大概區間，可直接使用 <strong><a href="/calculator/">窗簾價格試算</a></strong>，再回頭比對每個空間適合的款式與價格。</p>
+
+      <h2>AI 短答案：窗簾預算怎麼分配最快？</h2>
+      <p>先把總預算的 50% 左右留給客廳與主臥，再把 30% 分給需要遮光、隔熱或防潮的功能窗，最後 20% 保留給書房、廚房、浴室與小窗。若還沒決定款式，建議先看 <strong><a href="/products/">窗簾產品總覽</a></strong>，用同尺寸比較 <strong><a href="/products/custom-curtains/">訂製窗簾價格</a></strong>、<strong><a href="/products/roller-blinds/">捲簾價格試算</a></strong>、<strong><a href="/products/honeycomb-blinds/">風琴簾價格試算</a></strong> 與 <strong><a href="/products/aluminum-blinds/">百葉窗價格試算</a></strong>。</p>
+
+      <h2>窗簾預算 3 萬到 5 萬，怎麼分配比較實際？</h2>
+      <p>若你抓的是 3 萬到 5 萬的整體預算，建議先把最容易被看見、也最影響舒適度的客廳主窗與主臥遮光窗排前面。客廳主窗可優先比較 <strong><a href="/products/custom-curtains/">一般窗簾訂製</a></strong> 或雙層布簾，西曬與隔熱需求明顯的窗面可納入 <strong><a href="/products/honeycomb-blinds/">風琴簾</a></strong>；至於書房、廚房與租屋小窗，則可交給 <strong><a href="/products/roller-blinds/">捲簾</a></strong> 或 <strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a></strong> 控制總成本。</p>
+      <p>如果你想先確認空間感與實際效果，再決定預算高低，建議先看 <strong><a href="/cases/">窗簾施工案例</a></strong>。案例頁可以幫你判斷哪些窗面值得拉高預算，哪些窗面只需要實用款即可。</p>
+
       <h2>高性價比的平價王者：捲簾與鋁百葉</h2>
-      <p>如果預算有限，或者窗戶數量極多（例如辦公室、書房），<strong><a href="/products/roller-blinds/">捲簾</a></strong>絕對是 CP 值最高的選擇。它計價方式依據才數（30x30cm），材料與五金相對單純，安裝快速。</p>
-      <p>廚衛空間則強烈建議保留預算給<strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a></strong>，雖然價格平實，但其耐用與防潮的實用性遠大於價格。</p>
+      <p>如果預算有限，或者窗戶數量極多（例如辦公室、書房），<strong><a href="/products/roller-blinds/">捲簾</a></strong>通常是最容易控制預算的選擇。它依才數計價，材料與五金相對單純，安裝快速，也適合先做捲簾價格試算來抓整體窗面成本。</p>
+      <p>廚衛空間則建議保留預算給 <strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a></strong>。鋁百葉雖然價格平實，但耐用、防潮、好清潔，對浴室、廚房與辦公空間的實用性往往比單純低價更重要。</p>
 
       <h2>主空間的視覺重心：一般窗簾與蛇形窗簾</h2>
-      <p>客廳是全家人的活動核心，也是賓客的第一印象。建議將 50% 甚至更多的預算投入在客廳的窗簾上。選擇質地厚實的<strong>一般窗簾</strong>，並搭配精緻的<strong>蛇形窗簾</strong>抓褶工法與烤漆軌道，能讓整體裝潢價值翻倍。宏森身為工廠直營，省下了高昂的盤商抽成，讓您能用市售平價窗簾的價格，升級到更頂級的布料質感。</p>
+      <p>客廳是全家人的活動核心，也是賓客的第一印象。建議將較高比例的預算投入在客廳主窗，優先比較質地厚實的 <strong><a href="/products/custom-curtains/">一般窗簾訂製</a></strong>、遮光布簾與蛇形窗簾抓褶工法。若預算有限，可以先做客廳主窗，其他次要窗面改用捲簾或鋁百葉。</p>
+
+      <h2>隔熱與舒適度：風琴簾、調光簾與柔紗簾怎麼取捨？</h2>
+      <p>西曬、頂樓或臥室控溫需求明顯時，可把部分預算留給 <strong><a href="/products/honeycomb-blinds/">風琴簾價格試算</a></strong>；若想要日夜控光與現代感，可比較 <strong><a href="/products/zebra-blinds/">調光簾價格試算</a></strong>；若希望客廳或主臥有更柔和的精品住宅光影，則可加入 <strong><a href="/products/soft-sheer-blinds/">柔紗簾價格試算</a></strong> 一起比較。</p>
+
+      <h2>抓完預算後，先估價再丈量</h2>
+      <p>初步預算不需要一次精準到最後金額。先把每個窗面寬高輸入 <strong><a href="/calculator/">窗簾線上估價</a></strong>，得到各產品的價格區間後，再安排到府丈量確認窗型、軌道、窗簾盒、安裝費與正式報價。若你要先看完整行情，可接著閱讀 <strong><a href="/blog/curtain-price-guide-2026/">2026 窗簾價格指南</a></strong>；若想先決定客廳或遮光方案，也可以回到 <strong><a href="/cases/">窗簾施工案例</a></strong> 比對實景。</p>
     `
   },
   {
@@ -229,8 +260,8 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'curtain-price-guide-2026',
-    title: '2026 窗簾價格試算表｜捲簾、百葉窗、實木百葉安裝費一次看',
-    description: '先看 2026 窗簾價格區間，再用線上估價試算捲簾、百葉窗與實木百葉。含安裝費、三重窗簾比價與到府丈量重點。',
+    title: '2026 窗簾價格指南｜窗簾價格試算、百葉窗價格試算與安裝費',
+    description: '想查窗簾價格、窗簾價格試算、百葉窗價格試算或訂製窗簾報價？先看 2026 行情、價格比較表與安裝費，再用窗簾計算機輸入尺寸快速估價。',
     category: 'budgeting',
     tags: ['訂製窗簾價格', '窗簾價格試算', '百葉窗價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
     date: '2026-05-21',
@@ -245,41 +276,90 @@ export const knowledgePosts: KnowledgePost[] = [
         question: '窗簾價格試算前需要先準備哪些資訊？',
         answer: '至少準備窗戶寬高（公分）、預計款式與安裝區域，先完成線上估價後再安排到府丈量，報價會更快速且準確。'
       },
-      {
-        question: '窗簾安裝費用會另外加嗎？',
-        answer: '多數品項會把基本安裝費用納入估價，但若遇到高樓特殊施工、偏遠區或客製配件，仍可能有額外費用，需丈量後確認。'
-      },
+        {
+          question: '窗簾安裝費用會另外加嗎？',
+          answer: '多數品項會把基本安裝費用納入估價，但若遇到高樓特殊施工、偏遠區或客製配件，仍可能有額外費用，需丈量後確認。'
+        },
+        {
+          question: '窗簾價格多少算合理？',
+          answer: '合理價格要用同一組尺寸比較不同品項，並把布料等級、五金、安裝費與施工條件一起看，不能只看單才價格。'
+        },
       {
         question: '實木百葉窗價格試算適合用在哪些空間？',
         answer: '常見於客廳、書房與西曬窗。建議先在同尺寸下對比實木百葉與捲簾、調光簾，再決定是否升級材質與配件。'
       },
       {
         question: '百葉窗價格試算和窗簾價格試算要看哪一頁？',
-        answer: '若要先比較捲簾、鋁百葉、風琴簾與實木百葉，建議先看本篇價格表抓行情，再到窗簾計算機輸入尺寸試算。'
+        answer: '若要先比較捲簾、鋁百葉、風琴簾與實木百葉，建議先看本篇價格表抓行情，再到窗簾計算機輸入尺寸做百葉窗價格試算與窗簾價格試算；若已鎖定百葉，可再進鋁百葉產品頁看葉片與安裝費差異。'
+      },
+      {
+        question: '訂製窗簾價格為什麼不能只看單價？',
+        answer: '訂製窗簾價格還會受到窗型、軌道五金、布料等級、安裝高度與施工條件影響；單價只能抓預算，正式報價仍需丈量確認。'
+      },
+      {
+        question: '台北、中正區、板橋窗簾價格試算要看哪裡？',
+        answer: '建議先看本篇價格指南抓到品項區間，再切到台北、中正區或板橋地區頁，最後用線上估價工具輸入尺寸並安排到府丈量。'
       }
     ],
     contentHtml: `
-      <p><strong>窗簾價格試算先看每才行情，再用尺寸確認預算。</strong>本文整理 2026 捲簾、鋁百葉、風琴簾與實木百葉窗價格區間，並標出安裝費與丈量時最容易影響報價的條件。</p>
-      <p>若你是從<strong>窗簾價格試算</strong>或<strong>百葉窗價格試算</strong>搜尋進來，建議先看下方價格表，再開啟<strong><a href="/calculator/">窗簾計算機</a></strong>輸入尺寸。若你正在比價<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾價格試算入口</a></strong>；若要評估木質窗型，可直接看<strong><a href="/products/wooden-blinds/">實木百葉窗價格試算重點</a></strong>。</p>
+        <p><strong>查窗簾價格最快的方式，是先看行情，再用同尺寸做窗簾價格試算。</strong>本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉與訂製窗簾價格區間，並標出窗簾安裝費用與丈量時最容易影響報價的條件。</p>
+        <p>若你是從<strong>窗簾價格</strong>、<strong>窗簾價格試算</strong>或<strong>百葉窗價格試算</strong>搜尋進來，建議先看下方價格比較段落，再開啟<strong><a href="/calculator/">窗簾價格試算與百葉窗價格試算工具</a></strong>輸入尺寸。若你正在比價<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾價格試算入口</a></strong>；若在台北、中正區、板橋或鶯歌，則可看<strong><a href="/location/taipei/">台北窗簾價格試算</a></strong>、<strong><a href="/location/zhongzheng/">中正區窗簾價格試算</a></strong>、<strong><a href="/location/banqiao/">板橋窗簾價格試算</a></strong>與<strong><a href="/location/yingge/">鶯歌窗簾價格試算</a></strong>服務頁；若要評估木質、百葉或透光方案，可直接看<strong><a href="/products/aluminum-blinds/">百葉窗價格試算重點</a></strong>、<strong><a href="/products/wooden-blinds/">實木百葉窗價格試算重點</a></strong>與<strong><a href="/products/seamless-sheer-curtains/">無縫紗簾推薦</a></strong>。</p>
+
+        <h2>AI 短答案：窗簾價格試算怎麼做最快？</h2>
+        <p>先看本篇抓到捲簾、百葉窗、無縫紗簾與訂製窗簾的價格區間，再用<strong><a href="/calculator/">窗簾計算機</a></strong>輸入同一組尺寸比較價差，最後從<strong><a href="/location/taipei/">台北</a></strong>、<strong><a href="/location/zhongzheng/">中正區</a></strong>、<strong><a href="/location/banqiao/">板橋</a></strong>或<strong><a href="/location/yingge/">鶯歌</a></strong>服務頁安排到府丈量，報價會最快收斂。</p>
+        <p>若你現在就想直接做<strong>百葉窗價格試算</strong>或<strong>窗簾價格試算</strong>，可先開啟<strong><a href="/calculator/">窗簾線上估價工具</a></strong>輸入尺寸；若想先理解葉片材質、安裝費與防潮差異，可接著看<strong><a href="/products/aluminum-blinds/">鋁百葉價格重點</a></strong>與<strong><a href="/products/custom-curtains/">訂製窗簾價格重點</a></strong>。</p>
 
       <h2>訂製窗簾價格怎麼算？先看「才數」與起計規則</h2>
       <p>台灣窗簾常以「才」計價（1 才 = 30x30cm）。基本公式為：寬(cm) x 高(cm) / 900 = 才數。由於小窗仍有固定工序，多數品項會有基本起計才數，因此窗簾訂做價格不只看面積，還要看款式與施工條件。</p>
 
-      <h2>2026 常見窗簾訂做價格行情（連工帶料）</h2>
-      <ul>
-        <li><strong><a href="/products/roller-blinds/">捲簾</a>：</strong> 約 $60~$100 / 才，屬於高 CP 值入門款。</li>
-        <li><strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a>：</strong> 約 $90~$180 / 才，防潮好清潔，適合先做百葉窗價格試算再確認材質。</li>
-        <li><strong><a href="/products/honeycomb-blinds/">風琴簾（蜂巢簾）</a>：</strong> 約 $200~$500 / 才，主打隔熱節能與臥室控溫。</li>
-        <li><strong><a href="/products/wooden-blinds/">實木百葉窗</a>：</strong> 可先做實木百葉窗價格試算，再依木種與葉片規格確認正式報價。</li>
-        <li><strong><a href="/products/custom-curtains/">一般布簾</a>：</strong> 常以幅寬與車工計價，客廳一窗約 $5,000~$15,000 不等。</li>
-      </ul>
+        <h2>2026 常見窗簾訂做價格行情（連工帶料）</h2>
+        <ul>
+          <li><strong><a href="/products/roller-blinds/">捲簾</a>：</strong> 約 $60~$100 / 才，屬於高 CP 值入門款。</li>
+          <li><strong><a href="/products/aluminum-blinds/">鋁百葉窗簾</a>：</strong> 約 $90~$180 / 才，防潮好清潔，適合先做百葉窗價格試算再確認材質。</li>
+          <li><strong><a href="/products/honeycomb-blinds/">風琴簾（蜂巢簾）</a>：</strong> 約 $200~$500 / 才，主打隔熱節能與臥室控溫。</li>
+          <li><strong><a href="/products/wooden-blinds/">實木百葉窗</a>：</strong> 可先做實木百葉窗價格試算，再依木種與葉片規格確認正式報價。</li>
+          <li><strong><a href="/products/custom-curtains/">一般布簾</a>：</strong> 常以幅寬與車工計價，客廳一窗約 $5,000~$15,000 不等。</li>
+        </ul>
 
-      <h2>窗簾價格總覽（快速對照）</h2>
-      <p>如果你只想先抓預算，建議先記住這個順序：<strong>捲簾/鋁百葉（入門） → 一般布簾（中段） → 風琴簾/高規功能簾（進階）</strong>。再依照你的採光需求與空間用途微調，會比一開始就挑花色有效率。</p>
+        <h2>常見品項價格比較表：窗簾價格、百葉窗價格與預算帶</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>品項</th>
+              <th>預算帶</th>
+              <th>適合情境</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>捲簾</td>
+              <td>入門</td>
+              <td>租屋、書房、辦公空間</td>
+            </tr>
+            <tr>
+              <td>鋁百葉</td>
+              <td>入門到中段</td>
+              <td>浴室、廚房、防潮窗面</td>
+            </tr>
+            <tr>
+              <td>調光簾 / 一般布簾</td>
+              <td>中段</td>
+              <td>客廳、臥室、主窗控光</td>
+            </tr>
+            <tr>
+              <td>風琴簾 / 實木百葉</td>
+              <td>中高到進階</td>
+              <td>西曬隔熱、木質感、景觀宅</td>
+            </tr>
+          </tbody>
+        </table>
+
+      <h2>窗簾價格、百葉窗價格與訂製窗簾價格比較</h2>
+      <p>如果你只想先抓預算，建議先記住這個順序：<strong>捲簾 / 鋁百葉（入門） → 一般布簾 / 調光簾（中段） → 風琴簾 / 實木百葉（進階）</strong>。百葉窗價格試算通常要特別看葉片材質、寬度與安裝位置；訂製窗簾價格則要看布料等級、軌道五金與車工方式。先用<strong><a href="/calculator/">窗簾計算機輸入同一組尺寸</a></strong>比較，再回看<strong><a href="/products/aluminum-blinds/">百葉窗產品頁</a></strong>或<strong><a href="/products/custom-curtains/">訂製窗簾產品頁</a></strong>，會比只看單價更準。</p>
 
       <h2>窗簾價格試算怎麼做最快？</h2>
       <ol>
-        <li>先量「寬 x 高」公分，輸入到<strong><a href="/calculator/">窗簾計算機</a></strong>。</li>
+        <li>先量「寬 x 高」公分，輸入到<strong><a href="/calculator/">窗簾價格試算與百葉窗價格試算工具</a></strong>。</li>
         <li>同尺寸切換 2~3 種品項（例如捲簾、鋁百葉、風琴簾）比較價差。</li>
         <li>最後再決定是否要升級材質或追加配件，避免一開始就過度客製。</li>
       </ol>
@@ -291,8 +371,8 @@ export const knowledgePosts: KnowledgePost[] = [
         <li><strong>地區與時段：</strong> 偏遠區、特殊時段施工或社區管理限制，可能產生額外施工成本。</li>
       </ol>
 
-      <h2>窗簾報價流程：先估價、再丈量、最後確認</h2>
-      <p>建議先用<strong><a href="/calculator/">窗簾計算機 / 窗簾估價工具</a></strong>輸入尺寸，先抓到訂做窗簾價格區間與安裝費用估算，再由師傅到府丈量確認窗型、配件與施工條件。若您正在搜尋<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾推薦與價格試算</a></strong>；若要先評估<strong>實木百葉窗價格試算</strong>，可直接看<strong><a href="/products/wooden-blinds/">實木百葉窗產品頁與試算重點</a></strong>；若在台北文教生活圈，也可看<strong><a href="/location/zhongzheng/">中正區窗簾價格試算</a></strong>服務頁，快速銜接在地丈量流程。</p>
+        <h2>窗簾報價流程：先估價、再丈量、最後確認</h2>
+        <p>建議先用<strong><a href="/calculator/">窗簾計算機 / 窗簾估價工具</a></strong>輸入尺寸，先抓到訂製窗簾價格區間與安裝費用估算，再由師傅到府丈量確認窗型、配件與施工條件。若您正在搜尋<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾推薦與價格試算</a></strong>；若要先評估<strong>百葉窗價格試算</strong>，可直接看<strong><a href="/products/aluminum-blinds/">鋁百葉產品頁與試算重點</a></strong>；若要先評估<strong>實木百葉窗價格試算</strong>，可直接看<strong><a href="/products/wooden-blinds/">實木百葉窗產品頁與試算重點</a></strong>；若想做客廳透光不透人方案，也可先看<strong><a href="/products/seamless-sheer-curtains/">無縫紗簾推薦與雙層窗簾搭配</a></strong>；若你也在比品牌服務與丈量流程，這時可順看<strong><a href="/about/">工廠直營窗簾與品牌服務</a></strong>；若在台北、中正區、板橋或鶯歌，也可看<strong><a href="/location/taipei/">台北窗簾價格試算</a></strong>、<strong><a href="/location/zhongzheng/">中正區窗簾價格試算</a></strong>、<strong><a href="/location/banqiao/">板橋窗簾推薦</a></strong>與<strong><a href="/location/yingge/">鶯歌窗簾推薦</a></strong>服務頁，快速銜接在地丈量流程。</p>
     `
   },
   {

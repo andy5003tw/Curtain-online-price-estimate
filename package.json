@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "seo:preflight": "node scripts/seo-preflight.mjs",
-    "seo:check": "node scripts/seo-check.mjs"
+    "seo:check": "node scripts/seo-check.mjs",
+    "deploy:ftp": "pwsh -NoLogo -ExecutionPolicy Bypass -File scripts/deploy-ftp.ps1 -Mode quick",
+    "deploy:ftp:dry": "pwsh -NoLogo -ExecutionPolicy Bypass -File scripts/deploy-ftp.ps1 -Mode quick -DryRun",
+    "deploy:ftp:all": "pwsh -NoLogo -ExecutionPolicy Bypass -File scripts/deploy-ftp.ps1 -Mode all"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

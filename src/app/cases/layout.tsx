@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import { absoluteUrl } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: '窗簾施工案例 | 大台北實景作品與安裝紀錄',
-  description: '瀏覽宏森窗簾大台北實際施工案例，包含三重、板橋、新莊、台北市等區域的布簾、捲簾、百葉窗、調光簾與蛇形簾作品。',
+  title: '窗簾施工案例｜客廳窗簾實景、遮光搭配與價格試算入口',
+  description: '先看三重、板橋、新莊、台北與士林的窗簾施工案例，快速比較客廳窗簾、遮光窗簾、無縫紗簾與捲簾實景，再接到窗簾價格試算。',
   alternates: { canonical: absoluteUrl('/cases/') },
   openGraph: {
-    title: '窗簾施工案例 | 宏森窗簾',
-    description: '大台北窗簾訂製與安裝實景案例，依地區與款式快速查看。',
+    title: '窗簾施工案例｜客廳窗簾實景與價格試算入口',
+    description: '先看大台北窗簾施工案例，再比較客廳窗簾、遮光窗簾與無縫紗簾方案，最後帶尺寸做線上估價。',
     url: absoluteUrl('/cases/'),
     images: [{ url: absoluteUrl('/banner_img/banner_01.webp'), width: 1200, height: 630 }],
     locale: 'zh_TW',

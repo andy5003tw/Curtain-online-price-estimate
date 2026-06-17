@@ -7,13 +7,13 @@ import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '窗簾價格試算｜窗簾線上估價、百葉窗價格試算與地區入口';
-const HOME_DESCRIPTION = '想先做窗簾價格試算、百葉窗價格試算或看台北、三重、板橋窗簾入口？宏森提供 1 分鐘線上估價、價格指南與地區服務頁，先抓預算再安排丈量。';
+const HOME_TITLE = '宏森窗簾推薦｜窗簾價格試算、線上估價與雙北丈量';
+const HOME_DESCRIPTION = '找窗簾推薦或想先做窗簾價格試算？宏森提供 1 分鐘線上估價、百葉窗價格試算、價格指南與台北新北到府丈量入口。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  keywords: ['窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '百葉窗價格試算', '工廠直營窗簾', '三重窗簾', '三重窗簾推薦', '板橋窗簾推薦', '台北窗簾價格試算', '鶯歌窗簾推薦', '中正區窗簾價格試算', '無縫紗簾', '實木百葉窗價格試算', '窗簾訂製', '窗簾安裝', '到府丈量'],
+  keywords: ['窗簾', '窗簾推薦', '窗簾價格試算', '窗簾線上估價', '窗簾估價工具', '百葉窗價格試算', '工廠直營窗簾', '三重窗簾', '三重窗簾推薦', '板橋窗簾推薦', '台北窗簾價格試算', '鶯歌窗簾推薦', '中正區窗簾價格試算', '無縫紗簾', '實木百葉窗價格試算', '窗簾訂製', '窗簾安裝', '到府丈量'],
   ...buildOgTwitterMeta({
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
@@ -57,6 +57,10 @@ const homepageFaq = [
   {
     q: '窗簾價格試算後多久可正式報價？',
     a: '先用窗簾線上估價輸入尺寸後，通常可立即看到預算區間；安排到府丈量後即可確認正式報價，特殊材質與大面積案件會再補充細項。',
+  },
+  {
+    q: '搜尋窗簾推薦時，首頁先看哪三個入口？',
+    a: '建議先看窗簾價格試算、2026 窗簾價格指南與所在服務區域頁。這三個入口能先確認預算、合理價格與到府丈量流程。',
   },
   {
     q: '三重窗簾要先估價還是先丈量？',
@@ -179,10 +183,10 @@ export default function HomePage() {
               marginBottom: '1rem',
             }}
           >
-            窗簾價格試算・百葉窗價格試算・台北新北地區入口
+            宏森窗簾推薦・價格試算・台北新北丈量入口
           </p>
-          <h1>窗簾價格試算與百葉窗價格試算入口</h1>
-          <p>輸入尺寸先比較窗簾訂製、遮光窗簾、鋁百葉、捲簾、無縫紗簾與實木百葉價格區間；再依台北、三重、板橋、鶯歌、士林或中正區服務頁安排丈量，確認窗型、布料與安裝費。</p>
+          <h1>宏森窗簾推薦與線上價格試算入口</h1>
+          <p>先用尺寸比較窗簾訂製、遮光窗簾、鋁百葉、捲簾、無縫紗簾與實木百葉價格區間；再依台北、三重、板橋、鶯歌、士林或中正區服務頁安排丈量，確認窗型、布料與安裝費。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />
@@ -202,7 +206,7 @@ export default function HomePage() {
               fontSize: '0.9rem',
             }}
           >
-                {['1 分鐘線上估價', '台北三重板橋鶯歌士林中正區丈量', '價格指南與地區入口同步比較'].map(item => (
+                {['1 分鐘線上估價', '台北三重板橋鶯歌士林中正區丈量', '價格指南與產品入口同步比較'].map(item => (
               <span
                 key={item}
                 style={{

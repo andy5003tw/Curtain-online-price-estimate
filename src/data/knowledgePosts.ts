@@ -260,8 +260,8 @@ export const knowledgePosts: KnowledgePost[] = [
   },
   {
     id: 'curtain-price-guide-2026',
-    title: '2026 窗簾價格指南｜合理價格、窗簾價格試算與安裝費',
-    description: '想知道窗簾價格多少合理、窗簾安裝費用怎麼看？先看 2026 行情、百葉窗價格試算與訂製窗簾報價，再用窗簾計算機估價。',
+    title: '窗簾價格多少合理？2026 窗簾價格指南、安裝費用與試算',
+    description: '想知道窗簾價格多少合理、窗簾價格與窗簾安裝費用怎麼看？先看 2026 行情、試算差異與訂製窗簾報價，再用窗簾計算機估價。',
     category: 'budgeting',
     tags: ['窗簾價格多少合理', '窗簾價格', '訂製窗簾價格', '窗簾價格試算', '百葉窗價格試算', '窗簾安裝費用', '窗簾訂做價格', '訂做窗簾價格', '窗簾報價', '捲簾', '風琴簾'],
     date: '2026-05-21',
@@ -270,7 +270,7 @@ export const knowledgePosts: KnowledgePost[] = [
     faqs: [
       {
         question: '同尺寸為何報價不同（窗型 / 配件 / 施工）？',
-        answer: '同尺寸仍會因窗型、五金配件、安裝難度與布料等級不同而有價差。建議先做窗簾價格試算抓區間，再由丈量確認細節。'
+        answer: '同尺寸仍會因窗型、五金配件、安裝難度與布料等級不同而有價差。建議先做窗簾價格試算抓區間，再由丈量確認窗簾安裝費用與細節。'
       },
       {
         question: '窗簾價格試算前需要先準備哪些資訊？',
@@ -281,8 +281,8 @@ export const knowledgePosts: KnowledgePost[] = [
           answer: '多數品項會把基本安裝費用納入估價，但若遇到高樓特殊施工、偏遠區或客製配件，仍可能有額外費用，需丈量後確認。'
         },
         {
-          question: '窗簾價格多少算合理？2026 要怎麼判斷？',
-          answer: '合理價格要用同一組尺寸比較不同品項，並把布料等級、五金、安裝費與施工條件一起看。若只看單才價格，容易忽略正式報價中真正影響總價的條件。'
+          question: '窗簾價格多少合理？2026 要怎麼判斷？',
+          answer: '窗簾價格多少合理，要用同一組尺寸比較不同品項，並把布料等級、五金、窗簾安裝費用與施工條件一起看。若只看單才價格，容易忽略正式報價中真正影響總價的條件。'
         },
       {
         question: '實木百葉窗價格試算適合用在哪些空間？',
@@ -302,11 +302,11 @@ export const knowledgePosts: KnowledgePost[] = [
       }
     ],
     contentHtml: `
-        <p><strong>判斷窗簾價格多少合理，最快的方式是先看行情，再用同尺寸做窗簾價格試算。</strong>本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉、無縫紗簾與訂製窗簾價格區間，並標出窗簾安裝費用與丈量時最容易影響報價的條件。</p>
+        <p><strong>判斷窗簾價格多少合理，最快的方式是先看行情，再用同尺寸做窗簾價格試算。</strong>本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉、無縫紗簾與訂製窗簾價格區間，並標出合理價格、窗簾安裝費用、試算差異與丈量時最容易影響報價的條件。</p>
         <p>若你是從<strong>窗簾價格</strong>、<strong>窗簾價格試算</strong>或<strong>百葉窗價格試算</strong>搜尋進來，建議先看下方價格比較段落，再開啟<strong><a href="/calculator/">窗簾價格試算與百葉窗價格試算工具</a></strong>輸入尺寸。若你正在比價<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾價格試算入口</a></strong>；若在台北、中正區、板橋或鶯歌，則可看<strong><a href="/location/taipei/">台北窗簾價格試算</a></strong>、<strong><a href="/location/zhongzheng/">中正區窗簾價格試算</a></strong>、<strong><a href="/location/banqiao/">板橋窗簾價格試算</a></strong>與<strong><a href="/location/yingge/">鶯歌窗簾價格試算</a></strong>服務頁；若要評估木質、百葉或透光方案，可直接看<strong><a href="/products/aluminum-blinds/">百葉窗價格試算重點</a></strong>、<strong><a href="/products/wooden-blinds/">實木百葉窗價格試算重點</a></strong>與<strong><a href="/products/seamless-sheer-curtains/">無縫紗簾推薦</a></strong>。</p>
 
         <h2>AI 短答案：窗簾價格多少合理？</h2>
-        <p>窗簾價格要看同尺寸、同品項、同施工條件才合理。先用本篇抓到捲簾、百葉窗、無縫紗簾與訂製窗簾的價格區間，再用<strong><a href="/calculator/">窗簾計算機</a></strong>輸入同一組尺寸比較價差，最後從<strong><a href="/location/taipei/">台北</a></strong>、<strong><a href="/location/zhongzheng/">中正區</a></strong>、<strong><a href="/location/banqiao/">板橋</a></strong>或<strong><a href="/location/yingge/">鶯歌</a></strong>服務頁安排到府丈量，報價會最快收斂。</p>
+        <p>窗簾價格要看同尺寸、同品項、同施工條件才合理，還要把基本安裝費與配件一起納入。先用本篇抓到捲簾、百葉窗、無縫紗簾與訂製窗簾的價格區間，再用<strong><a href="/calculator/">窗簾計算機</a></strong>輸入同一組尺寸比較價差，最後從<strong><a href="/location/taipei/">台北</a></strong>、<strong><a href="/location/zhongzheng/">中正區</a></strong>、<strong><a href="/location/banqiao/">板橋</a></strong>或<strong><a href="/location/yingge/">鶯歌</a></strong>服務頁安排到府丈量，報價會最快收斂。</p>
         <p>若你現在就想直接做<strong>百葉窗價格試算</strong>或<strong>窗簾價格試算</strong>，可先開啟<strong><a href="/calculator/">窗簾線上估價工具</a></strong>輸入尺寸；若想先理解葉片材質、安裝費與防潮差異，可接著看<strong><a href="/products/aluminum-blinds/">鋁百葉價格重點</a></strong>與<strong><a href="/products/custom-curtains/">訂製窗簾價格重點</a></strong>。</p>
 
       <h2>訂製窗簾價格怎麼算？先看「才數」與起計規則</h2>

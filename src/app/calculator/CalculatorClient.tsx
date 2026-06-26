@@ -207,7 +207,7 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
                 <span>NT$ {result.total_price.toLocaleString()}</span>
               </div>
               <p className="form-hint" style={{ marginTop: '0.75rem' }}>
-                此為線上估價，現場若有特殊窗型、配件、施工條件會再微調。
+                此為線上估價，現場若有特殊窗型、配件、施工條件會再微調。(總安裝費最低以1300計算)
               </p>
               <a href="#contact" className="btn-primary" style={{ marginTop: '1.25rem', width: '100%' }}>
                 預約現場丈量 <ChevronRight size={16} />

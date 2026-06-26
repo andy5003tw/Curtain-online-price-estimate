@@ -7,28 +7,28 @@ import { products } from '@/data/products';
 import { withBasePath } from '@/lib/base-path';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 
-const PRODUCTS_TITLE = '窗簾產品總覽｜窗簾訂製、捲簾價格試算、風琴簾與百葉窗比較';
+const PRODUCTS_TITLE = '窗簾產品總覽｜窗簾款式比較、訂製窗簾與功能簾選購';
 const PRODUCTS_DESCRIPTION =
-  '想比較窗簾訂製、捲簾價格試算、風琴簾價格試算或百葉窗價格試算？先看布簾、捲簾、鋁百葉、風琴簾、調光簾與柔紗簾差異，再回到線上估價用同尺寸比較。';
+  '這份窗簾產品總覽整理窗簾款式比較、訂製窗簾、捲簾、百葉窗、風琴簾與調光簾適用情境，先縮小款式，再帶同尺寸進窗簾價格試算。';
 
 type ProductItem = (typeof products)[number];
 
 const faqItems = [
   {
-    q: '第一次挑窗簾，先看產品總覽還是直接估價？',
-    a: '若還在比較款式，建議先看產品總覽，把窗簾訂製、捲簾或風琴簾先縮小到 2 到 3 個品項，再用同尺寸做價格試算，判斷預算會更直覺。',
+    q: '窗簾產品總覽和窗簾款式比較要先看什麼？',
+    a: '若還沒有鎖定款式，先看窗簾產品總覽會更有效率。你可以把布簾、捲簾、百葉窗、風琴簾與調光簾放在同一頁比較，再挑 2 到 3 個品項進入產品頁或價格試算。',
   },
   {
-    q: '產品總覽頁先比哪三種，最容易找到 owner page？',
-    a: '若你偏一般住家主窗，可先比窗簾訂製、捲簾與風琴簾；若偏防潮與控光，可改比鋁百葉、實木百葉與調光簾，再往對應產品頁深入。',
+    q: '窗簾款式比較時，先比哪三個條件最實用？',
+    a: '先比空間用途、採光隱私與清潔難度最實用。客廳主窗常從訂製布簾與無縫紗簾開始，小窗或租屋可先看捲簾，浴室廚房適合鋁百葉，西曬房間可比較風琴簾。',
   },
   {
-    q: '窗簾訂製、捲簾價格試算與風琴簾價格試算要怎麼分流？',
-    a: '若你重視垂墜感、遮光等級與客廳主窗搭配，可先看窗簾訂製；若重視價格親和、好清潔與快速估價，可先看捲簾；若你在意西曬隔熱與臥室控溫，就先看風琴簾價格試算。',
+    q: '產品總覽看完後，怎麼最快接到窗簾價格試算？',
+    a: '先在窗簾款式比較中選出 1 到 2 種候選方案，再用同一組寬高尺寸做窗簾價格試算。這樣能直接比較訂製窗簾、捲簾、風琴簾或百葉窗的預算差異。',
   },
   {
-    q: '產品總覽看完後，怎麼最快得到窗簾報價？',
-    a: '可以從產品卡直接進入線上估價，先用接近實際的寬高尺寸抓預算區間，再保留試算結果安排士林、台北或新北地區的到府丈量。',
+    q: '產品總覽頁會和單一產品頁搶關鍵字嗎？',
+    a: '不會。這頁負責窗簾產品總覽與窗簾款式比較；單一產品頁則承接窗簾訂製、捲簾、風琴簾、百葉窗或醫院隔簾等更明確的產品需求。',
   },
   {
     q: '遮光窗簾需求，產品總覽後要先看哪一頁？',
@@ -48,7 +48,7 @@ const microTags: Record<string, string[]> = {
   P009: ['隔熱節能', '蜂巢結構', '西曬降溫'],
   P010: ['柔和調光', '隱私兼顧', '日夜切換'],
   P011: ['柔紗價格', '透光柔化', '精品住宅'],
-  P012: ['醫療空間', '防焰抗菌', '專業施工'],
+  P012: ['醫院隔簾價格', '醫療隔簾', '防焰抗菌'],
   P013: ['大片窗面', '商空隔間', '直立開闔'],
 };
 
@@ -57,11 +57,12 @@ const hardProducts = ['P005', 'P006', 'P007', 'P010'];
 const functionProducts = ['P009', 'P012', 'P013', 'P008'];
 
 const quickLinks = [
-  { href: '/calculator/', label: '先做窗簾價格試算與線上估價' },
+  { href: '/calculator/', label: '窗簾款式比較後，帶尺寸做線上估價' },
   { href: '/products/custom-curtains/', label: '窗簾訂製價格試算：遮光布簾、客廳主窗與雙層搭配' },
   { href: '/products/roller-blinds/', label: '捲簾價格試算：租屋、辦公室、廚房與遮光入口' },
   { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬隔熱、臥室控溫與蜂巢簾比較' },
   { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：先看鋁百葉與防潮方案' },
+  { href: '/products/hospital-curtains/', label: '醫院隔簾價格：醫療隔簾、防焰抗菌與診所施工' },
   { href: '/curtain/blackout/', label: '遮光窗簾推薦：補眠、西曬與隔熱方案整理' },
   { href: '/location/shilin/', label: '士林窗簾推薦：天母客廳、遮光與到府丈量入口' },
   { href: '/products/wooden-blinds/', label: '實木百葉窗價格試算與產品重點' },
@@ -73,6 +74,9 @@ export const metadata: Metadata = {
   description: PRODUCTS_DESCRIPTION,
   keywords: [
     '窗簾產品總覽',
+    '窗簾款式比較',
+    '窗簾款式推薦',
+    '窗簾產品推薦',
     '窗簾產品比較',
     '窗簾訂製',
     '窗簾價格試算',
@@ -97,7 +101,7 @@ export const metadata: Metadata = {
 const productListSchema = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
-  name: '宏森窗簾產品系列',
+  name: '宏森窗簾產品總覽與窗簾款式比較',
   url: absoluteUrl('/products/'),
   itemListElement: products.map((product, index) => ({
     '@type': 'ListItem',
@@ -155,12 +159,12 @@ export default function ProductsPage() {
       <section className="py-section bg-white">
         <div className="section-container" style={{ maxWidth: '880px', margin: '0 auto' }}>
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-            產品總覽 / 窗簾訂製 / 捲簾價格試算 / 風琴簾比較
+            窗簾產品總覽 / 窗簾款式比較 / 估價分流
           </div>
-          <h1>先比較窗簾訂製、捲簾、風琴簾與百葉窗，再做價格試算</h1>
+          <h1>窗簾產品總覽：先做窗簾款式比較，再進價格試算</h1>
           <p style={{ lineHeight: 1.85 }}>
-            這裡整理宏森常見的窗簾訂製、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾，方便先看各品項的使用情境、價格差異與估價方向。若你正在找
-            訂製窗簾價格、捲簾價格試算、風琴簾價格試算、百葉窗價格試算或遮光窗簾推薦，可先從對應 owner page 縮小到 2 到 3 個方向，再回到估價頁輸入同尺寸比較。
+            這份窗簾產品總覽適合先做窗簾款式比較：把訂製布簾、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾放在同一頁看用途、清潔、採光與預算方向。
+            若你正在找訂製窗簾價格、捲簾價格試算、風琴簾價格試算或百葉窗價格試算，可先縮小到 2 到 3 個 owner page，再回到估價頁輸入同尺寸比較。
           </p>
           <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.55rem' }}>
             {quickLinks.map(link => (
@@ -203,8 +207,8 @@ export default function ProductsPage() {
       <section className="py-section bg-white border-t border-stone-200">
         <div className="section-container" style={{ maxWidth: '820px' }}>
           <div className="section-heading">
-            <h2>產品總覽頁常見問題</h2>
-            <p>先把比較邏輯釐清，再進估價頁會快很多。</p>
+            <h2>窗簾產品總覽常見問題</h2>
+            <p>先把窗簾款式比較邏輯釐清，再進估價頁會快很多。</p>
           </div>
           {faqItems.map(item => (
             <div
@@ -228,8 +232,8 @@ export default function ProductsPage() {
         <section className="py-section bg-white border-t border-stone-200">
           <div className="section-container" style={{ maxWidth: '1000px' }}>
             <div className="section-heading">
-              <h2>地區頁與估價入口</h2>
-              <p>如果你已經有區域需求，可直接從地區頁看丈量流程，再帶入估價頁快速抓窗簾訂製、捲簾或風琴簾預算。</p>
+            <h2>地區頁與估價入口</h2>
+              <p>如果你已經完成窗簾款式比較並有區域需求，可直接從地區頁看丈量流程，再帶入估價頁快速抓窗簾訂製、捲簾或風琴簾預算。</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
               {geoQuickAreas.map(area => (
@@ -265,9 +269,9 @@ export default function ProductsPage() {
 
       <section style={{ background: 'var(--stone-900)', color: 'white', padding: '4.5rem 0', textAlign: 'center' }}>
         <div className="section-container" style={{ maxWidth: '760px' }}>
-          <h2 style={{ fontSize: '1.9rem', fontWeight: 700, marginBottom: '0.85rem' }}>挑到 2 到 3 個品項後，就能開始試算</h2>
+          <h2 style={{ fontSize: '1.9rem', fontWeight: 700, marginBottom: '0.85rem' }}>完成窗簾款式比較後，就能開始試算</h2>
           <p style={{ color: 'var(--stone-300)', marginBottom: '2.5rem', fontSize: '1.05rem', lineHeight: 1.8 }}>
-            先比較產品，再用同尺寸做窗簾線上估價，會比直接問單一價格更容易判斷整體預算與安裝方向。
+            先看窗簾產品總覽，再用同尺寸做窗簾線上估價，會比直接問單一價格更容易判斷整體預算與安裝方向。
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href={buildCalculatorUrl()} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '0.9rem 2.1rem' }}>

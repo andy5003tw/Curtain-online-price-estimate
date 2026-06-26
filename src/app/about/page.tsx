@@ -4,13 +4,13 @@ import { CheckCircle2, Phone, MapPin, ShieldCheck, Factory, Clock, Calculator, C
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const ABOUT_TITLE = '台北窗簾推薦｜工廠直營窗簾、免費丈量與品牌服務';
-const ABOUT_DESCRIPTION = '想找台北窗簾推薦或工廠直營窗簾？宏森提供台北、新北免費丈量、窗簾價格試算與品牌服務說明，先看價格指南再安排線上估價。';
+const ABOUT_TITLE = '工廠直營窗簾｜台北窗簾免費丈量、報價流程與品牌服務';
+const ABOUT_DESCRIPTION = '想找工廠直營窗簾或台北窗簾免費丈量？宏森提供台北、新北到府丈量、窗簾價格試算、工廠直營報價與安裝服務流程。';
 
 export const metadata: Metadata = {
   title: ABOUT_TITLE,
   description: ABOUT_DESCRIPTION,
-  keywords: ['工廠直營窗簾', '台北窗簾推薦', '關於宏森窗簾', '窗簾訂製流程', '窗簾安裝', '窗簾報價', '窗簾價格試算', '台北窗簾', '新北窗簾'],
+  keywords: ['工廠直營窗簾', '台北窗簾免費丈量', '免費到府丈量', '工廠直營窗簾報價', '台北窗簾推薦', '關於宏森窗簾', '窗簾訂製流程', '窗簾安裝', '窗簾報價', '窗簾價格試算', '台北窗簾', '新北窗簾'],
   ...buildOgTwitterMeta({
     title: ABOUT_TITLE,
     description: ABOUT_DESCRIPTION,
@@ -44,12 +44,12 @@ const iconicCases = [
 ];
 
 const faqs = [
-  { q: '量尺要收費嗎？', a: '宏森開發提供台北市、新北市主要服務區的免費到府量尺與報價服務，確認施作才收費，沒有隱藏成本。' },
+  { q: '台北窗簾免費丈量真的不用先付費嗎？', a: '宏森開發提供台北市與新北市主要服務區的免費到府量尺與報價服務，確認施作才收費。若你想先抓預算，也可以先用窗簾價格試算，再安排台北窗簾免費丈量。' },
   { q: '只有一窗也可以服務嗎？', a: '沒問題！無論是整間房屋或是單一窗戶，我們都提供同樣專業的丈量與安裝服務。' },
   { q: '外縣市有服務嗎？', a: '我們主要服務大台北地區（雙北）。台北市及新北市以外的區域，視距離酌收基本出差車資，歡迎致電洽詢。' },
   { q: '先做線上估價，再安排丈量可以嗎？', a: '可以，建議先用窗簾價格試算抓預算，再安排到府丈量確認材質、窗型、配件與正式報價。台北、板橋、鶯歌等服務頁也都可先比對流程。' },
   { q: '估價後多久可以安排丈量？', a: '一般案件可先在線上估價後安排最近時段丈量；若是大面積、透天或特殊窗型案件，會先確認空間條件再排入丈量時程。' },
-  { q: '宏森和一般門市窗簾最大的差別是什麼？', a: '宏森以工廠直營為核心，從丈量、選料、製作到安裝都由同一服務鏈完成，價格與交期更透明，也更容易統一品質。' },
+  { q: '工廠直營窗簾和一般門市報價差在哪裡？', a: '工廠直營窗簾從丈量、選料、製作到安裝由同一服務鏈完成，能減少轉單溝通與中間成本。對屋主來說，價格、交期與售後責任會更清楚。' },
 ];
 
 const breadcrumbSchema = {
@@ -91,9 +91,9 @@ export default function AboutPage() {
 
       <div className="page-hero">
         <div className="section-container">
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>三十年專業傳承</div>
-          <h1>台北窗簾推薦與工廠直營窗簾服務：先估價再安排免費丈量</h1>
-          <p>宏森深耕三重與大台北窗簾市場，提供工廠直營報價、台北窗簾推薦與免費到府丈量。若你想先抓預算，可先看價格指南、地區服務頁，再進線上估價。</p>
+          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>工廠直營窗簾 / 台北窗簾免費丈量 / 品牌信任</div>
+          <h1>工廠直營窗簾服務：台北窗簾免費丈量、估價與安裝流程</h1>
+          <p>宏森深耕三重與大台北窗簾市場，提供工廠直營窗簾報價、台北窗簾免費丈量與到府安裝服務。若你想先抓預算，可先看價格指南、地區服務頁，再進線上估價。</p>
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export default function AboutPage() {
             <div className="about-text">
               <div className="tag">我們的堅持</div>
               <h2>工廠直營，品質、交期與報價一次看清楚</h2>
-              <p>宏森開發有限公司自1996年開業以來，始終堅持「專業、品質、誠信」三大核心指標。這頁不只介紹品牌，也讓正在找台北窗簾推薦、工廠直營窗簾與免費丈量流程的屋主，快速找到價格試算與地區入口。</p>
+              <p>宏森開發有限公司自1996年開業以來，始終堅持「專業、品質、誠信」三大核心指標。這頁不只介紹品牌，也讓正在找工廠直營窗簾、台北窗簾免費丈量與免費到府丈量流程的屋主，快速找到價格試算與地區入口。</p>
               <p style={{ marginTop: '0.85rem', color: 'var(--stone-600)', lineHeight: 1.7 }}>
                 若您想先了解窗簾價格與安裝費用，可先使用
                 <Link href="/calculator/" style={{ margin: '0 0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
@@ -114,6 +114,15 @@ export default function AboutPage() {
                 <Link href="/blog/curtain-price-guide-2026/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
                   2026 窗簾價格指南
                 </Link>
+                ，若還沒決定款式，可先看
+                <Link href="/products/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+                  窗簾產品總覽與款式比較
+                </Link>
+                ，也能從
+                <Link href="/cases/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+                  窗簾施工案例
+                </Link>
+                確認實際安裝效果
                 ，也可先看
                 <Link href="/location/taipei/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
                   台北窗簾價格試算
@@ -215,7 +224,7 @@ export default function AboutPage() {
             <div className="about-text">
               <div className="tag">在地深耕・權威認證</div>
               <h2>台大、立法院多次選用</h2>
-              <p>宏森開發不僅服務萬戶住家，更有幸獲得諸多頂尖機構的信任。我們深耕三重國小捷運站周邊及大台北各地區，提供符合消防局認可的「防焰標籤」窗簾，是商辦與醫療院所的第一選擇。若你正在比較台北窗簾推薦與工廠直營窗簾服務，這一頁就是品牌信任入口。</p>
+              <p>宏森開發不僅服務萬戶住家，更有幸獲得諸多頂尖機構的信任。我們深耕三重國小捷運站周邊及大台北各地區，提供符合消防局認可的「防焰標籤」窗簾，是商辦與醫療院所的第一選擇。若你正在比較工廠直營窗簾、台北窗簾推薦與台北窗簾免費丈量服務，這一頁就是品牌信任入口。</p>
               
               <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--stone-50)', borderRadius: '1rem', border: '1px solid var(--stone-200)' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '1rem' }}>指標性服務客戶</h4>
@@ -243,7 +252,7 @@ export default function AboutPage() {
             <div className="about-text">
               <div className="tag">實體服務據點</div>
               <h2>在地聯絡資訊與位置</h2>
-              <p>我們深耕三重與大台北地區，工廠直營，提供最高品質的在地服務。歡迎先做窗簾價格試算，再預約到府量尺與估價，快速確認最適合的窗簾方案。</p>
+              <p>我們深耕三重與大台北地區，工廠直營，提供最高品質的在地服務。歡迎先做窗簾價格試算，再預約台北窗簾免費丈量或新北到府量尺與估價，快速確認最適合的窗簾方案。</p>
               
               <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -325,8 +334,8 @@ export default function AboutPage() {
       {/* CTA */}
       <section style={{ background: 'var(--stone-900)', color: 'white', padding: '5rem 0', textAlign: 'center' }}>
         <div className="section-container">
-          <h2>先看品牌，再估價，再安排丈量</h2>
-          <p style={{ color: 'var(--stone-400)', marginBottom: '2.5rem', marginTop: '1rem' }}>宏森開發把工廠直營、價格透明與在地丈量整合在同一條服務鏈，讓比價與施工都更安心。</p>
+          <h2>先看工廠直營窗簾服務，再估價，再安排丈量</h2>
+          <p style={{ color: 'var(--stone-400)', marginBottom: '2.5rem', marginTop: '1rem' }}>宏森開發把工廠直營、價格透明與台北窗簾免費丈量整合在同一條服務鏈，讓比價與施工都更安心。</p>
           <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/calculator" className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2rem' }}>
               立即線上估價 <ChevronRight size={18} />

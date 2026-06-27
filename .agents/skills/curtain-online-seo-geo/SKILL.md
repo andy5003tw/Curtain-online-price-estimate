@@ -11,28 +11,66 @@ Use this skill to work on `Curtain-online-price-estimate` SEO, GEO, schema, rank
 
 ## Fast Start
 
-1. Run the read-only snapshot first when repo access is available:
-   `node .agents/skills/curtain-online-seo-geo/scripts/curtain-snapshot.mjs`
-2. For keyword/ranking work, also run:
+Default to Slim Implementation Mode. Escalate to Strategy, Deploy, or Troubleshooting mode only when the task explicitly needs it.
+
+### Slim Implementation Mode (default)
+
+Use this for requests like "implement the latest SEO/GEO action plan", "依最新報告優化 6 頁", or "照 AI 執行指令修改".
+
+1. Read only:
+   - `plan.md`
+   - `Weekly SOP/latest/seo-geo-action-plan.ai.md`
+2. Do not reselect pages or keywords when the AI action plan exists, unless the user explicitly asks for strategy/reselection.
+3. Read only the source files for the action-plan target pages plus the needed source truth:
+   - Product pages: `src/data/products.ts` and `src/app/products/[slug]/page.tsx`
+   - GEO pages: `src/data/locationPages.ts` and `src/app/location/[area]/page.tsx`
+   - Blog pages: `src/data/knowledgePosts.ts` and `src/app/blog/[id]/page.tsx`
+   - Calculator/home/cross-cutting SEO: read the specific page file and `src/lib/seo.ts` only if canonical, URL, OG/Twitter, or calculator URL behavior is touched.
+4. Before finishing source edits, run:
    `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`
-3. Read only the smallest needed source set before editing:
-   `plan.md`, latest `Weekly SOP/12-keyword-pool-v*.md`, `src/lib/seo.ts`, `src/data/products.ts`, and `scripts/seo-check.mjs`.
+5. Validate with the fixed loop in `Validation Loop`.
+
+### Strategy / Re-selection Mode
+
+Use this only when the user asks to analyze 7d/28d data, create or replace a keyword pool, choose the next 6 pages, or decide whether to keep/replace/expand keywords.
+
+1. Read `references/seo-batch-workflow.md`.
+2. Read the latest `Weekly SOP/12-keyword-pool-v*.md`.
+3. Read only the needed latest 7d/28d summaries or current baseline CSV files. Do not recursively scan `Weekly SOP/reports/` or old history files.
+4. Run `keyword-owner-check.mjs` after proposing or editing owner mappings.
+
+### Deploy / Validation Mode
+
+Use this when the user asks to validate, upload, deploy, or live-check SEO/GEO/schema changes.
+
+1. Read `references/validation-deploy.md`.
+2. Run the fixed validation/deploy commands requested by the task.
+3. Report summaries only: pass/fail, selected/uploaded/skipped/failed counts, and concrete errors. Do not paste full per-file FTP logs unless needed to diagnose a failure.
+
+### Troubleshooting Mode
+
+Read `references/windows-sandbox-troubleshooting.md` only after sandbox, permission, PowerShell, `os error 740`, or `CreateProcessAsUserW failed: 1312` symptoms appear.
+
+`curtain-snapshot.mjs` is optional. Use it for orientation or audits, not as a mandatory first step for routine SEO implementation.
 
 ## Reference Routing
 
-- Project map and ownership: read `references/repo-map.md`.
-- GSC, keyword-owner, and 6-page ranking batch work: read `references/seo-batch-workflow.md`.
-- Content, FAQ, AI-answer, and schema alignment: read `references/content-schema-standards.md`.
-- Build, SEO check, FTP upload SOP, export, deploy, and live verification: read `references/validation-deploy.md`.
-- Windows sandbox failures such as `os error 740` or `CreateProcessAsUserW failed: 1312`: read `references/windows-sandbox-troubleshooting.md`.
+- Project map and ownership: read `references/repo-map.md` only when source ownership, moved docs, or repo boundaries are unclear.
+- GSC, keyword-owner, and 6-page ranking batch work: read `references/seo-batch-workflow.md` only in Strategy / Re-selection Mode.
+- Content, FAQ, AI-answer, and schema alignment: read `references/content-schema-standards.md` only when changing visible FAQ/content/schema contracts or resolving schema/content mismatch.
+- Build, SEO check, FTP upload SOP, export, deploy, and live verification: read `references/validation-deploy.md` only in Deploy / Validation Mode or before a real upload.
+- Windows sandbox failures such as `os error 740` or `CreateProcessAsUserW failed: 1312`: read `references/windows-sandbox-troubleshooting.md` only after those failures appear.
 
 ## Core Rules
 
-- Treat `plan.md` as the compact live control file; treat `Phase*.md` as completed history.
-- Begin ranking work from 7d/28d GSC baseline and `1 keyword = 1 owner page`.
+- Treat `plan.md` as the compact live control file; treat `All_plan/` and `Phase*.md` as completed history for tracebacks only.
+- In routine implementation, prefer `Weekly SOP/latest/seo-geo-action-plan.ai.md` over raw 7d/28d data. Begin from raw 7d/28d baselines only in Strategy / Re-selection Mode.
+- Maintain `1 keyword = 1 owner page`.
 - Execute ranking work in complete 6-page batches unless the user explicitly changes the batch size.
+- If `Weekly SOP/latest/seo-geo-action-plan.ai.md` exists, do not reselect pages, reselect keywords, or redo strategy analysis unless the user explicitly requests it.
 - Use shared SEO helpers in `src/lib/seo.ts` for canonical, product paths, absolute URLs, OG/Twitter, and calculator URLs.
 - Edit source files only. Do not edit generated `out/` files directly.
+- Do not read `All_plan/`, `Phase*.md`, raw GSC CSV baselines, or `Weekly SOP/reports/` by default.
 - Do not add unrelated UI, libraries, pages, or schema types while performing SEO/GEO/schema work.
 - On Windows, use `npm.cmd`, not `npm`, when running project scripts.
 - For upload/deploy requests, follow the FTP quick/delta SOP in `references/validation-deploy.md`; default to `npm.cmd run deploy:ftp`, not a full 916-file reupload.
@@ -41,7 +79,7 @@ Use this skill to work on `Curtain-online-price-estimate` SEO, GEO, schema, rank
 ## Boundaries
 
 - Do not turn SEO/GEO/schema tasks into PHP admin, pricing-rule, credential, or backend business-logic changes.
-- Do not upload `plan.md`, `Phase*.md`, `Weekly SOP`, `.agents`, raw CSV baselines, or local scripts to the public static site.
+- Do not upload `plan.md`, `All_plan`, `Phase*.md`, `Weekly SOP`, `.agents`, raw CSV baselines, or local scripts to the public static site.
 - Do not create extra planning files unless the user asks for a standalone document.
 - Do not translate code identifiers, file paths, commands, schema field names, or URL paths into Chinese.
 

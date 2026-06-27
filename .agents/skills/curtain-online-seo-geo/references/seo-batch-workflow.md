@@ -6,7 +6,7 @@ Chinese task terms: `關鍵字詞池`, `主攻詞`, `綁定主頁`, `產品 + �
 
 ## Baseline First
 
-Start with complete-day GSC baseline data:
+Use complete-day GSC baseline data only for Strategy / Re-selection Mode: creating a new pool, choosing/replacing the next 6 pages, or formally deciding keep/replace/expand.
 
 - 7-day query baseline: `Weekly SOP/history/7d/current_query_baseline.normalized.csv`
 - 7-day page baseline: `Weekly SOP/history/7d/current_page_baseline.normalized.csv`
@@ -14,6 +14,8 @@ Start with complete-day GSC baseline data:
 - 28-day page baseline: `Weekly SOP/history/28d/current_page_baseline.normalized.csv`
 
 Use 7d for quick movement and micro-adjustments. Use 28d for formal decisions about keeping, replacing, or expanding keywords.
+
+For routine implementation, do not reread raw baselines when `Weekly SOP/latest/seo-geo-action-plan.ai.md` already exists. Execute the action plan and preserve its selected pages/keywords unless the user explicitly asks to redo strategy.
 
 ## Keyword Ownership
 
@@ -23,6 +25,7 @@ Use 7d for quick movement and micro-adjustments. Use 28d for formal decisions ab
 - Do not let product pages, GEO pages, calculator pages, and blog pages compete for the same exact owner keyword.
 - Before editing pages, run:
   `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`
+- Running the owner check is required; reading the script source is not required unless debugging the script.
 
 ## Six-Page Batch Rule
 
@@ -42,6 +45,8 @@ For each selected page, align:
 
 Use the latest `Weekly SOP/12-keyword-pool-v*.md` unless the user specifies another file.
 
+If `Weekly SOP/latest/seo-geo-action-plan.ai.md` has already selected the 6 pages, do not reselect from the pool during implementation. Read the pool only if owner keywords are missing, contradictory, or the user asks to revise the batch.
+
 When creating the next pool:
 
 - Start from 7d/28d query and page baselines.
@@ -56,4 +61,4 @@ After each batch goes live:
 
 - After 7 complete days: review CTR, impressions, average position, and obvious page/query mismatches.
 - After 28 complete days: decide whether to keep, replace, or expand each keyword cluster.
-- Keep `plan.md` compact by updating current state and next steps; move detailed completed evidence into phase/history files when needed.
+- Keep `plan.md` compact by updating current state and next steps; move detailed completed evidence into `All_plan/` or dedicated history files when needed.

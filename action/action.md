@@ -13,6 +13,7 @@
 
 3. 按 `複製下一輪 Slim AI 指令`
    - 第一次會複製 Round 1。
+   - UI 會在按鈕下方顯示 Round 1、Round 2、Round 3、Technical Queue 與目前 active round。
    - 貼到 AI 對話框，讓 AI 執行。
 
 4. AI 完成後，再按 `複製下一輪 Slim AI 指令`

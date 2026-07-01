@@ -7,8 +7,8 @@ import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '窗簾推薦｜宏森窗簾、價格試算與雙北丈量';
-const HOME_DESCRIPTION = '找窗簾或窗簾推薦、想先做窗簾價格試算？宏森提供 1 分鐘線上估價、百葉窗價格試算、價格指南與台北新北到府丈量入口。';
+const HOME_TITLE = '窗簾｜窗簾推薦、價格試算與雙北到府丈量｜宏森';
+const HOME_DESCRIPTION = '找窗簾或窗簾推薦？宏森提供 1 分鐘窗簾價格試算、窗簾線上估價、百葉窗價格試算、價格指南與台北新北到府丈量入口。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
@@ -52,7 +52,11 @@ const trustNumbers = [
 const homepageFaq = [
   {
     q: '窗簾推薦要怎麼選，才不會只看款式？',
-    a: '建議先從窗簾價格試算、2026 窗簾價格指南與所在地區頁開始，確認預算、採光隱私需求與丈量流程，再挑選布簾、紗簾、百葉或調光簾。',
+    a: '建議先從窗簾價格試算、2026 窗簾價格指南與所在地區頁開始，確認預算、採光隱私需求與丈量流程，再挑選布簾、紗簾、百葉或調光簾，這樣窗簾推薦才會貼近實際使用情境。',
+  },
+  {
+    q: '搜尋窗簾或窗簾推薦，最快從哪裡開始？',
+    a: '最快先用首頁進入窗簾價格試算，再看 2026 窗簾價格指南與台北、新北服務區域頁。先確認預算、合理價格與丈量流程，再挑產品頁會更有效率。',
   },
   {
     q: '宏森窗簾有提供免費到府丈量嗎？',
@@ -189,8 +193,8 @@ export default function HomePage() {
           >
             宏森窗簾推薦・價格試算・台北新北丈量入口
           </p>
-          <h1>宏森窗簾推薦：窗簾價格試算與線上估價入口</h1>
-          <p>先用尺寸比較窗簾訂製、遮光窗簾、鋁百葉、捲簾、無縫紗簾與實木百葉價格區間；再依台北、三重、板橋、鶯歌、士林或中正區服務頁安排丈量，確認窗型、布料與安裝費。</p>
+          <h1>窗簾推薦與窗簾價格試算：宏森雙北到府丈量入口</h1>
+          <p>找窗簾或窗簾推薦時，先用尺寸比較窗簾訂製、遮光窗簾、鋁百葉、捲簾、無縫紗簾與實木百葉價格區間；再依台北、三重、板橋、鶯歌、士林或中正區服務頁安排丈量，確認窗型、布料與安裝費。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />

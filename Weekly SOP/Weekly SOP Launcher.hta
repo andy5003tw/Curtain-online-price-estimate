@@ -813,8 +813,8 @@
           setButtonState("btnCopySeoGeoAiPrompt", true, "複製目前 Round", "請先產生 SEO/GEO queue");
           setButtonState("btnAdvanceSeoGeoRound", true, "標記完成前進", "請先產生 SEO/GEO queue");
         } else if (queue.isCompleted) {
-          setButtonState("btnCopySeoGeoAiPrompt", true, "本輪 queue 已完成", "請等下一次 7d/28d 報表後再產生新 queue");
-          setButtonState("btnAdvanceSeoGeoRound", true, "本輪 queue 已完成", "請等下一次 7d/28d 報表後再產生新 queue");
+          setButtonState("btnCopySeoGeoAiPrompt", true, "無可複製 Round", "本輪 queue 已完成，請等下一次 7d/28d 報表後再產生新 queue");
+          setButtonState("btnAdvanceSeoGeoRound", true, "無可前進 Round", "本輪 queue 已完成，請等下一次 7d/28d 報表後再產生新 queue");
         } else if (queue.isCopiedPending) {
           setButtonState("btnCopySeoGeoAiPrompt", false, "重新複製 Round " + queue.activeRound, "重複複製目前 active round 指令");
           setButtonState("btnAdvanceSeoGeoRound", false, "標記 Round " + queue.activeRound + " 完成並前進", "AI 完成目前 Round 後按這顆");

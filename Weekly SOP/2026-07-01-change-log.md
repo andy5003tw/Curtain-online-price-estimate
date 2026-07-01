@@ -31,6 +31,7 @@
 - 已有 queue 時，重新產生前會要求確認。
 - `run-seo-geo-cycle.ps1` 執行改為 PowerShell fallback：優先 `pwsh`，缺少時用 `powershell`。
 - Round 操作拆成兩顆：`複製目前 Round`、`標記完成前進`。
+- queue completed 時，Round 按鈕文案改為 `無可複製 Round` / `無可前進 Round`。
 - `.gitignore` 改為追蹤 `Weekly SOP/` 根目錄 `.cmd` / `.hta` / `.ps1` 與 `*change-log.md`，不追蹤 reports/latest/raw data。
 
 ## 備註

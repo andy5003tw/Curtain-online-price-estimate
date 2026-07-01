@@ -19,6 +19,7 @@
 
 - FTP quick deploy：uploaded 106、skipped 84、failed 0
 - GitHub：`7ef933b Apply SEO GEO content updates`
+- GitHub：`3695661 Update Weekly SOP queue workflow`
 
 ## 流程變更
 
@@ -30,9 +31,9 @@
 - 已有 queue 時，重新產生前會要求確認。
 - `run-seo-geo-cycle.ps1` 執行改為 PowerShell fallback：優先 `pwsh`，缺少時用 `powershell`。
 - Round 操作拆成兩顆：`複製目前 Round`、`標記完成前進`。
-- `.gitignore` 改為只追蹤 `Weekly SOP/` 根目錄 `.cmd` / `.hta` / `.ps1` 工具檔，不追蹤 reports/latest/raw data。
+- `.gitignore` 改為追蹤 `Weekly SOP/` 根目錄 `.cmd` / `.hta` / `.ps1` 與 `*change-log.md`，不追蹤 reports/latest/raw data。
 
 ## 備註
 
-- `action/action.md` 只保留流程說明。
-- `Weekly SOP/` 僅開放根目錄工具檔進 Git；報表、latest、raw data 仍維持本機。
+- `action/action.md` 只保留操作流程說明。
+- `Weekly SOP/` 僅開放根目錄工具檔與 change log 進 Git；報表、latest、raw data 仍維持本機。

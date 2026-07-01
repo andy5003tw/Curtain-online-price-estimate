@@ -437,13 +437,29 @@
       border-radius: 8px;
       border: 1px solid #d2e3f3;
       background: #ffffff;
-      font-family: Consolas, "Courier New", monospace;
       font-size: 12px;
       line-height: 1.55;
+      color: #244763;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .details-section-title {
+      margin: 3px 0 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0b2f4a;
+    }
+
+    #statusDetailsLog {
+      margin-top: 8px;
+      padding: 9px;
+      border: 1px solid #d8e6f2;
+      border-radius: 8px;
+      background: #f7fbff;
+      font-family: Consolas, "Courier New", monospace;
       white-space: pre-wrap;
       color: #244763;
-      max-height: 260px;
-      overflow: auto;
     }
 
     .footer {
@@ -480,7 +496,10 @@
     }
 
     function setStatusDetails(text) {
-      document.getElementById("statusDetails").innerText = text || "";
+      var log = document.getElementById("statusDetailsLog");
+      if (log) {
+        log.innerText = text || "目前沒有執行明細。";
+      }
     }
 
     function toggleDetails() {
@@ -1482,38 +1501,6 @@
       <li>完成後先看摘要，若要排錯可展開明細查看 run summary 與完整 log。</li>
     </ol>
 
-    <div class="section-title">環境與資料狀態</div>
-    <div class="health-grid">
-      <div class="health-item" id="healthPwsh">
-        <div class="health-label">PowerShell</div>
-        <div class="health-value" id="healthPwshValue">檢查中...</div>
-      </div>
-      <div class="health-item" id="healthNode">
-        <div class="health-label">Node</div>
-        <div class="health-value" id="healthNodeValue">檢查中...</div>
-      </div>
-      <div class="health-item" id="healthNpm">
-        <div class="health-label">npm.cmd</div>
-        <div class="health-value" id="healthNpmValue">檢查中...</div>
-      </div>
-      <div class="health-item" id="health7d">
-        <div class="health-label">Latest 7d</div>
-        <div class="health-value" id="health7dValue">檢查中...</div>
-      </div>
-      <div class="health-item" id="health28d">
-        <div class="health-label">Latest 28d</div>
-        <div class="health-value" id="health28dValue">檢查中...</div>
-      </div>
-      <div class="health-item" id="healthPool">
-        <div class="health-label">Keyword Pool</div>
-        <div class="health-value" id="healthPoolValue">檢查中...</div>
-      </div>
-      <div class="health-item" id="healthPlan">
-        <div class="health-label">Action Plan</div>
-        <div class="health-value" id="healthPlanValue">檢查中...</div>
-      </div>
-    </div>
-
     <div class="flow-panel" id="workflowStatusPanel">
       <div class="flow-title" id="workflowStatusTitle">流程狀態：檢查中</div>
       <div class="flow-next" id="workflowStatusNext">正在讀取 latest 7d / 28d、keyword pool 與 queue state。</div>
@@ -1547,7 +1534,41 @@
       <div class="detail-actions">
         <button id="btnToggleDetails" class="btn-detail">展開明細</button>
       </div>
-      <div id="statusDetails"></div>
+      <div id="statusDetails">
+        <div class="details-section-title">環境與資料狀態</div>
+        <div class="health-grid">
+          <div class="health-item" id="healthPwsh">
+            <div class="health-label">PowerShell</div>
+            <div class="health-value" id="healthPwshValue">檢查中...</div>
+          </div>
+          <div class="health-item" id="healthNode">
+            <div class="health-label">Node</div>
+            <div class="health-value" id="healthNodeValue">檢查中...</div>
+          </div>
+          <div class="health-item" id="healthNpm">
+            <div class="health-label">npm.cmd</div>
+            <div class="health-value" id="healthNpmValue">檢查中...</div>
+          </div>
+          <div class="health-item" id="health7d">
+            <div class="health-label">Latest 7d</div>
+            <div class="health-value" id="health7dValue">檢查中...</div>
+          </div>
+          <div class="health-item" id="health28d">
+            <div class="health-label">Latest 28d</div>
+            <div class="health-value" id="health28dValue">檢查中...</div>
+          </div>
+          <div class="health-item" id="healthPool">
+            <div class="health-label">Keyword Pool</div>
+            <div class="health-value" id="healthPoolValue">檢查中...</div>
+          </div>
+          <div class="health-item" id="healthPlan">
+            <div class="health-label">Action Plan</div>
+            <div class="health-value" id="healthPlanValue">檢查中...</div>
+          </div>
+        </div>
+        <div class="details-section-title">執行明細</div>
+        <div id="statusDetailsLog">目前沒有執行明細。</div>
+      </div>
     </div>
 
     <div class="footer">Weekly SOP Launcher | UI 2026-07-01 | PowerShell fallback</div>

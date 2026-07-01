@@ -1,0 +1,1556 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="IE=edge">
+  <title>Weekly SOP 一鍵執行</title>
+  <hta:application
+    id="weeklySopLauncher"
+    applicationname="Weekly SOP Launcher"
+    border="thin"
+    caption="yes"
+    maximizebutton="no"
+    minimizebutton="yes"
+    sysmenu="yes"
+    scroll="yes"
+    singleinstance="yes"
+    windowstate="normal"
+  />
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 22px;
+      font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
+      color: #102a43;
+      background:
+        radial-gradient(circle at 14% 8%, #e2f3ff 0%, rgba(226, 243, 255, 0) 46%),
+        radial-gradient(circle at 88% 90%, #d8f6ea 0%, rgba(216, 246, 234, 0) 38%),
+        linear-gradient(140deg, #f8fbff 0%, #f2f7fb 100%);
+    }
+
+    .card {
+      width: 1040px;
+      max-width: 100%;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #d8e6f2;
+      border-radius: 20px;
+      padding: 24px 24px 18px;
+      box-shadow: 0 14px 34px rgba(16, 42, 67, 0.12);
+    }
+
+    .heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 27px;
+      letter-spacing: 0.4px;
+      color: #0b2f4a;
+    }
+
+    .tag {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.35px;
+      color: #0f5132;
+      background: #e8f8ef;
+      border: 1px solid #bde7cf;
+      border-radius: 999px;
+      padding: 5px 11px;
+      white-space: nowrap;
+    }
+
+    .intro {
+      margin: 8px 0 0;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #36536b;
+    }
+
+    .steps {
+      margin: 16px 0 0;
+      padding: 14px 16px 14px 32px;
+      background: #f8fbff;
+      border: 1px solid #d8e6f2;
+      border-radius: 14px;
+    }
+
+    .steps li {
+      margin: 6px 0;
+      font-size: 14px;
+      line-height: 1.65;
+      color: #183b56;
+    }
+
+    .steps code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #eaf2fa;
+      padding: 1px 5px;
+      border-radius: 6px;
+      color: #0b2f4a;
+    }
+
+    .actions {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    button {
+      border: 2px solid transparent;
+      border-radius: 999px;
+      padding: 11px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+      min-height: 46px;
+      width: 100%;
+      text-align: center;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.62;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-run {
+      color: #0f2e46;
+      background: linear-gradient(160deg, #d8efe8 0%, #cfe6f5 100%);
+      border-color: #004b3d;
+      box-shadow: 0 8px 16px rgba(0, 79, 102, 0.2);
+      font-size: 16px;
+    }
+
+    .section-title {
+      margin: 18px 0 8px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0b2f4a;
+    }
+
+    .seo-geo-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      border: 2px solid #2c7a87;
+      background: #e8f5f7;
+    }
+
+    .btn-seo-geo {
+      border: 0;
+      border-bottom: 2px solid #2c7a87;
+      border-radius: 0;
+      color: #0f2e46;
+      background: transparent;
+      box-shadow: none;
+      min-height: 50px;
+    }
+
+    .btn-seo-geo:last-child {
+      border-bottom: 0;
+    }
+
+    .btn-seo-geo:hover {
+      background: #d9eef2;
+    }
+
+    .seo-geo-note {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.65;
+      color: #244763;
+      background: #f7fbff;
+      border: 1px solid #d8e6f2;
+    }
+
+    .queue-panel {
+      margin-top: 12px;
+      border: 1px solid #cfe0ef;
+      border-radius: 12px;
+      background: #fbfdff;
+      overflow: hidden;
+    }
+
+    .queue-panel.warn {
+      border-color: #edc77d;
+      background: #fffaf0;
+    }
+
+    .queue-panel.error {
+      border-color: #f1b5b2;
+      background: #fff7f7;
+    }
+
+    .queue-head {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #163a56;
+      background: #eef6fb;
+      border-bottom: 1px solid #d8e6f2;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .queue-body {
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #244763;
+    }
+
+    .queue-meta {
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
+
+    .queue-rounds {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .queue-card {
+      border: 1px solid #d8e6f2;
+      border-left: 5px solid #9eb7cc;
+      border-radius: 9px;
+      background: #ffffff;
+      padding: 9px;
+      min-height: 116px;
+    }
+
+    .queue-card.active {
+      border-left-color: #2b6cb0;
+      background: #f2f8ff;
+    }
+
+    .queue-card.copied {
+      border-left-color: #c77918;
+      background: #fffaf0;
+    }
+
+    .queue-card.done {
+      border-left-color: #2f855a;
+      background: #f7fdf9;
+    }
+
+    .queue-card.missing {
+      border-left-color: #c53030;
+      background: #fff5f5;
+    }
+
+    .queue-card-title {
+      font-weight: 800;
+      color: #0b2f4a;
+      margin-bottom: 4px;
+    }
+
+    .queue-card-status {
+      font-size: 11px;
+      font-weight: 800;
+      color: #56718a;
+      margin-bottom: 6px;
+    }
+
+    .queue-card-targets {
+      margin: 0;
+      padding-left: 16px;
+      word-break: break-word;
+    }
+
+    .queue-extra {
+      border-top: 1px solid #d8e6f2;
+      padding-top: 9px;
+      white-space: pre-wrap;
+    }
+
+    .health-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .health-item {
+      min-height: 54px;
+      padding: 9px 11px;
+      background: #f7fbff;
+      border: 1px solid #d8e6f2;
+      border-left: 5px solid #9eb7cc;
+      border-radius: 8px;
+    }
+
+    .health-item.ok {
+      border-left-color: #2f855a;
+      background: #f7fdf9;
+    }
+
+    .health-item.warn {
+      border-left-color: #c77918;
+      background: #fffaf0;
+    }
+
+    .health-item.error {
+      border-left-color: #c53030;
+      background: #fff5f5;
+    }
+
+    .health-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      color: #56718a;
+      text-transform: uppercase;
+    }
+
+    .health-value {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #183b56;
+      word-break: break-word;
+    }
+
+    .flow-panel {
+      margin-top: 12px;
+      border: 1px solid #cfe0ef;
+      border-left: 5px solid #2b6cb0;
+      background: #f7fbff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #244763;
+    }
+
+    .flow-panel.ok {
+      border-left-color: #2f855a;
+      background: #f7fdf9;
+    }
+
+    .flow-panel.warn {
+      border-left-color: #c77918;
+      background: #fffaf0;
+    }
+
+    .flow-panel.error {
+      border-left-color: #c53030;
+      background: #fff5f5;
+    }
+
+    .flow-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0b2f4a;
+      margin-bottom: 4px;
+    }
+
+    .flow-next {
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .status-wrap {
+      margin-top: 14px;
+      background: #f7fbff;
+      border: 1px solid #d8e6f2;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .status-head {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #274760;
+      background: #eef5fc;
+      border-bottom: 1px solid #d8e6f2;
+    }
+
+    .status-wrap.running .status-head {
+      color: #0b5f6d;
+      background: #e7f6f8;
+    }
+
+    .status-wrap.success .status-head {
+      color: #165d3e;
+      background: #eaf8f0;
+    }
+
+    .status-wrap.error .status-head {
+      color: #8d1b13;
+      background: #fdeceb;
+    }
+
+    #statusSummary {
+      padding: 11px 12px 8px;
+      font-size: 13px;
+      line-height: 1.58;
+      white-space: pre-wrap;
+      color: #2f4f67;
+      min-height: 82px;
+    }
+
+    .detail-actions {
+      padding: 0 12px 10px;
+    }
+
+    .btn-detail {
+      width: auto;
+      min-height: 34px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      color: #163a56;
+      background: #eef5fc;
+      border: 1px solid #c7dbef;
+      box-shadow: none;
+    }
+
+    #statusDetails {
+      display: none;
+      margin: 0 12px 12px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #d2e3f3;
+      background: #ffffff;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      color: #244763;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .footer {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #54708a;
+      text-align: right;
+    }
+  </style>
+  <script type="text/javascript">
+    var isUiBusy = false;
+
+    function getRootFolder() {
+      var raw = decodeURIComponent(window.location.pathname);
+      raw = raw.replace(/\//g, "\\");
+      if (/^\\[A-Za-z]:/.test(raw)) {
+        raw = raw.substring(1);
+      }
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      return fso.GetParentFolderName(raw);
+    }
+
+    function setStatusMode(mode) {
+      var wrap = document.getElementById("statusWrap");
+      wrap.className = "status-wrap";
+      if (mode) {
+        wrap.className += " " + mode;
+      }
+    }
+
+    function setStatusSummary(text, mode) {
+      document.getElementById("statusSummary").innerText = text;
+      setStatusMode(mode || "");
+    }
+
+    function setStatusDetails(text) {
+      document.getElementById("statusDetails").innerText = text || "";
+    }
+
+    function toggleDetails() {
+      var panel = document.getElementById("statusDetails");
+      var btn = document.getElementById("btnToggleDetails");
+      if (panel.style.display === "block") {
+        panel.style.display = "none";
+        btn.innerText = "展開明細";
+      } else {
+        panel.style.display = "block";
+        btn.innerText = "收合明細";
+      }
+    }
+
+    function resetDetailsCollapsed() {
+      var panel = document.getElementById("statusDetails");
+      var btn = document.getElementById("btnToggleDetails");
+      panel.style.display = "none";
+      btn.innerText = "展開明細";
+    }
+
+    function setButtonsBusy(isBusy) {
+      isUiBusy = isBusy;
+      var allButtons = document.getElementsByTagName("button");
+      for (var i = 0; i < allButtons.length; i++) {
+        allButtons[i].disabled = isBusy;
+      }
+      if (!isBusy) {
+        updateWorkflowControls();
+      }
+    }
+
+    function readTextIfExists(path) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      if (!fso.FileExists(path)) {
+        return "";
+      }
+      var stream = null;
+      try {
+        stream = new ActiveXObject("ADODB.Stream");
+        stream.Type = 2; // text
+        stream.Mode = 3; // read/write
+        stream.Charset = "utf-8";
+        stream.Open();
+        stream.LoadFromFile(path);
+        return stream.ReadText(-1);
+      } catch (e) {
+        // Fallback for environments where ADODB.Stream is unavailable.
+        var f = fso.OpenTextFile(path, 1, false, -2);
+        try {
+          return f.ReadAll();
+        } finally {
+          f.Close();
+        }
+      } finally {
+        if (stream && stream.State === 1) {
+          stream.Close();
+        }
+      }
+    }
+
+    function writeUtf8Text(path, text) {
+      var stream = new ActiveXObject("ADODB.Stream");
+      stream.Type = 2; // text
+      stream.Mode = 3; // read/write
+      stream.Charset = "utf-8";
+      stream.Open();
+      stream.WriteText(text);
+      stream.Position = 0;
+      stream.SaveToFile(path, 2); // overwrite
+      stream.Close();
+    }
+
+    function parseJson(text) {
+      if (!text) {
+        return null;
+      }
+      text = String(text);
+      text = text.replace(/^\uFEFF/, "");
+      text = text.replace(/^\u00EF\u00BB\u00BF/, "");
+      text = text.replace(/^\s+|\s+$/g, "");
+      if (window.JSON && window.JSON.parse) {
+        return window.JSON.parse(text);
+      }
+      return eval("(" + text + ")");
+    }
+
+    function stringifyJson(value) {
+      if (window.JSON && window.JSON.stringify) {
+        return window.JSON.stringify(value, null, 2);
+      }
+      function esc(s) {
+        return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r/g, "\\r").replace(/\n/g, "\\n");
+      }
+      function encode(v) {
+        if (v === null || typeof v === "undefined") { return "null"; }
+        if (typeof v === "number" || typeof v === "boolean") { return String(v); }
+        if (typeof v === "string") { return '"' + esc(v) + '"'; }
+        if (Object.prototype.toString.call(v) === "[object Array]") {
+          var parts = [];
+          for (var i = 0; i < v.length; i++) { parts.push(encode(v[i])); }
+          return "[" + parts.join(",") + "]";
+        }
+        var props = [];
+        for (var k in v) {
+          if (v.hasOwnProperty(k) && typeof v[k] !== "function") {
+            props.push('"' + esc(k) + '":' + encode(v[k]));
+          }
+        }
+        return "{" + props.join(",") + "}";
+      }
+      return encode(value);
+    }
+
+    function commandExists(commandName) {
+      var shell = new ActiveXObject("WScript.Shell");
+      try {
+        var exec = shell.Exec("cmd /c where " + commandName);
+        var output = exec.StdOut.ReadAll();
+        exec.StdErr.ReadAll();
+        return exec.ExitCode === 0 && output.replace(/^\s+|\s+$/g, "") !== "";
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function formatDateTime(date) {
+      if (!date) {
+        return "n/a";
+      }
+      function pad(n) {
+        return n < 10 ? "0" + n : "" + n;
+      }
+      return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) + " " + pad(date.getHours()) + ":" + pad(date.getMinutes());
+    }
+
+    function parseManifestTime(value) {
+      if (!value) {
+        return null;
+      }
+      var m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+      if (!m) {
+        return null;
+      }
+      return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10), parseInt(m[4], 10), parseInt(m[5], 10), parseInt(m[6] || "0", 10));
+    }
+
+    function ageDays(date) {
+      if (!date) {
+        return 99999;
+      }
+      return Math.floor((new Date().getTime() - date.getTime()) / 86400000);
+    }
+
+    function setHealthItem(id, value, mode) {
+      var item = document.getElementById(id);
+      var valueEl = document.getElementById(id + "Value");
+      if (!item || !valueEl) {
+        return;
+      }
+      item.className = "health-item " + (mode || "");
+      valueEl.innerText = value || "n/a";
+    }
+
+    function getWindowFreshness(root, windowName, maxDays) {
+      var path = root + "\\latest\\" + windowName + "\\weekly-sop-last-run.json";
+      var raw = readTextIfExists(path);
+      if (!raw) {
+        return { mode: "error", text: "尚未匯入 " + windowName + " 報表" };
+      }
+      try {
+        var manifest = parseJson(raw);
+        if (!manifest || manifest.status !== "success") {
+          return { mode: "error", text: windowName + " manifest 狀態：" + ((manifest && manifest.status) || "unknown") };
+        }
+        var runDate = parseManifestTime(manifest.run_time);
+        var days = ageDays(runDate);
+        var mode = days > maxDays ? "warn" : "ok";
+        var staleText = days > maxDays ? "過期" : "fresh";
+        return {
+          mode: mode,
+          text: windowName + " " + staleText + "，" + days + " 天前（" + (manifest.run_time || "n/a") + "）"
+        };
+      } catch (e) {
+        return { mode: "error", text: windowName + " manifest 無法解析：" + e.message };
+      }
+    }
+
+    function getLatestKeywordPool(root) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var folder = fso.GetFolder(root);
+      var files = new Enumerator(folder.Files);
+      var bestName = "";
+      var bestDate = null;
+      for (; !files.atEnd(); files.moveNext()) {
+        var file = files.item();
+        if (/^12-keyword-pool-v.*\.md$/i.test(file.Name)) {
+          var modified = new Date(file.DateLastModified);
+          if (!bestDate || modified.getTime() > bestDate.getTime()) {
+            bestName = file.Name;
+            bestDate = modified;
+          }
+        }
+      }
+      if (!bestName) {
+        return { mode: "error", text: "找不到 12-keyword-pool-v*.md" };
+      }
+      return { mode: "ok", text: bestName + "（" + formatDateTime(bestDate) + "）" };
+    }
+
+    function getActionPlanStatus(root) {
+      var path = root + "\\latest\\seo-geo-action-plan.json";
+      var raw = readTextIfExists(path);
+      if (!raw) {
+        return { mode: "warn", text: "尚未產生 SEO/GEO action plan" };
+      }
+      try {
+        var plan = parseJson(raw);
+        if (!plan || plan.status !== "success") {
+          return { mode: "warn", text: "action plan 狀態：" + ((plan && plan.status) || "unknown") };
+        }
+        var count = plan.action_count || 0;
+      return { mode: "ok", text: (plan.generated_at || "n/a") + " / " + (plan.mode || "n/a") + " / " + count + " 頁" };
+      } catch (e) {
+        return { mode: "error", text: "action plan JSON 無法解析：" + e.message };
+      }
+    }
+
+    function htmlEscape(value) {
+      if (value === null || typeof value === "undefined") { value = ""; }
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function arrayContains(values, target) {
+      values = values || [];
+      for (var i = 0; i < values.length; i++) {
+        if (Number(values[i]) === Number(target)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function readJsonIfExists(path) {
+      var raw = readTextIfExists(path);
+      if (!raw) { return null; }
+      return parseJson(raw);
+    }
+
+    function isFreshStatus(status) {
+      return status && status.mode === "ok";
+    }
+
+    function setButtonState(id, disabled, label, title) {
+      var btn = document.getElementById(id);
+      if (!btn) { return; }
+      btn.disabled = !!disabled;
+      if (label) { btn.innerText = label; }
+      btn.title = title || "";
+    }
+
+    function getQueueSnapshot(root) {
+      var state = readJsonIfExists(root + "\\latest\\seo-geo-action-queue-state.json");
+      if (!state || !state.prompt_files || !state.prompt_files.length) {
+        return {
+          exists: false,
+          state: state,
+          activeRound: 1,
+          totalRounds: 0,
+          isCompleted: false,
+          isCopiedPending: false
+        };
+      }
+      var activeRound = Number(state.active_round || state.next_round || 1);
+      var totalRounds = Number(state.total_rounds || state.prompt_files.length || 0);
+      var completed = state.completed_rounds || [];
+      var copied = state.copied_rounds || [];
+      var isCompleted = state.status === "completed" || activeRound > totalRounds;
+      return {
+        exists: true,
+        state: state,
+        activeRound: activeRound,
+        totalRounds: totalRounds,
+        isCompleted: isCompleted,
+        isCopiedPending: !isCompleted && arrayContains(copied, activeRound) && !arrayContains(completed, activeRound),
+        queueId: state.queue_id || "n/a",
+        generatedAt: state.generated_at || "n/a"
+      };
+    }
+
+    function renderWorkflowPanel(mode, title, nextStep) {
+      var panel = document.getElementById("workflowStatusPanel");
+      var titleEl = document.getElementById("workflowStatusTitle");
+      var nextEl = document.getElementById("workflowStatusNext");
+      if (!panel || !titleEl || !nextEl) { return; }
+      panel.className = "flow-panel " + (mode || "");
+      titleEl.innerText = title || "流程狀態：檢查中";
+      nextEl.innerText = nextStep || "";
+    }
+
+    function updateWorkflowControls() {
+      if (isUiBusy) { return; }
+
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var seven = getWindowFreshness(root, "7d", 10);
+        var twentyEight = getWindowFreshness(root, "28d", 35);
+        var pool = getLatestKeywordPool(root);
+        var planHtmlPath = root + "\\latest\\seo-geo-action-plan.html";
+        var optionalPath = root + "\\latest\\seo-geo-action-plan.optional.slim.ai.md";
+        var queue = getQueueSnapshot(root);
+
+        var canGenerate = isFreshStatus(seven) && pool.mode === "ok";
+        var hasPlanHtml = fso.FileExists(planHtmlPath);
+        var hasOptionalPrompt = fso.FileExists(optionalPath);
+
+        setButtonState("btnRunSeoGeoActionPlan", !canGenerate, "產生 SEO/GEO 優化建議",
+          canGenerate ? "讀取 latest 7d/28d 與 keyword pool 產生 queue" : "需先有 fresh 7d 報表與 keyword pool");
+        setButtonState("btnOpenSeoGeoActionPlan", !hasPlanHtml, "開啟最新 SEO/GEO 行動報告",
+          hasPlanHtml ? "開啟 latest action plan HTML" : "尚未產生 action plan");
+        setButtonState("btnCopyOptionalSeoGeoPrompt", !hasOptionalPrompt, "複製小幅優化參考指令",
+          hasOptionalPrompt ? "複製 optional opportunities 判斷指令" : "尚未產生 optional prompt");
+
+        if (!queue.exists) {
+          setButtonState("btnCopySeoGeoAiPrompt", true, "複製目前 Round", "請先產生 SEO/GEO queue");
+          setButtonState("btnAdvanceSeoGeoRound", true, "標記完成前進", "請先產生 SEO/GEO queue");
+        } else if (queue.isCompleted) {
+          setButtonState("btnCopySeoGeoAiPrompt", true, "本輪 queue 已完成", "請等下一次 7d/28d 報表後再產生新 queue");
+          setButtonState("btnAdvanceSeoGeoRound", true, "本輪 queue 已完成", "請等下一次 7d/28d 報表後再產生新 queue");
+        } else if (queue.isCopiedPending) {
+          setButtonState("btnCopySeoGeoAiPrompt", false, "重新複製 Round " + queue.activeRound, "重複複製目前 active round 指令");
+          setButtonState("btnAdvanceSeoGeoRound", false, "標記 Round " + queue.activeRound + " 完成並前進", "AI 完成目前 Round 後按這顆");
+        } else {
+          setButtonState("btnCopySeoGeoAiPrompt", false, "複製 Round " + queue.activeRound + " Slim AI 指令", "複製目前 active round 指令");
+          setButtonState("btnAdvanceSeoGeoRound", true, "標記完成前進", "請先複製目前 Round");
+        }
+
+        if (!isFreshStatus(seven)) {
+          renderWorkflowPanel("error", "流程狀態：等待上傳 7d 報表", "下一步：按「上傳成效 ZIP 並自動產生報表（7d/28d）」，先匯入 fresh 7d。");
+          return;
+        }
+
+        if (pool.mode !== "ok") {
+          renderWorkflowPanel("error", "流程狀態：缺 keyword pool", "下一步：補上 12-keyword-pool-v*.md，再產生 SEO/GEO queue。");
+          return;
+        }
+
+        if (!queue.exists) {
+          if (!isFreshStatus(twentyEight)) {
+            renderWorkflowPanel("warn", "流程狀態：可產生 weekly queue", "下一步：若只要 7d watchlist，可按「產生 SEO/GEO 優化建議」。若要 28d monthly 正式判定，請先上傳 28d ZIP。");
+          } else {
+            renderWorkflowPanel("ok", "流程狀態：可產生 monthly queue", "下一步：按「產生 SEO/GEO 優化建議」。");
+          }
+          return;
+        }
+
+        if (queue.isCompleted) {
+          renderWorkflowPanel("warn", "流程狀態：queue completed", "下一步：等下一次 7d/28d 報表後再上傳並產生新 queue。若確定要重算，按「產生 SEO/GEO 優化建議」會再詢問確認。");
+          return;
+        }
+
+        if (queue.isCopiedPending) {
+          renderWorkflowPanel("warn", "流程狀態：Round " + queue.activeRound + " 已複製待確認", "下一步：AI 完成後，按「標記 Round " + queue.activeRound + " 完成並前進」。若要重貼給 AI，按「重新複製 Round " + queue.activeRound + "」。");
+          return;
+        }
+
+        renderWorkflowPanel("ok", "流程狀態：Round " + queue.activeRound + " 可複製", "下一步：按「複製 Round " + queue.activeRound + " Slim AI 指令」，貼給 AI 執行。");
+      } catch (e) {
+        setButtonState("btnRunSeoGeoActionPlan", true, "產生 SEO/GEO 優化建議", "流程狀態讀取失敗");
+        setButtonState("btnCopySeoGeoAiPrompt", true, "複製目前 Round", "流程狀態讀取失敗");
+        setButtonState("btnAdvanceSeoGeoRound", true, "標記完成前進", "流程狀態讀取失敗");
+        renderWorkflowPanel("error", "流程狀態：讀取失敗", e.message);
+      }
+    }
+
+    function summarizeTargets(targets) {
+      targets = targets || [];
+      var html = '<ol class="queue-card-targets">';
+      var max = targets.length < 3 ? targets.length : 3;
+      for (var i = 0; i < max; i++) {
+        html += "<li>" + htmlEscape(targets[i]) + "</li>";
+      }
+      if (targets.length > 3) {
+        html += "<li>+" + (targets.length - 3) + " more</li>";
+      }
+      if (targets.length === 0) {
+        html += "<li>尚無 target</li>";
+      }
+      html += "</ol>";
+      return html;
+    }
+
+    function getRoundState(round, activeRound, completed, copied, queueStatus) {
+      if (arrayContains(completed, round)) {
+        return { cls: "done", label: "已完成" };
+      }
+      if (Number(activeRound) === Number(round)) {
+        if (arrayContains(copied, round)) {
+          return { cls: "copied", label: "已複製待確認" };
+        }
+        return { cls: "active", label: queueStatus === "completed" ? "已完成" : "下一輪要複製" };
+      }
+      return { cls: "", label: "待排程" };
+    }
+
+    function refreshQueueStatus() {
+      var panel = document.getElementById("queueStatusPanel");
+      var body = document.getElementById("queueStatusBody");
+      var badge = document.getElementById("queueStatusBadge");
+      if (!panel || !body || !badge) { return; }
+
+      var root = getRootFolder();
+      var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
+      var queuePath = root + "\\latest\\seo-geo-action-queue.json";
+      var logPath = root + "\\latest\\seo-geo-action-plan-last-run.log";
+      panel.className = "queue-panel";
+
+      try {
+        var state = readJsonIfExists(statePath);
+        var queue = readJsonIfExists(queuePath);
+        if (!state) {
+          panel.className = "queue-panel warn";
+          badge.innerText = "尚未建立";
+          var log = readTextIfExists(logPath);
+          var logLine = log ? log.replace(/\r?\n/g, " ").substring(0, 220) : "尚無 last-run log";
+          body.innerHTML =
+            '<div class="queue-meta">Queue 尚未建立或本次產生失敗。\n請先按「產生 SEO/GEO 優化建議」，若仍失敗請查看：\n' +
+            htmlEscape(logPath) + "\n\n最近錯誤摘要：" + htmlEscape(logLine) + "</div>";
+          return;
+        }
+
+        var activeRound = state.active_round || state.next_round || 1;
+        var totalRounds = state.total_rounds || (state.prompt_files ? state.prompt_files.length : 0);
+        var completed = state.completed_rounds || [];
+        var copied = state.copied_rounds || [];
+        var isCompleted = state.status === "completed" || Number(activeRound) > Number(totalRounds);
+        var activeRoundLabel = isCompleted ? "已完成" : activeRound;
+        badge.innerText = isCompleted ? "completed" : ("active Round " + activeRound);
+
+        var meta = "Queue ID：" + (state.queue_id || "n/a") +
+          "\n產生時間：" + (state.generated_at || "n/a") +
+          "\nactive_round：" + activeRoundLabel + " / total_rounds：" + totalRounds +
+          "\ncompleted_rounds：" + (completed.length ? completed.join(", ") : "none") +
+          "\ncopied_rounds：" + (copied.length ? copied.join(", ") : "none");
+
+        var promptFiles = state.prompt_files || [];
+        var byRound = {};
+        for (var i = 0; i < promptFiles.length; i++) {
+          byRound[Number(promptFiles[i].round)] = promptFiles[i];
+        }
+
+        var cards = '<div class="queue-rounds">';
+        for (var round = 1; round <= 3; round++) {
+          var file = byRound[round] || null;
+          var stateInfo = file ? getRoundState(round, activeRound, completed, copied, state.status) : { cls: "missing", label: "尚未產生" };
+          cards += '<div class="queue-card ' + stateInfo.cls + '">';
+          cards += '<div class="queue-card-title">Round ' + round + '</div>';
+          cards += '<div class="queue-card-status">' + htmlEscape(stateInfo.label) + ' / 目標頁數：' + htmlEscape(file ? (file.targetCount || 0) : 0) + '</div>';
+          cards += summarizeTargets(file ? file.targets : []);
+          cards += '</div>';
+        }
+        cards += '</div>';
+
+        var technical = queue && queue.technical_tasks ? queue.technical_tasks : [];
+        var optional = queue && queue.optional_opportunities ? queue.optional_opportunities : [];
+        var techLines = [];
+        for (var t = 0; t < technical.length && t < 4; t++) {
+          techLines.push("P" + (technical[t].priority || "?") + " / " + (technical[t].type || "technical") + "：" + (technical[t].title || "n/a"));
+        }
+        var extra = "Technical Queue：" + technical.length + " 項" +
+          (techLines.length ? "\n" + techLines.join("\n") : "\n目前沒有 technical task") +
+          "\n\nOptional Opportunities：" + optional.length + " 項（不會被下一輪 Slim AI 指令自動複製）";
+
+        if (isCompleted) {
+          panel.className = "queue-panel warn";
+          meta += "\n\n本次 queue 已完成，請等下一次 7d/28d 報表後再產生新 queue。";
+        }
+        body.innerHTML = '<div class="queue-meta">' + htmlEscape(meta) + '</div>' + cards + '<div class="queue-extra">' + htmlEscape(extra) + '</div>';
+      } catch (e) {
+        panel.className = "queue-panel error";
+        badge.innerText = "error";
+        body.innerHTML = '<div class="queue-meta">Queue 狀態讀取失敗：' + htmlEscape(e.message) + '</div>';
+      }
+    }
+
+    function refreshHealth() {
+      try {
+        var root = getRootFolder();
+        var hasPwsh = commandExists("pwsh");
+        var hasNode = commandExists("node");
+        var hasNpm = commandExists("npm.cmd");
+        setHealthItem("healthPwsh", hasPwsh ? "pwsh 可用" : "找不到 pwsh，會 fallback 到 Windows PowerShell", hasPwsh ? "ok" : "warn");
+        setHealthItem("healthNode", hasNode ? "node 可用" : "找不到 node", hasNode ? "ok" : "error");
+        setHealthItem("healthNpm", hasNpm ? "npm.cmd 可用" : "找不到 npm.cmd", hasNpm ? "ok" : "error");
+        var seven = getWindowFreshness(root, "7d", 10);
+        var twentyEight = getWindowFreshness(root, "28d", 35);
+        var pool = getLatestKeywordPool(root);
+        var plan = getActionPlanStatus(root);
+        setHealthItem("health7d", seven.text, seven.mode);
+        setHealthItem("health28d", twentyEight.text, twentyEight.mode);
+        setHealthItem("healthPool", pool.text, pool.mode);
+        setHealthItem("healthPlan", plan.text, plan.mode);
+        refreshQueueStatus();
+        updateWorkflowControls();
+      } catch (e) {
+        setHealthItem("healthPlan", "健康檢查失敗：" + e.message, "error");
+        renderWorkflowPanel("error", "流程狀態：健康檢查失敗", e.message);
+      }
+    }
+
+    function runFileDialogWithPowerShell(exeName, dialogTitle) {
+      var shell = new ActiveXObject("WScript.Shell");
+      var ps =
+        "$ErrorActionPreference='Stop';" +
+        "Add-Type -AssemblyName System.Windows.Forms;" +
+        "$dlg=New-Object System.Windows.Forms.OpenFileDialog;" +
+        "$dlg.Title='" + dialogTitle.replace(/'/g, "''") + "';" +
+        "$dlg.Filter='GSC Performance ZIP (*.zip)|*.zip';" +
+        "$dlg.Multiselect=$false;" +
+        "if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){Write-Output $dlg.FileName}";
+
+      var cmd = exeName + ' -NoLogo -NoProfile -ExecutionPolicy Bypass -STA -Command "' + ps.replace(/"/g, '\\"') + '"';
+      var exec = shell.Exec(cmd);
+      var output = exec.StdOut.ReadAll();
+      var err = exec.StdErr.ReadAll();
+
+      if (exec.ExitCode !== 0) {
+        throw new Error(err || (exeName + " 選檔失敗，錯誤代碼：" + exec.ExitCode));
+      }
+
+      var cleaned = output.replace(/\r?\n/g, "");
+      cleaned = cleaned.replace(/^\s+|\s+$/g, "");
+      return cleaned;
+    }
+
+    function pickInputFile(dialogTitle) {
+      if (commandExists("pwsh")) {
+        try {
+          return runFileDialogWithPowerShell("pwsh", dialogTitle);
+        } catch (e) {
+          return runFileDialogWithPowerShell("powershell", dialogTitle);
+        }
+      }
+      return runFileDialogWithPowerShell("powershell", dialogTitle);
+    }
+
+    function buildManifestSummary(manifest) {
+      var lines = [];
+      if (manifest.status && manifest.status !== "success") {
+        lines.push("狀態：" + manifest.status);
+        lines.push("訊息：" + (manifest.message || "n/a"));
+        lines.push("輸入檔案：" + (manifest.input_file || "n/a"));
+        if (manifest.input_sha256) {
+          lines.push("ZIP SHA256：" + manifest.input_sha256);
+        }
+        if (manifest.duplicate_of) {
+          lines.push("已存在封存：" + manifest.duplicate_of);
+        }
+        return lines.join("\n");
+      }
+      lines.push("執行時間：" + (manifest.run_time || "n/a"));
+      lines.push("自動判斷區間：" + (manifest.resolved_window || "n/a") + " / " + (manifest.period_label || "n/a"));
+      lines.push("輸入檔案：" + (manifest.input_file || "n/a"));
+      lines.push("Verdict mode：" + (manifest.verdict_mode || "n/a"));
+      var seoGeo = manifest.seo_geo || {};
+      lines.push("SEO/GEO rows：Query " + (seoGeo.query || 0) + " / Page " + (seoGeo.page || 0) + " / Total " + (seoGeo.total || 0));
+      if (manifest.input_sha256) {
+        lines.push("ZIP SHA256：" + manifest.input_sha256.substring(0, 12) + "...");
+      }
+      if (manifest.same_baseline) {
+        lines.push("Same baseline：Query " + manifest.same_baseline.query + " / Page " + manifest.same_baseline.page);
+      }
+      lines.push("封存 ZIP：" + (manifest.archived_input || "n/a"));
+      return lines.join("\n");
+    }
+
+    function buildActionPlanSummary(plan) {
+      var lines = [];
+      lines.push("產生時間：" + (plan.generated_at || "n/a"));
+      lines.push("模式：" + (plan.mode || "n/a") + (plan.requested_mode ? "（requested: " + plan.requested_mode + "）" : ""));
+      lines.push("狀態：" + (plan.baseline_status || "n/a"));
+      lines.push("Round 1 行動頁數：" + (plan.action_count || 0));
+      if (plan.queue_round_count) {
+        lines.push("任務佇列輪數：" + plan.queue_round_count);
+      }
+      if (plan.freshness) {
+        var seven = plan.freshness["7d"] || {};
+        var twentyEight = plan.freshness["28d"] || {};
+        lines.push("7d freshness：" + (seven.status || seven.text || "n/a"));
+        lines.push("28d freshness：" + (twentyEight.status || twentyEight.text || "n/a"));
+      }
+      if (plan.current_round && plan.current_round.targets && plan.current_round.targets.length) {
+        lines.push("");
+        lines.push("Round 1 頁面：");
+        for (var r = 0; r < plan.current_round.targets.length; r++) {
+          lines.push((r + 1) + ". " + plan.current_round.targets[r]);
+        }
+      } else if (plan.batch_pages && plan.batch_pages.length) {
+        lines.push("");
+        lines.push("本輪頁面：");
+        for (var i = 0; i < plan.batch_pages.length; i++) {
+          lines.push((i + 1) + ". " + plan.batch_pages[i]);
+        }
+      }
+      return lines.join("\n");
+    }
+
+    function runAutoWindowWithInput(inputPath) {
+      var root = getRootFolder();
+      var shell = new ActiveXObject("WScript.Shell");
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var safePath = inputPath.replace(/"/g, '""');
+      var logDir = root + "\\latest";
+      if (!fso.FolderExists(logDir)) {
+        fso.CreateFolder(logDir);
+      }
+
+      var logPath = logDir + "\\weekly-sop-last-run.log";
+      var manifestPath = logDir + "\\weekly-sop-last-run.json";
+      var safeLog = logPath.replace(/"/g, '""');
+      var psExe = commandExists("pwsh") ? "pwsh" : "powershell";
+      var cmd = 'cmd /c cd /d "' + root + '" && ' + psExe + ' -NoLogo -NoProfile -ExecutionPolicy Bypass -File "run-weekly-window.ps1" -Window "auto" -InputFile "' + safePath + '" > "' + safeLog + '" 2>&1';
+
+      resetDetailsCollapsed();
+      setStatusDetails("");
+      setButtonsBusy(true);
+      setStatusSummary("開始執行 Weekly SOP（自動判斷 7d/28d）...\n來源檔案：\n" + inputPath, "running");
+
+      try {
+        var code = shell.Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        var detailParts = [];
+        detailParts.push("Command:\n" + cmd);
+
+        if (code === 0) {
+          var manifestRaw = readTextIfExists(manifestPath);
+          var manifest = parseJson(manifestRaw);
+          if (manifest && manifest.status === "success") {
+            var summaryText = buildManifestSummary(manifest);
+            setStatusSummary("Weekly SOP 已完成。\n\n" + summaryText, "success");
+
+            var runSummaryPath = manifest.run_summary || "";
+            var runSummaryText = runSummaryPath ? readTextIfExists(runSummaryPath) : "";
+            if (runSummaryText) {
+              detailParts.push("\nRun Summary:\n" + runSummaryText);
+            }
+          } else {
+            setStatusSummary("Weekly SOP 已完成，但未取得執行摘要 JSON，請展開明細查看 log。", "success");
+          }
+        } else {
+          var failedManifestRaw = readTextIfExists(manifestPath);
+          var failedManifest = parseJson(failedManifestRaw);
+          if (failedManifest && failedManifest.status) {
+            setStatusSummary("Weekly SOP 未更新 baseline。\n\n" + buildManifestSummary(failedManifest), failedManifest.status === "duplicate_input" ? "success" : "error");
+          } else {
+            setStatusSummary(
+              "執行失敗，錯誤代碼：" + code + "\n請確認上傳的是 GSC Search Performance ZIP，且包含查詢.csv、網頁.csv、篩選器.csv。",
+              "error"
+            );
+          }
+        }
+
+        if (logText) {
+          detailParts.push("\nLog:\n" + logText);
+        }
+        setStatusDetails(detailParts.join("\n"));
+      } catch (e) {
+        setStatusSummary("執行流程發生錯誤：" + e.message, "error");
+        setStatusDetails("Command:\n" + cmd + "\n\nException:\n" + e.message);
+      } finally {
+        setButtonsBusy(false);
+        refreshHealth();
+      }
+    }
+
+    function uploadAndRunAuto() {
+      try {
+        var file = pickInputFile("Select GSC Search Performance ZIP - 自動判斷 7天/28天");
+        if (!file) {
+          setStatusSummary("已取消選檔。", "");
+          return;
+        }
+        runAutoWindowWithInput(file);
+      } catch (e) {
+        setButtonsBusy(false);
+        setStatusSummary("上傳執行失敗：" + e.message, "error");
+      }
+    }
+
+    function runSeoGeoActionPlan() {
+      var root = getRootFolder();
+      var shell = new ActiveXObject("WScript.Shell");
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var logDir = root + "\\latest";
+      if (!fso.FolderExists(logDir)) {
+        fso.CreateFolder(logDir);
+      }
+
+      var seven = getWindowFreshness(root, "7d", 10);
+      var twentyEight = getWindowFreshness(root, "28d", 35);
+      var pool = getLatestKeywordPool(root);
+      if (!isFreshStatus(seven) || pool.mode !== "ok") {
+        setStatusSummary("目前不能產生 SEO/GEO queue。\n\n7d：" + seven.text + "\nKeyword Pool：" + pool.text + "\n\n請先補齊資料後再重試。", "error");
+        updateWorkflowControls();
+        return;
+      }
+      if (!isFreshStatus(twentyEight)) {
+        var weeklyOk = confirm("目前 28d 報表不是 fresh。\n\n若繼續，auto mode 會以 7d weekly watchlist 產生 queue；若要 monthly 正式判定，請按取消並先上傳 28d ZIP。\n\n是否仍要繼續？");
+        if (!weeklyOk) {
+          setStatusSummary("已取消產生 SEO/GEO queue。\n請先上傳 fresh 28d 報表後再重試。", "");
+          updateWorkflowControls();
+          return;
+        }
+      }
+
+      var existingQueue = getQueueSnapshot(root);
+      if (existingQueue.exists) {
+        var queueMsg = existingQueue.isCompleted ?
+          "目前已有 completed queue。\n\nQueue ID：" + existingQueue.queueId + "\n產生時間：" + existingQueue.generatedAt + "\n\n重新產生會覆蓋目前 queue state。若是下一次 7d/28d 報表已上傳，可繼續；否則建議取消。" :
+          "目前已有進行中的 queue。\n\nQueue ID：" + existingQueue.queueId + "\nactive Round：" + existingQueue.activeRound + " / " + existingQueue.totalRounds + "\n\n重新產生會覆蓋目前 Round 狀態。是否繼續？";
+        if (!confirm(queueMsg)) {
+          setStatusSummary("已取消重新產生 SEO/GEO queue，保留目前 queue state。", "");
+          updateWorkflowControls();
+          return;
+        }
+      }
+
+      var mode = "auto";
+      var logPath = logDir + "\\seo-geo-action-plan-last-run.log";
+      var planPath = logDir + "\\seo-geo-action-plan.json";
+      var safeLog = logPath.replace(/"/g, '""');
+      var psExe = commandExists("pwsh") ? "pwsh" : "powershell";
+      var cmd = 'cmd /c cd /d "' + root + '" && ' + psExe + ' -NoLogo -NoProfile -ExecutionPolicy Bypass -File "run-seo-geo-cycle.ps1" -Mode "' + mode + '" > "' + safeLog + '" 2>&1';
+
+      resetDetailsCollapsed();
+      setStatusDetails("");
+      setButtonsBusy(true);
+      setStatusSummary("開始產生 SEO/GEO 優化建議（" + mode + "）...\n\n" + cmd, "running");
+
+      try {
+        var code = shell.Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nLog:\n" + logText);
+
+        if (code === 0) {
+          var planRaw = readTextIfExists(planPath);
+          var plan = parseJson(planRaw);
+          var planSummary = plan ? buildActionPlanSummary(plan) : "已完成，但尚未讀到 action plan JSON。";
+          setStatusSummary(
+            "SEO/GEO 優化建議已完成。\n\n" + planSummary + "\n\n已輸出：\nWeekly SOP\\latest\\seo-geo-action-plan.md\nWeekly SOP\\latest\\seo-geo-action-plan.html\nWeekly SOP\\latest\\seo-geo-action-plan.round-1.slim.ai.md\nWeekly SOP\\latest\\seo-geo-action-queue.md\nWeekly SOP\\latest\\seo-geo-action-queue-state.json",
+            "success"
+          );
+        } else {
+          setStatusSummary(
+            "SEO/GEO 優化建議產生失敗，錯誤代碼：" + code + "\n請先確認 latest 7d 報表已存在；若要 monthly 判定，請同時完成 latest 28d 報表。",
+            "error"
+          );
+        }
+      } catch (e) {
+        setStatusSummary("SEO/GEO 優化建議啟動失敗：" + e.message, "error");
+        setStatusDetails("Command:\n" + cmd + "\n\nException:\n" + e.message);
+      } finally {
+        setButtonsBusy(false);
+        refreshHealth();
+      }
+    }
+
+    function openLatestSeoGeoActionPlan() {
+      try {
+        var root = getRootFolder();
+        var target = root + "\\latest\\seo-geo-action-plan.html";
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        if (!fso.FileExists(target)) {
+          setStatusSummary("找不到最新 SEO/GEO 行動報告。\n請先點「產生 SEO/GEO 優化建議」。", "error");
+          return;
+        }
+        var shell = new ActiveXObject("WScript.Shell");
+        shell.Run('cmd /c start "" "' + target + '"', 1, false);
+        setStatusSummary("已開啟最新 SEO/GEO 行動報告：\n" + target, "success");
+      } catch (e) {
+        setStatusSummary("開啟 SEO/GEO 行動報告失敗：" + e.message, "error");
+      }
+    }
+
+    function copyLatestSeoGeoAiPrompt() {
+      try {
+        var root = getRootFolder();
+        var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        refreshQueueStatus();
+
+        if (!fso.FileExists(statePath)) {
+          setStatusSummary("Queue 尚未建立或本次產生失敗。\n請先點「產生 SEO/GEO 優化建議」。\n若剛產生過仍失敗，請查看：\n" + root + "\\latest\\seo-geo-action-plan-last-run.log", "error");
+          return;
+        }
+
+        var state = parseJson(readTextIfExists(statePath));
+        if (!state || !state.prompt_files || !state.prompt_files.length) {
+          setStatusSummary("queue state 無法讀取或內容不完整。\n請重新點「產生 SEO/GEO 優化建議」。", "error");
+          refreshQueueStatus();
+          return;
+        }
+
+        var activeRound = state.active_round || state.next_round || 1;
+        var completed = state.completed_rounds || [];
+        var copied = state.copied_rounds || [];
+        var totalRounds = state.total_rounds || state.prompt_files.length;
+        if (activeRound > totalRounds) {
+          state.status = "completed";
+          writeUtf8Text(statePath, stringifyJson(state));
+          setStatusSummary("本次 SEO/GEO queue 已全部完成。\n請等下一次 7d/28d 報表後，再點「產生 SEO/GEO 優化建議」建立新 queue。", "success");
+          refreshQueueStatus();
+          return;
+        }
+
+        var target = "";
+        var targetCount = 0;
+        for (var i = 0; i < state.prompt_files.length; i++) {
+          if (Number(state.prompt_files[i].round) === Number(activeRound)) {
+            target = state.prompt_files[i].path;
+            targetCount = state.prompt_files[i].targetCount || 0;
+            break;
+          }
+        }
+        if (!target || !fso.FileExists(target)) {
+          setStatusSummary("找不到 Round " + activeRound + " 的 Slim AI 指令。\n請重新點「產生 SEO/GEO 優化建議」。", "error");
+          refreshQueueStatus();
+          return;
+        }
+
+        var text = readTextIfExists(target);
+        if (!text) {
+          setStatusSummary("Round " + activeRound + " Slim AI 執行指令是空的，請重新產生 SEO/GEO 優化建議。", "error");
+          refreshQueueStatus();
+          return;
+        }
+        if (window.clipboardData && window.clipboardData.setData) {
+          window.clipboardData.setData("Text", text);
+          if (copied.indexOf(activeRound) < 0) {
+            copied.push(activeRound);
+          }
+          state.copied_rounds = copied;
+          state.active_round = activeRound;
+          state.next_round = activeRound;
+          state.status = "active";
+          state.last_copied_round = activeRound;
+          state.last_copied_at = new Date().toISOString();
+          writeUtf8Text(statePath, stringifyJson(state));
+          var nextStep = "AI 完成後，按「標記 Round " + activeRound + " 完成並前進」";
+          setStatusSummary("目前複製：Round " + activeRound + "\nSlim AI 執行指令：\n" + target + "\n\n目標頁數：" + targetCount + "\n下一步：" + nextStep, "success");
+          refreshQueueStatus();
+          updateWorkflowControls();
+        } else {
+          setStatusSummary("目前 HTA 環境不支援剪貼簿，請直接開啟 Round " + activeRound + " Slim AI 指令：\n" + target, "error");
+          refreshQueueStatus();
+          updateWorkflowControls();
+        }
+      } catch (e) {
+        setStatusSummary("複製目前 Round Slim AI 指令失敗：" + e.message, "error");
+        refreshQueueStatus();
+        updateWorkflowControls();
+      }
+    }
+
+    function advanceSeoGeoRound() {
+      try {
+        var root = getRootFolder();
+        var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        refreshQueueStatus();
+
+        if (!fso.FileExists(statePath)) {
+          setStatusSummary("Queue 尚未建立。\n請先點「產生 SEO/GEO 優化建議」。", "error");
+          updateWorkflowControls();
+          return;
+        }
+
+        var state = parseJson(readTextIfExists(statePath));
+        if (!state || !state.prompt_files || !state.prompt_files.length) {
+          setStatusSummary("queue state 無法讀取或內容不完整。\n請重新點「產生 SEO/GEO 優化建議」。", "error");
+          refreshQueueStatus();
+          updateWorkflowControls();
+          return;
+        }
+
+        var activeRound = Number(state.active_round || state.next_round || 1);
+        var totalRounds = Number(state.total_rounds || state.prompt_files.length || 0);
+        var completed = state.completed_rounds || [];
+        var copied = state.copied_rounds || [];
+
+        if (state.status === "completed" || activeRound > totalRounds) {
+          state.status = "completed";
+          writeUtf8Text(statePath, stringifyJson(state));
+          setStatusSummary("本次 SEO/GEO queue 已全部完成。\n請等下一次 7d/28d 報表後，再產生新 queue。", "success");
+          refreshQueueStatus();
+          updateWorkflowControls();
+          return;
+        }
+
+        if (completed.indexOf(activeRound) >= 0) {
+          setStatusSummary("Round " + activeRound + " 已標記完成。\n請重新整理 queue 狀態或重新產生 SEO/GEO 優化建議。", "success");
+          refreshQueueStatus();
+          updateWorkflowControls();
+          return;
+        }
+
+        if (copied.indexOf(activeRound) < 0) {
+          setStatusSummary("Round " + activeRound + " 尚未複製。\n請先按「複製 Round " + activeRound + " Slim AI 指令」，貼給 AI 完成後再標記前進。", "error");
+          updateWorkflowControls();
+          return;
+        }
+
+        if (!confirm("確認 Round " + activeRound + " 已由 AI 完成？\n\n按「確定」會標記完成並前進到下一輪。")) {
+          setStatusSummary("已取消標記 Round " + activeRound + " 完成，queue 狀態未變更。", "");
+          updateWorkflowControls();
+          return;
+        }
+
+        completed.push(activeRound);
+        var finishedRound = activeRound;
+        activeRound++;
+        state.completed_rounds = completed;
+        state.active_round = activeRound;
+        state.next_round = activeRound;
+
+        if (activeRound > totalRounds) {
+          state.status = "completed";
+          writeUtf8Text(statePath, stringifyJson(state));
+          setStatusSummary("已標記 Round " + finishedRound + " 完成。\n\n本次 SEO/GEO queue 已全部完成。", "success");
+        } else {
+          state.status = "active";
+          writeUtf8Text(statePath, stringifyJson(state));
+          setStatusSummary("已標記 Round " + finishedRound + " 完成。\n\n下一步：按「複製 Round " + activeRound + " Slim AI 指令」。", "success");
+        }
+
+        refreshQueueStatus();
+        updateWorkflowControls();
+      } catch (e) {
+        setStatusSummary("標記完成前進失敗：" + e.message, "error");
+        refreshQueueStatus();
+        updateWorkflowControls();
+      }
+    }
+
+    function copyOptionalSeoGeoPrompt() {
+      try {
+        var root = getRootFolder();
+        var target = root + "\\latest\\seo-geo-action-plan.optional.slim.ai.md";
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        if (!fso.FileExists(target)) {
+          setStatusSummary("找不到小幅可優化參考指令。\n請先點「產生 SEO/GEO 優化建議」。", "error");
+          return;
+        }
+        var text = readTextIfExists(target);
+        if (!text) {
+          setStatusSummary("小幅可優化參考指令是空的，請重新產生 SEO/GEO 優化建議。", "error");
+          return;
+        }
+        if (window.clipboardData && window.clipboardData.setData) {
+          window.clipboardData.setData("Text", text);
+          setStatusSummary("已複製小幅可優化參考指令：\n" + target + "\n\n貼給 AI 後，只會判斷是否值得加做；不會直接修改 source。", "success");
+        } else {
+          setStatusSummary("目前 HTA 環境不支援剪貼簿，請直接開啟小幅可優化參考指令：\n" + target, "error");
+        }
+      } catch (e) {
+        setStatusSummary("複製小幅可優化參考指令失敗：" + e.message, "error");
+      }
+    }
+
+    function init() {
+      document.getElementById("btnRunAuto").onclick = uploadAndRunAuto;
+      document.getElementById("btnRunSeoGeoActionPlan").onclick = runSeoGeoActionPlan;
+      document.getElementById("btnOpenSeoGeoActionPlan").onclick = openLatestSeoGeoActionPlan;
+      document.getElementById("btnCopySeoGeoAiPrompt").onclick = copyLatestSeoGeoAiPrompt;
+      document.getElementById("btnAdvanceSeoGeoRound").onclick = advanceSeoGeoRound;
+      document.getElementById("btnCopyOptionalSeoGeoPrompt").onclick = copyOptionalSeoGeoPrompt;
+      document.getElementById("btnToggleDetails").onclick = toggleDetails;
+      refreshHealth();
+    }
+  </script>
+</head>
+<body onload="init()">
+  <div class="card">
+    <div class="heading">
+      <h1>Weekly SOP 一鍵執行</h1>
+      <span class="tag">單一上傳 / 自動判斷 7天與 28天</span>
+    </div>
+
+    <p class="intro">請上傳 Google Search Console「成效」ZIP。系統會自動依篩選器判斷 7天觀察或 28天正式判定，並一次產生查詢與網頁報表。</p>
+
+    <ol class="steps">
+      <li>從 GSC 成效報表匯出 ZIP（內含 <code>查詢.csv</code>、<code>網頁.csv</code>、<code>篩選器.csv</code>）。</li>
+      <li>點擊「上傳成效 ZIP 並自動產生報表」。</li>
+      <li>完成後先看摘要，若要排錯可展開明細查看 run summary 與完整 log。</li>
+    </ol>
+
+    <div class="section-title">環境與資料狀態</div>
+    <div class="health-grid">
+      <div class="health-item" id="healthPwsh">
+        <div class="health-label">PowerShell</div>
+        <div class="health-value" id="healthPwshValue">檢查中...</div>
+      </div>
+      <div class="health-item" id="healthNode">
+        <div class="health-label">Node</div>
+        <div class="health-value" id="healthNodeValue">檢查中...</div>
+      </div>
+      <div class="health-item" id="healthNpm">
+        <div class="health-label">npm.cmd</div>
+        <div class="health-value" id="healthNpmValue">檢查中...</div>
+      </div>
+      <div class="health-item" id="health7d">
+        <div class="health-label">Latest 7d</div>
+        <div class="health-value" id="health7dValue">檢查中...</div>
+      </div>
+      <div class="health-item" id="health28d">
+        <div class="health-label">Latest 28d</div>
+        <div class="health-value" id="health28dValue">檢查中...</div>
+      </div>
+      <div class="health-item" id="healthPool">
+        <div class="health-label">Keyword Pool</div>
+        <div class="health-value" id="healthPoolValue">檢查中...</div>
+      </div>
+      <div class="health-item" id="healthPlan">
+        <div class="health-label">Action Plan</div>
+        <div class="health-value" id="healthPlanValue">檢查中...</div>
+      </div>
+    </div>
+
+    <div class="flow-panel" id="workflowStatusPanel">
+      <div class="flow-title" id="workflowStatusTitle">流程狀態：檢查中</div>
+      <div class="flow-next" id="workflowStatusNext">正在讀取 latest 7d / 28d、keyword pool 與 queue state。</div>
+    </div>
+
+    <div class="actions">
+      <button id="btnRunAuto" class="btn-run">上傳成效 ZIP 並自動產生報表（7d/28d）</button>
+    </div>
+
+    <div class="section-title">SEO/GEO 固定優化</div>
+    <div class="seo-geo-actions">
+      <button id="btnRunSeoGeoActionPlan" class="btn-seo-geo">產生 SEO/GEO 優化建議</button>
+      <button id="btnOpenSeoGeoActionPlan" class="btn-seo-geo">開啟最新 SEO/GEO 行動報告</button>
+      <button id="btnCopySeoGeoAiPrompt" class="btn-seo-geo">複製目前 Round</button>
+      <button id="btnAdvanceSeoGeoRound" class="btn-seo-geo">標記完成前進</button>
+      <button id="btnCopyOptionalSeoGeoPrompt" class="btn-seo-geo">複製小幅優化參考指令</button>
+    </div>
+    <p class="seo-geo-note">會讀取 latest 7d / 28d 報表與最新 12 詞池，自動產出 SEO/GEO 任務佇列、每輪 Slim AI 指令、queue state 與小幅優化參考指令；先複製目前 Round 給 AI，完成後再按「標記完成前進」，小幅優化指令只供判斷是否加做。</p>
+
+    <div class="queue-panel" id="queueStatusPanel">
+      <div class="queue-head">
+        <span>目前 Queue 狀態</span>
+        <span id="queueStatusBadge">檢查中...</span>
+      </div>
+      <div class="queue-body" id="queueStatusBody">檢查中...</div>
+    </div>
+
+    <div class="status-wrap" id="statusWrap">
+      <div class="status-head">執行狀態</div>
+      <div id="statusSummary">待命中。</div>
+      <div class="detail-actions">
+        <button id="btnToggleDetails" class="btn-detail">展開明細</button>
+      </div>
+      <div id="statusDetails"></div>
+    </div>
+
+    <div class="footer">Weekly SOP Launcher | UI 2026-07-01 | PowerShell fallback</div>
+  </div>
+</body>
+</html>

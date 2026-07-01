@@ -11,18 +11,20 @@
    - 系統會產生完整 queue：Round 1、Round 2、Round 3、Technical Queue。
    - 也會列出 `小幅可優化參考清單`，只給你判斷，不會自動交給 AI。
 
-3. 按 `複製下一輪 Slim AI 指令`
+3. 按 `複製目前 Round`
    - 第一次會複製 Round 1。
    - UI 會在按鈕下方顯示 Round 1、Round 2、Round 3、Technical Queue 與目前 active round。
    - 貼到 AI 對話框，讓 AI 執行。
 
-4. AI 完成後，再按 `複製下一輪 Slim AI 指令`
-   - 如果 Round 1 已完成，按確認，系統會複製 Round 2。
-   - 如果還沒完成，按取消，系統會重複複製 Round 1。
+4. AI 完成後，按 `標記完成前進`
+   - 系統會標記目前 Round 已完成。
+   - 若還有下一輪，UI 會切到下一個 Round。
+   - 若已沒有下一輪，這次 queue 會顯示 completed。
 
 5. 重複第 4 步
-   - Round 2 完成後複製 Round 3。
-   - Round 3 完成後，這次 queue 就結束。
+   - 先按 `複製目前 Round`。
+   - AI 完成後按 `標記完成前進`。
+   - 最後一輪完成後，這次 queue 就結束。
 
 6. 想看還有沒有小地方可補
    - 按 `開啟最新 SEO/GEO 行動報告`。
@@ -39,7 +41,7 @@
 
 ## 記住一句話
 
-`產生 SEO/GEO 優化建議` 只按一次；後面都按 `複製下一輪 Slim AI 指令`。
+`產生 SEO/GEO 優化建議` 只按一次；後面依序按 `複製目前 Round`、`標記完成前進`。
 
 小幅參考頁只用第 5 顆 `複製小幅優化參考指令` 來判斷，不算本輪自動任務。
 

@@ -2,14 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
-import { getGeoExpansionPages } from '@/data/locationPages';
 import { products } from '@/data/products';
 import { withBasePath } from '@/lib/base-path';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 
-const PRODUCTS_TITLE = '窗簾產品總覽｜窗簾款式比較、訂製窗簾與功能簾選購';
+const PRODUCTS_TITLE = '窗簾產品總覽｜窗簾款式比較、材質價格與適用情境';
 const PRODUCTS_DESCRIPTION =
-  '這份窗簾產品總覽整理窗簾款式比較、訂製窗簾、捲簾、百葉窗、風琴簾與調光簾適用情境，先縮小款式，再帶同尺寸進窗簾價格試算。';
+  '這份窗簾產品總覽整理窗簾款式比較、材質、價格與適用情境，先縮小訂製窗簾、捲簾、百葉窗或風琴簾，再帶同尺寸進窗簾價格試算。';
 
 type ProductItem = (typeof products)[number];
 
@@ -58,15 +57,12 @@ const functionProducts = ['P009', 'P012', 'P013', 'P008'];
 
 const quickLinks = [
   { href: '/calculator/', label: '窗簾款式比較後，帶尺寸做線上估價' },
+  { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南：先看材質、安裝費與預算區間' },
   { href: '/products/custom-curtains/', label: '窗簾訂製價格試算：遮光布簾、客廳主窗與雙層搭配' },
   { href: '/products/roller-blinds/', label: '捲簾價格試算：租屋、辦公室、廚房與遮光入口' },
   { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬隔熱、臥室控溫與蜂巢簾比較' },
   { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：先看鋁百葉與防潮方案' },
-  { href: '/products/hospital-curtains/', label: '醫院隔簾價格：醫療隔簾、防焰抗菌與診所施工' },
-  { href: '/curtain/blackout/', label: '遮光窗簾推薦：補眠、西曬與隔熱方案整理' },
-  { href: '/location/shilin/', label: '士林窗簾推薦：天母客廳、遮光與到府丈量入口' },
-  { href: '/products/wooden-blinds/', label: '實木百葉窗價格試算與產品重點' },
-  { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南與安裝費說明' },
+  { href: '/location/shilin/', label: '士林窗簾丈量入口：有地區需求再接 GEO 頁' },
 ];
 
 export const metadata: Metadata = {
@@ -138,8 +134,6 @@ function getProductsByIds(ids: string[]) {
 }
 
 export default function ProductsPage() {
-  const geoQuickAreas = getGeoExpansionPages();
-
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productListSchema) }} />
@@ -163,8 +157,8 @@ export default function ProductsPage() {
           </div>
           <h1>窗簾產品總覽：先做窗簾款式比較，再進價格試算</h1>
           <p style={{ lineHeight: 1.85 }}>
-            這份窗簾產品總覽適合先做窗簾款式比較：把訂製布簾、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾放在同一頁看用途、清潔、採光與預算方向。
-            若你正在找訂製窗簾價格、捲簾價格試算、風琴簾價格試算或百葉窗價格試算，可先縮小到 2 到 3 個 owner page，再回到估價頁輸入同尺寸比較。
+            這份窗簾產品總覽適合先做窗簾款式比較：把訂製布簾、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾放在同一頁看材質、清潔、採光、遮光和預算方向。
+            若你正在找訂製窗簾價格、捲簾價格試算、風琴簾價格試算或百葉窗價格試算，先縮小到 2 到 3 個候選款式，再回到估價頁輸入同尺寸比較會最有效率。
           </p>
           <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.55rem' }}>
             {quickLinks.map(link => (
@@ -227,45 +221,6 @@ export default function ProductsPage() {
           ))}
         </div>
       </section>
-
-      {geoQuickAreas.length > 0 && (
-        <section className="py-section bg-white border-t border-stone-200">
-          <div className="section-container" style={{ maxWidth: '1000px' }}>
-            <div className="section-heading">
-            <h2>地區頁與估價入口</h2>
-              <p>如果你已經完成窗簾款式比較並有區域需求，可直接從地區頁看丈量流程，再帶入估價頁快速抓窗簾訂製、捲簾或風琴簾預算。</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.9rem' }}>
-              {geoQuickAreas.map(area => (
-                <article
-                  key={area.id}
-                  style={{
-                    background: 'var(--stone-50)',
-                    border: '1px solid var(--stone-200)',
-                    borderRadius: '0.85rem',
-                    padding: '1rem',
-                  }}
-                >
-                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--stone-900)' }}>
-                    {area.areaName}窗簾服務
-                  </h3>
-                  <p style={{ margin: '0.4rem 0 0 0', color: 'var(--stone-600)', fontSize: '0.86rem', lineHeight: 1.6 }}>
-                    {area.title}
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem', flexWrap: 'wrap' }}>
-                    <Link href={`/location/${area.id}/`} className="btn-outline" style={{ flex: 1, justifyContent: 'center' }}>
-                      查看地區頁
-                    </Link>
-                    <Link href={buildCalculatorUrl(undefined, area.id)} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                      帶入估價
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       <section style={{ background: 'var(--stone-900)', color: 'white', padding: '4.5rem 0', textAlign: 'center' }}>
         <div className="section-container" style={{ maxWidth: '760px' }}>

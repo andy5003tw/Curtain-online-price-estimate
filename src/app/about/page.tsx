@@ -45,6 +45,7 @@ const iconicCases = [
 
 const faqs = [
   { q: '台北窗簾免費丈量真的不用先付費嗎？', a: '宏森開發提供台北市與新北市主要服務區的免費到府量尺與報價服務，確認施作才收費。若你想先抓預算，也可以先用窗簾價格試算，再安排台北窗簾免費丈量。' },
+  { q: '工廠直營窗簾可以先線上估價再丈量嗎？', a: '可以。建議先用線上估價工具抓大約預算，再從工廠直營窗簾服務流程安排到府丈量、選料與正式報價，這樣比直接問單一款式價格更容易收斂。' },
   { q: '只有一窗也可以服務嗎？', a: '沒問題！無論是整間房屋或是單一窗戶，我們都提供同樣專業的丈量與安裝服務。' },
   { q: '外縣市有服務嗎？', a: '我們主要服務大台北地區（雙北）。台北市及新北市以外的區域，視距離酌收基本出差車資，歡迎致電洽詢。' },
   { q: '先做線上估價，再安排丈量可以嗎？', a: '可以，建議先用窗簾價格試算抓預算，再安排到府丈量確認材質、窗型、配件與正式報價。台北、板橋、鶯歌等服務頁也都可先比對流程。' },
@@ -124,22 +125,10 @@ export default function AboutPage() {
                 </Link>
                 確認實際安裝效果
                 ，也可先看
-                <Link href="/location/taipei/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-                  台北窗簾價格試算
+                <Link href="/location/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+                  雙北到府丈量服務區域
                 </Link>
-                與
-                <Link href="/location/sanchong/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-                  三重窗簾價格試算
-                </Link>
-                ，若你正在比較其他地區，也可接著看
-                <Link href="/location/banqiao/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-                  板橋窗簾推薦
-                </Link>
-                與
-                <Link href="/location/yingge/" style={{ marginLeft: '0.25rem', color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-                  鶯歌窗簾推薦
-                </Link>
-                。
+                ，再依所在地進入對應地區頁。
               </p>
               
               <div className="adv-list" style={{ marginTop: '2rem' }}>

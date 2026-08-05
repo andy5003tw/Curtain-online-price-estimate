@@ -1,7 +1,8 @@
 ﻿param(
   [ValidateSet('auto', '7d', '28d')]
   [string]$Window = 'auto',
-  [string]$InputFile
+  [string]$InputFile,
+  [string]$RuntimeRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -76,6 +77,34 @@ function Test-ArchiveContainsPerformanceSet {
   } catch {
     return $false
   }
+}
+
+function Get-OptionalQueryPageCsv {
+  param([string]$ExtractDir)
+  return Find-CsvByName -ExtractDir $ExtractDir -ExpectedNames @(
+    'query-page.csv', 'query_page.csv', 'query-pages.csv', 'queries-pages.csv',
+    '查詢x網頁.csv', '查詢×網頁.csv', '查詢-網頁.csv'
+  )
+}
+
+function Convert-GscMetric {
+  param(
+    [string]$Value,
+    [string]$Name,
+    [int]$RowNumber,
+    [double]$Minimum = 0.0,
+    [double]$Maximum = [double]::PositiveInfinity
+  )
+  if (-not (Test-NumericMetric -Value $Value)) {
+    throw "Invalid ${Name} at CSV row ${RowNumber}: '$Value'"
+  }
+  $clean = $Value.Trim().TrimEnd('%') -replace ',', ''
+  $parsed = 0.0
+  $null = [double]::TryParse($clean, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$parsed)
+  if ($parsed -lt $Minimum -or $parsed -gt $Maximum) {
+    throw "Out-of-range ${Name} at CSV row ${RowNumber}: '$Value'"
+  }
+  return $parsed
 }
 
 function Get-FileSha256 {
@@ -155,13 +184,15 @@ function Get-PropByIndex {
 function Normalize-Rows {
   param(
     [object[]]$Rows,
-    [ValidateSet('query', 'page')]
+    [ValidateSet('query', 'page', 'query_page')]
     [string]$Kind
   )
 
   $out = @()
   $validMetricRows = 0
+  $rowNumber = 1
   foreach ($row in $Rows) {
+    $rowNumber++
     $propNames = @($row.PSObject.Properties.Name)
 
     if ($Kind -eq 'query') {
@@ -169,12 +200,20 @@ function Normalize-Rows {
       if ([string]::IsNullOrWhiteSpace($query)) { $query = Get-PropByIndex -Row $row -Index 0 }
       if ([string]::IsNullOrWhiteSpace($query)) { continue }
       $page = '(all pages)'
-    } else {
+    } elseif ($Kind -eq 'page') {
       $hasPageHeader = ($propNames | Where-Object { $_ -in @('page', 'Page', 'url', 'URL', '熱門網頁', '網頁', '頁面') }).Count -gt 0
       $page = Get-FirstPropValue -Row $row -Names @('page', 'Page', 'url', 'URL', '熱門網頁', '網頁', '頁面')
       if ([string]::IsNullOrWhiteSpace($page)) { $page = Get-PropByIndex -Row $row -Index 0 }
       if ([string]::IsNullOrWhiteSpace($page)) { continue }
       $query = '(all queries)'
+    } else {
+      $query = Get-FirstPropValue -Row $row -Names @('query', 'Query', '熱門查詢項目', '查詢')
+      if ([string]::IsNullOrWhiteSpace($query)) { $query = Get-PropByIndex -Row $row -Index 0 }
+      $page = Get-FirstPropValue -Row $row -Names @('page', 'Page', 'url', 'URL', '熱門網頁', '網頁', '頁面')
+      if ([string]::IsNullOrWhiteSpace($page)) { $page = Get-PropByIndex -Row $row -Index 1 }
+      if ([string]::IsNullOrWhiteSpace($query) -or [string]::IsNullOrWhiteSpace($page)) {
+        throw "Query × Page export has an empty query or page at CSV row $rowNumber."
+      }
     }
 
     $clicks = Get-FirstPropValue -Row $row -Names @('clicks', 'Clicks', '點擊')
@@ -189,10 +228,16 @@ function Normalize-Rows {
     $pos = Get-FirstPropValue -Row $row -Names @('position', 'Position', '排名')
     if ([string]::IsNullOrWhiteSpace($pos)) { $pos = Get-PropByIndex -Row $row -Index 4 }
 
-    if ((Test-NumericMetric -Value $impr) -and (Test-NumericMetric -Value $pos)) {
-      if ($Kind -eq 'query' -and $query -notmatch '^https?://') { $validMetricRows++ }
-      if ($Kind -eq 'page' -and ($hasPageHeader -or $page -match '^https?://')) { $validMetricRows++ }
-    }
+    $clickValue = Convert-GscMetric -Value $clicks -Name 'clicks' -RowNumber $rowNumber
+    $imprValue = Convert-GscMetric -Value $impr -Name 'impressions' -RowNumber $rowNumber
+    $ctrValue = Convert-GscMetric -Value $ctr -Name 'CTR' -RowNumber $rowNumber -Maximum 100
+    $positionValue = Convert-GscMetric -Value $pos -Name 'position' -RowNumber $rowNumber -Minimum 0.000001
+    if ($clickValue -gt $imprValue) { throw "Clicks exceed impressions at CSV row $rowNumber." }
+    $expectedCtr = if ($imprValue -gt 0) { ($clickValue / $imprValue) * 100.0 } else { 0.0 }
+    if ([Math]::Abs($ctrValue - $expectedCtr) -gt 0.15) { throw "CTR is inconsistent with clicks/impressions at CSV row $rowNumber." }
+    if ($Kind -eq 'query' -and $query -notmatch '^https?://') { $validMetricRows++ }
+    if ($Kind -eq 'page' -and ($hasPageHeader -or $page -match '^https?://')) { $validMetricRows++ }
+    if ($Kind -eq 'query_page' -and $query -notmatch '^https?://' -and $page -match '^https?://') { $validMetricRows++ }
 
     $out += [PSCustomObject]@{
       query       = $query
@@ -215,7 +260,7 @@ function Normalize-Csv {
   param(
     [string]$CsvPath,
     [string]$OutputPath,
-    [ValidateSet('query', 'page')]
+    [ValidateSet('query', 'page', 'query_page')]
     [string]$Kind
   )
   Ensure-Dir -Path (Split-Path -Parent $OutputPath)
@@ -246,15 +291,50 @@ function Read-WindowFromFilter {
     $value = Get-FirstPropValue -Row $row -Names @('值', 'Value')
     if ($key -match '日期|Date') {
       $m = [regex]::Match($value, '(\d+)')
-      if ($m.Success) {
-        $days = [int]$m.Groups[1].Value
-        if ($days -eq 7) { return @{ Slug = '7d'; Label = '前 7 天'; Days = 7; Title = '7天'; VerdictMode = 'observation'; FilterKey = $key; FilterValue = $value } }
-        if ($days -eq 28) { return @{ Slug = '28d'; Label = '前 28 天'; Days = 28; Title = '28天'; VerdictMode = 'decision'; FilterKey = $key; FilterValue = $value } }
+      $dateMatches = [regex]::Matches($value, '(?<year>20\d{2})[\/-](?<month>\d{1,2})[\/-](?<day>\d{1,2})')
+      $startDate = $null
+      $endDate = $null
+      if ($dateMatches.Count -ge 2) {
+        try {
+          $startDate = (Get-Date -Year $dateMatches[0].Groups['year'].Value -Month $dateMatches[0].Groups['month'].Value -Day $dateMatches[0].Groups['day'].Value).ToString('yyyy-MM-dd')
+          $endDate = (Get-Date -Year $dateMatches[1].Groups['year'].Value -Month $dateMatches[1].Groups['month'].Value -Day $dateMatches[1].Groups['day'].Value).ToString('yyyy-MM-dd')
+        } catch { throw "Invalid explicit date range in 篩選器.csv: $value" }
+      }
+      if ($m.Success -or ($startDate -and $endDate)) {
+        $days = if ($startDate -and $endDate) {
+          (([datetime]::ParseExact($endDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture) - [datetime]::ParseExact($startDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).Days + 1)
+        } else { [int]$m.Groups[1].Value }
+        if ($days -eq 7) { return @{ Slug = '7d'; Label = '前 7 天'; Days = 7; Title = '7天'; VerdictMode = 'observation'; FilterKey = $key; FilterValue = $value; StartDate = $startDate; EndDate = $endDate } }
+        if ($days -eq 28) { return @{ Slug = '28d'; Label = '前 28 天'; Days = 28; Title = '28天'; VerdictMode = 'decision'; FilterKey = $key; FilterValue = $value; StartDate = $startDate; EndDate = $endDate } }
       }
       return @{ Slug = 'unknown'; Label = $value; Days = 0; Title = '未知區間'; VerdictMode = 'decision'; FilterKey = $key; FilterValue = $value }
     }
   }
   return @{ Slug = 'unknown'; Label = 'unknown'; Days = 0; Title = '未知區間'; VerdictMode = 'decision'; FilterKey = ''; FilterValue = '' }
+}
+
+function Read-DateRangeFromInputName {
+  param([string]$Name)
+  $match = [regex]::Match($Name, '(?<start>20\d{2}[-_/]\d{1,2}[-_/]\d{1,2})\s*(?:~|～|至|to)\s*(?<end>20\d{2}[-_/]\d{1,2}[-_/]\d{1,2})', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+  if (-not $match.Success) { return $null }
+  try {
+    $start = [datetime]::ParseExact(($match.Groups['start'].Value -replace '[_/]', '-'), 'yyyy-M-d', [Globalization.CultureInfo]::InvariantCulture)
+    $end = [datetime]::ParseExact(($match.Groups['end'].Value -replace '[_/]', '-'), 'yyyy-M-d', [Globalization.CultureInfo]::InvariantCulture)
+    if ($end -lt $start) { throw 'end date precedes start date' }
+    return [ordered]@{ StartDate = $start.ToString('yyyy-MM-dd'); EndDate = $end.ToString('yyyy-MM-dd'); Source = 'zip_filename' }
+  } catch {
+    throw "Invalid date range in ZIP filename '$Name': $($_.Exception.Message)"
+  }
+}
+
+function Test-CompleteDateRange {
+  param([string]$StartDate, [string]$EndDate, [int]$Days)
+  if ([string]::IsNullOrWhiteSpace($StartDate) -or [string]::IsNullOrWhiteSpace($EndDate)) { return $false }
+  try {
+    $start = [datetime]::ParseExact($StartDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+    $end = [datetime]::ParseExact($EndDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+    return (($end - $start).Days + 1 -eq $Days)
+  } catch { return $false }
 }
 
 function Initialize-Baseline {
@@ -368,6 +448,35 @@ function Invoke-KpiReport {
   }
 }
 
+function Set-KpiReportSourceLabels {
+  param(
+    [string[]]$ReportPaths,
+    [string]$BeforePath,
+    [string]$AfterPath,
+    [string]$BeforeLabel,
+    [string]$AfterLabel
+  )
+
+  $beforeFull = [System.IO.Path]::GetFullPath($BeforePath)
+  $afterFull = [System.IO.Path]::GetFullPath($AfterPath)
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+  foreach ($reportPath in $ReportPaths) {
+    if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+      throw "Missing report while normalizing source labels: $reportPath"
+    }
+
+    $content = [System.IO.File]::ReadAllText($reportPath, [System.Text.Encoding]::UTF8)
+    foreach ($beforeVariant in @($beforeFull, $beforeFull.Replace('\', '/'))) {
+      $content = $content.Replace($beforeVariant, $BeforeLabel)
+    }
+    foreach ($afterVariant in @($afterFull, $afterFull.Replace('\', '/'))) {
+      $content = $content.Replace($afterVariant, $AfterLabel)
+    }
+    [System.IO.File]::WriteAllText($reportPath, $content, $utf8NoBom)
+  }
+}
+
 function Write-RunManifest {
   param(
     [string]$Path,
@@ -375,12 +484,186 @@ function Write-RunManifest {
   )
   Ensure-Dir -Path (Split-Path -Parent $Path)
   $json = $Data | ConvertTo-Json -Depth 8
+  try {
+    $null = $json | ConvertFrom-Json -ErrorAction Stop
+  } catch {
+    throw "Refusing to write invalid manifest JSON: $($_.Exception.Message)"
+  }
   $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-  [System.IO.File]::WriteAllText($Path, $json, $utf8NoBom)
+  $tempPath = "$Path.tmp.$PID"
+  try {
+    [System.IO.File]::WriteAllText($tempPath, $json, $utf8NoBom)
+    $roundTrip = [System.IO.File]::ReadAllText($tempPath, [System.Text.Encoding]::UTF8)
+    $null = $roundTrip | ConvertFrom-Json -ErrorAction Stop
+    Move-Item -LiteralPath $tempPath -Destination $Path -Force
+  } finally {
+    if (Test-Path -LiteralPath $tempPath -PathType Leaf) {
+      Remove-Item -LiteralPath $tempPath -Force
+    }
+  }
 }
 
-$weeklyRoot = Join-Path $PSScriptRoot '.'
+function Read-SiteConfig {
+  param([string]$Path)
+
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "Missing site config: $Path"
+  }
+
+  try {
+    $configText = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+    $config = $configText | ConvertFrom-Json -ErrorAction Stop
+  } catch {
+    throw "Invalid site config JSON: $($_.Exception.Message)"
+  }
+
+  foreach ($field in @('siteId', 'siteUrl', 'expectedHost', 'gscProperty')) {
+    if ([string]::IsNullOrWhiteSpace([string]$config.$field)) {
+      throw "Site config is missing required field: $field"
+    }
+  }
+
+  $expectedHost = ([string]$config.expectedHost).Trim().TrimEnd('.').ToLowerInvariant()
+  $allowedHosts = @($config.allowedHosts | ForEach-Object { ([string]$_).Trim().TrimEnd('.').ToLowerInvariant() } | Where-Object { $_ })
+  if ($allowedHosts.Count -eq 0) {
+    $allowedHosts = @($expectedHost)
+  }
+  if ($allowedHosts -notcontains $expectedHost) {
+    throw "Site config allowedHosts must include expectedHost: $expectedHost"
+  }
+
+  $config.expectedHost = $expectedHost
+  $config.allowedHosts = $allowedHosts
+  return $config
+}
+
+function Convert-ToRelativePath {
+  param(
+    [string]$Path,
+    [string]$BaseRoot
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
+  $root = [System.IO.Path]::GetFullPath($BaseRoot).TrimEnd('\', '/')
+  $full = [System.IO.Path]::GetFullPath($Path)
+  $prefix = $root + [System.IO.Path]::DirectorySeparatorChar
+  if (-not $full.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Path is outside the configured base and cannot be stored in manifest: $full"
+  }
+  return $full.Substring($prefix.Length).Replace('\', '/')
+}
+
+function Test-PageHosts {
+  param(
+    [string]$NormalizedPageCsv,
+    [string]$ExpectedHost,
+    [string[]]$AllowedHosts
+  )
+
+  $rows = @(Import-Csv -LiteralPath $NormalizedPageCsv -Encoding UTF8)
+  $hostCounts = @{}
+  $targetRows = 0
+  $foreignRows = 0
+  $invalidRows = 0
+
+  foreach ($row in $rows) {
+    $value = [string]$row.page
+    $uri = $null
+    if (-not [Uri]::TryCreate($value, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -notin @('http', 'https')) {
+      $invalidRows++
+      continue
+    }
+
+    $rowHost = $uri.Host.Trim().TrimEnd('.').ToLowerInvariant()
+    if (-not $hostCounts.ContainsKey($rowHost)) { $hostCounts[$rowHost] = 0 }
+    $hostCounts[$rowHost] = [int]$hostCounts[$rowHost] + 1
+    if ($rowHost -eq $ExpectedHost) { $targetRows++ }
+    if ($AllowedHosts -notcontains $rowHost) { $foreignRows++ }
+  }
+
+  $hostSummary = (($hostCounts.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ', ')
+  if ($targetRows -eq 0 -or $foreignRows -gt 0 -or $invalidRows -gt 0) {
+    throw "GSC host validation failed. expected=$ExpectedHost target_rows=$targetRows foreign_rows=$foreignRows invalid_rows=$invalidRows hosts=[$hostSummary]"
+  }
+
+  return [ordered]@{
+    total = $rows.Count
+    target = $targetRows
+    foreign = $foreignRows
+    invalid = $invalidRows
+    hosts = $hostCounts
+  }
+}
+
+function Set-AtomicFileFromSource {
+  param(
+    [string]$Source,
+    [string]$Destination
+  )
+
+  Ensure-Dir -Path (Split-Path -Parent $Destination)
+  $tempPath = "$Destination.tmp.$PID"
+  try {
+    Copy-Item -LiteralPath $Source -Destination $tempPath -Force
+    Move-Item -LiteralPath $tempPath -Destination $Destination -Force
+  } finally {
+    if (Test-Path -LiteralPath $tempPath -PathType Leaf) {
+      Remove-Item -LiteralPath $tempPath -Force
+    }
+  }
+}
+
+function Set-AtomicBaselinePair {
+  param(
+    [string]$QuerySource, [string]$QueryDestination,
+    [string]$PageSource, [string]$PageDestination,
+    [string]$QueryPageSource, [string]$QueryPageDestination
+  )
+  $entries = @(
+    [PSCustomObject]@{ source = $QuerySource; destination = $QueryDestination },
+    [PSCustomObject]@{ source = $PageSource; destination = $PageDestination }
+  )
+  if ($QueryPageSource) { $entries += [PSCustomObject]@{ source = $QueryPageSource; destination = $QueryPageDestination } }
+  $token = "$PID.$([guid]::NewGuid().ToString('N'))"
+  $backups = @()
+  try {
+    foreach ($entry in $entries) {
+      Ensure-Dir -Path (Split-Path -Parent $entry.destination)
+      $stage = "$($entry.destination).stage.$token"
+      Copy-Item -LiteralPath $entry.source -Destination $stage -Force
+      $entry | Add-Member -NotePropertyName stage -NotePropertyValue $stage
+      $backup = "$($entry.destination).backup.$token"
+      if (Test-Path -LiteralPath $entry.destination) { Copy-Item -LiteralPath $entry.destination -Destination $backup -Force; $backups += $entry.destination }
+      $entry | Add-Member -NotePropertyName backup -NotePropertyValue $backup
+    }
+    foreach ($entry in $entries) { Move-Item -LiteralPath $entry.stage -Destination $entry.destination -Force }
+  } catch {
+    foreach ($entry in $entries) {
+      if (Test-Path -LiteralPath $entry.backup) { Move-Item -LiteralPath $entry.backup -Destination $entry.destination -Force }
+      elseif (Test-Path -LiteralPath $entry.destination -and $backups -notcontains $entry.destination) { Remove-Item -LiteralPath $entry.destination -Force }
+    }
+    throw
+  } finally {
+    foreach ($entry in $entries) {
+      if (Test-Path -LiteralPath $entry.stage) { Remove-Item -LiteralPath $entry.stage -Force }
+      if (Test-Path -LiteralPath $entry.backup) { Remove-Item -LiteralPath $entry.backup -Force }
+    }
+  }
+}
+
+$weeklyRoot = if ([string]::IsNullOrWhiteSpace($RuntimeRoot)) {
+  Join-Path $PSScriptRoot '.'
+} else {
+  [System.IO.Path]::GetFullPath($RuntimeRoot)
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$siteConfigPath = Join-Path $PSScriptRoot 'config\site-config.json'
+$siteConfig = Read-SiteConfig -Path $siteConfigPath
+$siteId = [string]$siteConfig.siteId
+$expectedHost = [string]$siteConfig.expectedHost
+$allowedHosts = @($siteConfig.allowedHosts)
+$timezoneId = [string]$siteConfig.timezone
+$dataLagDays = [int]$siteConfig.dataLagDays
 $inboxDir = Join-Path $weeklyRoot 'inbox'
 $archiveDir = Join-Path $weeklyRoot 'archive'
 $historyDir = Join-Path $weeklyRoot 'history'
@@ -393,9 +676,20 @@ Ensure-Dir -Path $historyDir
 Ensure-Dir -Path $reportsDir
 Ensure-Dir -Path $latestRoot
 
+$siteArchiveDir = Join-Path $archiveDir $siteId
+$siteHistoryDir = Join-Path $historyDir $siteId
+$siteReportsDir = Join-Path $reportsDir $siteId
+Ensure-Dir -Path $siteArchiveDir
+Ensure-Dir -Path $siteHistoryDir
+Ensure-Dir -Path $siteReportsDir
+
 $tmpDir = $null
 $incoming = $null
 $inputMode = 'inbox'
+$inputHash = ''
+$effectiveWindow = $null
+$runDir = $null
+$baselineCommitted = $false
 
 try {
   if (-not [string]::IsNullOrWhiteSpace($InputFile)) {
@@ -421,23 +715,28 @@ try {
   }
 
   $inputHash = Get-FileSha256 -Path $incoming.FullName
-  $duplicateArchive = Find-ArchivedZipByHash -ArchiveRoot $archiveDir -Hash $inputHash
+  $duplicateArchive = Find-ArchivedZipByHash -ArchiveRoot $siteArchiveDir -Hash $inputHash
   if (-not [string]::IsNullOrWhiteSpace($duplicateArchive)) {
+    $duplicateRelative = Convert-ToRelativePath -Path $duplicateArchive -BaseRoot $weeklyRoot
     $duplicateManifest = @{
+      schema_version = 2
       status = 'duplicate_input'
       run_time = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
       requested_window = $Window
+      site_id = $siteId
+      property = [string]$siteConfig.gscProperty
+      expected_host = $expectedHost
       input_mode = $inputMode
       input_file = $incoming.Name
-      input_path = $incoming.FullName
       input_sha256 = $inputHash
-      duplicate_of = $duplicateArchive
+      path_base = 'weekly_sop'
+      duplicate_of = $duplicateRelative
       message = 'This GSC ZIP was already archived. Baseline was not updated.'
     }
     Write-RunManifest -Path (Join-Path $latestRoot 'weekly-sop-last-run.json') -Data $duplicateManifest
     Write-Host "Duplicate GSC ZIP detected. Baseline was not updated."
     Write-Host "Input SHA256: $inputHash"
-    Write-Host "Duplicate of: $duplicateArchive"
+    Write-Host "Duplicate of: $duplicateRelative"
     exit 2
   }
 
@@ -451,6 +750,7 @@ try {
   $queryCsv = Find-CsvByName -ExtractDir $tmpDir -ExpectedNames @('查詢.csv', 'query.csv', 'queries.csv')
   $pageCsv = Find-CsvByName -ExtractDir $tmpDir -ExpectedNames @('網頁.csv', 'page.csv', 'pages.csv')
   $filterCsv = Find-CsvByName -ExtractDir $tmpDir -ExpectedNames @('篩選器.csv', 'filters.csv')
+  $queryPageCsv = Get-OptionalQueryPageCsv -ExtractDir $tmpDir
 
   if (-not $queryCsv) { throw "Missing 查詢.csv in ZIP: $($incoming.FullName)" }
   if (-not $pageCsv) { throw "Missing 網頁.csv in ZIP: $($incoming.FullName)" }
@@ -459,6 +759,19 @@ try {
   $actualWindow = Read-WindowFromFilter -FilterCsv $filterCsv.FullName
   if ($actualWindow.Slug -eq 'unknown') {
     throw "無法從篩選器判斷日期區間：$($actualWindow.Label)。目前只支援前 7 天與前 28 天。"
+  }
+  $actualWindow.DateSource = if ($actualWindow.StartDate -and $actualWindow.EndDate) { 'filter_csv' } else { 'missing' }
+  if (-not $actualWindow.StartDate -or -not $actualWindow.EndDate) {
+    $filenameRange = Read-DateRangeFromInputName -Name $incoming.Name
+    if ($filenameRange) {
+      $filenameDays = (([datetime]::ParseExact($filenameRange.EndDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture) - [datetime]::ParseExact($filenameRange.StartDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).Days + 1)
+      if ($filenameDays -ne [int]$actualWindow.Days) {
+        throw "ZIP filename date range is $filenameDays days, but 篩選器.csv is $($actualWindow.Days) days."
+      }
+      $actualWindow.StartDate = $filenameRange.StartDate
+      $actualWindow.EndDate = $filenameRange.EndDate
+      $actualWindow.DateSource = $filenameRange.Source
+    }
   }
 
   $effectiveWindow = if ($Window -eq 'auto') { [string]$actualWindow.Slug } else { $Window }
@@ -476,36 +789,89 @@ try {
   $mainQueryLimit = $detailLimit
   $mainPageLimit = $detailLimit
 
-  $runDir = Join-Path $reportsDir ("{0}_{1}" -f $stamp, $effectiveWindow)
-  $windowHistoryDir = Join-Path $historyDir $effectiveWindow
+  $runDir = Join-Path $siteReportsDir ("{0}_{1}" -f $stamp, $effectiveWindow)
+  $windowHistoryDir = Join-Path $siteHistoryDir $effectiveWindow
   $latestDir = Join-Path $latestRoot $effectiveWindow
 
-  $queryAfter = Join-Path $windowHistoryDir ("after_query_{0}_{1}.normalized.csv" -f $effectiveWindow, $stamp)
-  $pageAfter = Join-Path $windowHistoryDir ("after_page_{0}_{1}.normalized.csv" -f $effectiveWindow, $stamp)
+  $normalizedStageDir = Join-Path $tmpDir 'normalized'
+  $queryAfter = Join-Path $normalizedStageDir 'query.normalized.csv'
+  $pageAfter = Join-Path $normalizedStageDir 'page.normalized.csv'
+  $queryPageAfter = if ($queryPageCsv) { Join-Path $normalizedStageDir 'query-page.normalized.csv' } else { $null }
+  $queryHistoryAfter = Join-Path $windowHistoryDir ("after_query_{0}_{1}.normalized.csv" -f $effectiveWindow, $stamp)
+  $pageHistoryAfter = Join-Path $windowHistoryDir ("after_page_{0}_{1}.normalized.csv" -f $effectiveWindow, $stamp)
   Normalize-Csv -CsvPath $queryCsv.FullName -OutputPath $queryAfter -Kind 'query'
   Normalize-Csv -CsvPath $pageCsv.FullName -OutputPath $pageAfter -Kind 'page'
+  if ($queryPageCsv) { Normalize-Csv -CsvPath $queryPageCsv.FullName -OutputPath $queryPageAfter -Kind 'query_page' }
+  $hostValidation = Test-PageHosts -NormalizedPageCsv $pageAfter -ExpectedHost $expectedHost -AllowedHosts $allowedHosts
   $seoGeoQueryCount = @((Import-Csv -LiteralPath $queryAfter -Encoding UTF8)).Count
   $seoGeoPageCount = @((Import-Csv -LiteralPath $pageAfter -Encoding UTF8)).Count
-  $seoGeoTotal = $seoGeoQueryCount + $seoGeoPageCount
+  $seoGeoQueryPageCount = if ($queryPageAfter) { @((Import-Csv -LiteralPath $queryPageAfter -Encoding UTF8)).Count } else { 0 }
+  $seoGeoTotal = $seoGeoQueryCount + $seoGeoPageCount + $seoGeoQueryPageCount
 
   $queryBaseline = Join-Path $windowHistoryDir 'current_query_baseline.normalized.csv'
   $pageBaseline = Join-Path $windowHistoryDir 'current_page_baseline.normalized.csv'
-  Initialize-Baseline -BaselinePath $queryBaseline -Kind 'query' -Window $effectiveWindow -WeeklyRoot $weeklyRoot -RepoRoot $repoRoot -SeedNormalizedPath $queryAfter
-  Initialize-Baseline -BaselinePath $pageBaseline -Kind 'page' -Window $effectiveWindow -WeeklyRoot $weeklyRoot -RepoRoot $repoRoot -SeedNormalizedPath $pageAfter
-  $queryBaselineHashBefore = Get-FileSha256 -Path $queryBaseline
-  $pageBaselineHashBefore = Get-FileSha256 -Path $pageBaseline
+  $queryPageBaseline = Join-Path $windowHistoryDir 'current_query_page_baseline.normalized.csv'
+  $queryBaselineExists = Test-Path -LiteralPath $queryBaseline -PathType Leaf
+  $pageBaselineExists = Test-Path -LiteralPath $pageBaseline -PathType Leaf
+  if ($queryBaselineExists -ne $pageBaselineExists) {
+    throw "Baseline state is inconsistent for $siteId/$effectiveWindow. Query and page baselines must both exist or both be absent."
+  }
+  $baselineExists = ($queryBaselineExists -and $pageBaselineExists)
+  $queryPageBaselineExists = Test-Path -LiteralPath $queryPageBaseline -PathType Leaf
+  $queryCompareBaseline = if ($baselineExists) { $queryBaseline } else { $queryAfter }
+  $pageCompareBaseline = if ($baselineExists) { $pageBaseline } else { $pageAfter }
+  $queryBaselineHashBefore = if ($baselineExists) { Get-FileSha256 -Path $queryBaseline } else { $null }
+  $pageBaselineHashBefore = if ($baselineExists) { Get-FileSha256 -Path $pageBaseline } else { $null }
   $queryAfterHash = Get-FileSha256 -Path $queryAfter
   $pageAfterHash = Get-FileSha256 -Path $pageAfter
+  $queryPageAfterHash = if ($queryPageAfter) { Get-FileSha256 -Path $queryPageAfter } else { $null }
 
-  $querySameAsBaseline = ($queryBaselineHashBefore -eq $queryAfterHash)
-  $pageSameAsBaseline = ($pageBaselineHashBefore -eq $pageAfterHash)
+  $rangeComplete = Test-CompleteDateRange -StartDate $actualWindow.StartDate -EndDate $actualWindow.EndDate -Days $actualWindow.Days
+  $todayTaipei = [TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), $timezoneId).Date
+  $latestAllowedEnd = $todayTaipei.AddDays(-$dataLagDays)
+  $rangeLagValid = $rangeComplete -and ([datetime]::ParseExact($actualWindow.EndDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture) -le $latestAllowedEnd)
+  $previousManifestPath = Join-Path $latestDir 'weekly-sop-last-run.json'
+  $previousManifest = if (Test-Path -LiteralPath $previousManifestPath -PathType Leaf) { Get-Content -LiteralPath $previousManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json } else { $null }
+  if ($rangeComplete -and $previousManifest) {
+    if ($previousManifest.end_date -and ([string]$previousManifest.end_date -ge [string]$actualWindow.EndDate)) {
+      throw "Imported end_date $($actualWindow.EndDate) is not newer than the current $effectiveWindow baseline end_date $($previousManifest.end_date)."
+    }
+  }
+  $snapshotFamilyId = if ($rangeComplete) { "$siteId|$($siteConfig.gscProperty)|$($actualWindow.EndDate)|$timezoneId" } else { $null }
+  $qualityWarnings = @()
+  if ($previousManifest -and $previousManifest.row_counts) {
+    foreach ($check in @(
+      [PSCustomObject]@{ name = 'query'; current = $seoGeoQueryCount; previous = [int]$previousManifest.row_counts.normalized_query },
+      [PSCustomObject]@{ name = 'page'; current = $seoGeoPageCount; previous = [int]$previousManifest.row_counts.normalized_page }
+    )) {
+      if ($check.previous -gt 0 -and $check.current -lt [Math]::Ceiling($check.previous * 0.5)) {
+        $qualityWarnings += "$($check.name) row count dropped from $($check.previous) to $($check.current); possible truncated export."
+      }
+    }
+  }
+  $dataConfidence = if ($rangeLagValid -and $queryPageAfter -and $baselineExists -and $qualityWarnings.Count -eq 0) { 'decision_ready' } else { 'monitor_only' }
+
+  $querySameAsBaseline = ($baselineExists -and $queryBaselineHashBefore -eq $queryAfterHash)
+  $pageSameAsBaseline = ($baselineExists -and $pageBaselineHashBefore -eq $pageAfterHash)
+  if ($querySameAsBaseline -xor $pageSameAsBaseline) {
+    throw 'Only one of the Query/Page snapshots matches the current baseline. Refusing a partial or inconsistent update.'
+  }
 
   Ensure-Dir -Path $runDir
 
   $queryBaselineSnapshot = Join-Path $runDir ("before_query_baseline_{0}.normalized.csv" -f $effectiveWindow)
   $pageBaselineSnapshot = Join-Path $runDir ("before_page_baseline_{0}.normalized.csv" -f $effectiveWindow)
-  Copy-Item -LiteralPath $queryBaseline -Destination $queryBaselineSnapshot -Force
-  Copy-Item -LiteralPath $pageBaseline -Destination $pageBaselineSnapshot -Force
+  $queryCurrentSnapshot = Join-Path $runDir ("after_query_snapshot_{0}.normalized.csv" -f $effectiveWindow)
+  $pageCurrentSnapshot = Join-Path $runDir ("after_page_snapshot_{0}.normalized.csv" -f $effectiveWindow)
+  Copy-Item -LiteralPath $queryCompareBaseline -Destination $queryBaselineSnapshot -Force
+  Copy-Item -LiteralPath $pageCompareBaseline -Destination $pageBaselineSnapshot -Force
+  Copy-Item -LiteralPath $queryAfter -Destination $queryCurrentSnapshot -Force
+  Copy-Item -LiteralPath $pageAfter -Destination $pageCurrentSnapshot -Force
+
+  $relativeQueryBaselineSnapshot = Convert-ToRelativePath -Path $queryBaselineSnapshot -BaseRoot $weeklyRoot
+  $relativePageBaselineSnapshot = Convert-ToRelativePath -Path $pageBaselineSnapshot -BaseRoot $weeklyRoot
+  $relativeQueryCurrentSnapshot = Convert-ToRelativePath -Path $queryCurrentSnapshot -BaseRoot $weeklyRoot
+  $relativePageCurrentSnapshot = Convert-ToRelativePath -Path $pageCurrentSnapshot -BaseRoot $weeklyRoot
 
   $queryBaseName = "gsc-query-kpi-diff-report(查詢-$windowTitle)"
   $pageBaseName = "gsc-page-kpi-diff-report(網頁-$windowTitle)"
@@ -518,8 +884,11 @@ try {
   $queryFullHtml = Join-Path $runDir "$queryBaseName-full.html"
   $pageFullHtml = Join-Path $runDir "$pageBaseName-full.html"
 
-  Invoke-KpiReport -RepoRoot $repoRoot -Before $queryBaselineSnapshot -After $queryAfter -Output $queryMd -FullOutput $queryFullMd -TitleSuffix " (查詢-$windowTitle)" -PeriodLabel $periodLabel -TrackingStartDate $trackingStartDate -VerdictMode $verdictMode -MinImpr $detailMinImpr -Limit $detailLimit -FullMinImpr $fullDetailMinImpr -MainQueryLimit $mainQueryLimit -MainPageLimit $mainPageLimit -SeoGeoTotal $seoGeoTotal -SeoGeoQueryCount $seoGeoQueryCount -SeoGeoPageCount $seoGeoPageCount
-  Invoke-KpiReport -RepoRoot $repoRoot -Before $pageBaselineSnapshot -After $pageAfter -Output $pageMd -FullOutput $pageFullMd -TitleSuffix " (網頁-$windowTitle)" -PeriodLabel $periodLabel -TrackingStartDate $trackingStartDate -VerdictMode $verdictMode -MinImpr $detailMinImpr -Limit $detailLimit -FullMinImpr $fullDetailMinImpr -MainQueryLimit $mainQueryLimit -MainPageLimit $mainPageLimit -SeoGeoTotal $seoGeoTotal -SeoGeoQueryCount $seoGeoQueryCount -SeoGeoPageCount $seoGeoPageCount
+  Invoke-KpiReport -RepoRoot $repoRoot -Before $queryBaselineSnapshot -After $queryCurrentSnapshot -Output $queryMd -FullOutput $queryFullMd -TitleSuffix " (查詢-$windowTitle)" -PeriodLabel $periodLabel -TrackingStartDate $trackingStartDate -VerdictMode $verdictMode -MinImpr $detailMinImpr -Limit $detailLimit -FullMinImpr $fullDetailMinImpr -MainQueryLimit $mainQueryLimit -MainPageLimit $mainPageLimit -SeoGeoTotal $seoGeoTotal -SeoGeoQueryCount $seoGeoQueryCount -SeoGeoPageCount $seoGeoPageCount
+  Invoke-KpiReport -RepoRoot $repoRoot -Before $pageBaselineSnapshot -After $pageCurrentSnapshot -Output $pageMd -FullOutput $pageFullMd -TitleSuffix " (網頁-$windowTitle)" -PeriodLabel $periodLabel -TrackingStartDate $trackingStartDate -VerdictMode $verdictMode -MinImpr $detailMinImpr -Limit $detailLimit -FullMinImpr $fullDetailMinImpr -MainQueryLimit $mainQueryLimit -MainPageLimit $mainPageLimit -SeoGeoTotal $seoGeoTotal -SeoGeoQueryCount $seoGeoQueryCount -SeoGeoPageCount $seoGeoPageCount
+
+  Set-KpiReportSourceLabels -ReportPaths @($queryMd, $queryHtml, $queryFullMd, $queryFullHtml) -BeforePath $queryBaselineSnapshot -AfterPath $queryCurrentSnapshot -BeforeLabel $relativeQueryBaselineSnapshot -AfterLabel $relativeQueryCurrentSnapshot
+  Set-KpiReportSourceLabels -ReportPaths @($pageMd, $pageHtml, $pageFullMd, $pageFullHtml) -BeforePath $pageBaselineSnapshot -AfterPath $pageCurrentSnapshot -BeforeLabel $relativePageBaselineSnapshot -AfterLabel $relativePageCurrentSnapshot
 
   if (-not (Test-Path -LiteralPath $queryMd)) { throw "Missing report: $queryMd" }
   if (-not (Test-Path -LiteralPath $queryHtml)) { throw "Missing report: $queryHtml" }
@@ -530,10 +899,14 @@ try {
   if (-not (Test-Path -LiteralPath $pageFullMd)) { throw "Missing report: $pageFullMd" }
   if (-not (Test-Path -LiteralPath $pageFullHtml)) { throw "Missing report: $pageFullHtml" }
 
-  Copy-Item -LiteralPath $queryAfter -Destination $queryBaseline -Force
-  Copy-Item -LiteralPath $pageAfter -Destination $pageBaseline -Force
+  Ensure-Dir -Path $windowHistoryDir
+  Copy-Item -LiteralPath $queryAfter -Destination $queryHistoryAfter -Force
+  Copy-Item -LiteralPath $pageAfter -Destination $pageHistoryAfter -Force
+  Set-AtomicBaselinePair -QuerySource $queryAfter -QueryDestination $queryBaseline -PageSource $pageAfter -PageDestination $pageBaseline -QueryPageSource $queryPageAfter -QueryPageDestination $queryPageBaseline
+  $baselineCommitted = $true
   $queryBaselineHashAfter = Get-FileSha256 -Path $queryBaseline
   $pageBaselineHashAfter = Get-FileSha256 -Path $pageBaseline
+  $queryPageBaselineHashAfter = if ($queryPageAfter) { Get-FileSha256 -Path $queryPageBaseline } else { $null }
 
   Ensure-Dir -Path $latestDir
   Copy-Item -LiteralPath $queryMd -Destination (Join-Path $latestDir "$queryBaseName.md") -Force
@@ -546,7 +919,7 @@ try {
   Copy-Item -LiteralPath $pageFullHtml -Destination (Join-Path $latestDir "$pageBaseName-full.html") -Force
 
   $runEndedAt = Get-Date
-  $archiveDay = Join-Path $archiveDir ($runEndedAt.ToString('yyyy-MM-dd'))
+  $archiveDay = Join-Path $siteArchiveDir ($runEndedAt.ToString('yyyy-MM-dd'))
   $archiveWindow = Join-Path $archiveDay $effectiveWindow
   Ensure-Dir -Path $archiveWindow
   $archivedPath = Join-Path $archiveWindow ("{0}_{1}" -f $stamp, $incoming.Name)
@@ -557,6 +930,15 @@ try {
   }
 
   $summaryPath = Join-Path $runDir 'run-summary.md'
+  $relativeQueryBaseline = Convert-ToRelativePath -Path $queryBaseline -BaseRoot $weeklyRoot
+  $relativePageBaseline = Convert-ToRelativePath -Path $pageBaseline -BaseRoot $weeklyRoot
+  $relativeArchivedPath = Convert-ToRelativePath -Path $archivedPath -BaseRoot $weeklyRoot
+  $relativeRunDir = Convert-ToRelativePath -Path $runDir -BaseRoot $weeklyRoot
+  $relativeSummaryPath = Convert-ToRelativePath -Path $summaryPath -BaseRoot $weeklyRoot
+  $relativeLatestQueryHtml = Convert-ToRelativePath -Path (Join-Path $latestDir "$queryBaseName.html") -BaseRoot $weeklyRoot
+  $relativeLatestQueryFullHtml = Convert-ToRelativePath -Path (Join-Path $latestDir "$queryBaseName-full.html") -BaseRoot $weeklyRoot
+  $relativeLatestPageHtml = Convert-ToRelativePath -Path (Join-Path $latestDir "$pageBaseName.html") -BaseRoot $weeklyRoot
+  $relativeLatestPageFullHtml = Convert-ToRelativePath -Path (Join-Path $latestDir "$pageBaseName-full.html") -BaseRoot $weeklyRoot
   @(
     "# Weekly SOP $windowTitle Run Summary"
     ''
@@ -582,30 +964,60 @@ try {
     "- Page baseline hash after: $pageBaselineHashAfter"
     "- Input mode: $inputMode"
     "- Input file: $($incoming.Name)"
-    "- Query CSV: $($queryCsv.FullName)"
-    "- Page CSV: $($pageCsv.FullName)"
-    "- Query baseline snapshot: $queryBaselineSnapshot"
-    "- Page baseline snapshot: $pageBaselineSnapshot"
-    "- Query baseline updated: $queryBaseline"
-    "- Page baseline updated: $pageBaseline"
-    "- Latest query HTML: $(Join-Path $latestDir "$queryBaseName.html")"
-    "- Latest query full HTML: $(Join-Path $latestDir "$queryBaseName-full.html")"
-    "- Latest page HTML: $(Join-Path $latestDir "$pageBaseName.html")"
-    "- Latest page full HTML: $(Join-Path $latestDir "$pageBaseName-full.html")"
-    "- Archived input: $archivedPath"
+    "- Site ID: $siteId"
+    "- Property: $($siteConfig.gscProperty)"
+    "- Expected host: $expectedHost"
+    "- Host rows: target=$($hostValidation.target), foreign=$($hostValidation.foreign), invalid=$($hostValidation.invalid)"
+    "- Data confidence: $dataConfidence"
+    "- Date range: $($actualWindow.StartDate) to $($actualWindow.EndDate) / complete=$rangeComplete / lag_valid=$rangeLagValid"
+    "- Date source: $($actualWindow.DateSource)"
+    "- Query × Page CSV: $(if ($queryPageCsv) { $queryPageCsv.Name } else { 'missing' })"
+    "- Quality warnings: $(if ($qualityWarnings.Count) { $qualityWarnings -join ' | ' } else { 'none' })"
+    "- Query CSV: $($queryCsv.Name)"
+    "- Page CSV: $($pageCsv.Name)"
+    "- Query baseline snapshot: $relativeQueryBaselineSnapshot"
+    "- Page baseline snapshot: $relativePageBaselineSnapshot"
+    "- Query current snapshot: $relativeQueryCurrentSnapshot"
+    "- Page current snapshot: $relativePageCurrentSnapshot"
+    "- Query baseline updated: $relativeQueryBaseline"
+    "- Page baseline updated: $relativePageBaseline"
+    "- Latest query HTML: $relativeLatestQueryHtml"
+    "- Latest query full HTML: $relativeLatestQueryFullHtml"
+    "- Latest page HTML: $relativeLatestPageHtml"
+    "- Latest page full HTML: $relativeLatestPageFullHtml"
+    "- Archived input: $relativeArchivedPath"
   ) | Set-Content -LiteralPath $summaryPath -Encoding UTF8
 
   $runManifest = @{
+    schema_version = 2
     status = 'success'
+    path_base = 'weekly_sop'
+    site_id = $siteId
+    property = [string]$siteConfig.gscProperty
+    expected_host = $expectedHost
+    allowed_hosts = $allowedHosts
     run_id = $stamp
     run_time = $runEndedAt.ToString('yyyy-MM-dd HH:mm:ss')
+    generated_at = $runEndedAt.ToUniversalTime().ToString('o')
     requested_window = $Window
     resolved_window = $effectiveWindow
+    start_date = $actualWindow.StartDate
+    end_date = $actualWindow.EndDate
+    date_source = $actualWindow.DateSource
     period_label = $periodLabel
     verdict_mode = $verdictMode
+    data_confidence = $dataConfidence
+    decision_ready = ($dataConfidence -eq 'decision_ready')
+    snapshot_family_id = $snapshotFamilyId
+    timezone = $timezoneId
+    data_lag_days = $dataLagDays
+    date_range_complete = $rangeComplete
+    data_lag_valid = $rangeLagValid
+    quality_warnings = $qualityWarnings
+    property_validation = 'page_host'
+    query_page_available = [bool]$queryPageAfter
     input_mode = $inputMode
     input_file = $incoming.Name
-    input_path = $incoming.FullName
     input_sha256 = $inputHash
     filter = @{
       key = [string]$actualWindow.FilterKey
@@ -616,10 +1028,26 @@ try {
       total = $seoGeoTotal
       query = $seoGeoQueryCount
       page = $seoGeoPageCount
+      query_page = $seoGeoQueryPageCount
     }
     row_counts = @{
       normalized_query = $seoGeoQueryCount
       normalized_page = $seoGeoPageCount
+      normalized_query_page = $seoGeoQueryPageCount
+    }
+    host_counts = $hostValidation
+    baseline = @{
+      existed_before = $baselineExists
+      bootstrapped = (-not $baselineExists)
+      query = $relativeQueryBaseline
+      page = $relativePageBaseline
+      query_page = if ($queryPageAfter) { Convert-ToRelativePath -Path $queryPageBaseline -BaseRoot $weeklyRoot } else { $null }
+    }
+    comparison_sources = @{
+      query_before = $relativeQueryBaselineSnapshot
+      query_after = $relativeQueryCurrentSnapshot
+      page_before = $relativePageBaselineSnapshot
+      page_after = $relativePageCurrentSnapshot
     }
     same_baseline = @{
       query = $querySameAsBaseline
@@ -630,18 +1058,20 @@ try {
       page_baseline_before = $pageBaselineHashBefore
       query_after = $queryAfterHash
       page_after = $pageAfterHash
+      query_page_after = $queryPageAfterHash
       query_baseline_after = $queryBaselineHashAfter
       page_baseline_after = $pageBaselineHashAfter
+      query_page_baseline_after = $queryPageBaselineHashAfter
     }
     latest_reports = @{
-      query_html = (Join-Path $latestDir "$queryBaseName.html")
-      query_full_html = (Join-Path $latestDir "$queryBaseName-full.html")
-      page_html = (Join-Path $latestDir "$pageBaseName.html")
-      page_full_html = (Join-Path $latestDir "$pageBaseName-full.html")
+      query_html = $relativeLatestQueryHtml
+      query_full_html = $relativeLatestQueryFullHtml
+      page_html = $relativeLatestPageHtml
+      page_full_html = $relativeLatestPageFullHtml
     }
-    archived_input = $archivedPath
-    report_folder = $runDir
-    run_summary = $summaryPath
+    archived_input = $relativeArchivedPath
+    report_folder = $relativeRunDir
+    run_summary = $relativeSummaryPath
   }
   Write-RunManifest -Path (Join-Path $latestRoot 'weekly-sop-last-run.json') -Data $runManifest
   Write-RunManifest -Path (Join-Path $latestDir 'weekly-sop-last-run.json') -Data $runManifest
@@ -655,6 +1085,29 @@ try {
   if ($querySameAsBaseline -or $pageSameAsBaseline) {
     Write-Host "Note: input matched the current $effectiveWindow baseline, so this run created/updated latest reports as a baseline snapshot."
   }
+} catch {
+  $failureManifest = @{
+    schema_version = 2
+    status = 'failed_validation'
+    path_base = 'weekly_sop'
+    site_id = $siteId
+    property = [string]$siteConfig.gscProperty
+    expected_host = $expectedHost
+    run_time = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    requested_window = $Window
+    resolved_window = $effectiveWindow
+    input_mode = $inputMode
+    input_file = if ($incoming) { $incoming.Name } else { $null }
+    input_sha256 = $inputHash
+    baseline_updated = $baselineCommitted
+    message = $_.Exception.Message
+  }
+  try {
+    Write-RunManifest -Path (Join-Path $latestRoot 'weekly-sop-last-run.json') -Data $failureManifest
+  } catch {
+    Write-Warning "Could not write failure manifest: $($_.Exception.Message)"
+  }
+  throw
 } finally {
   if ($tmpDir -and (Test-Path -LiteralPath $tmpDir)) {
     Remove-Item -LiteralPath $tmpDir -Recurse -Force

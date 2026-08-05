@@ -7,8 +7,8 @@ import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
-const HOME_TITLE = '窗簾｜窗簾推薦、價格試算與雙北到府丈量｜宏森';
-const HOME_DESCRIPTION = '找窗簾或窗簾推薦？宏森提供 1 分鐘窗簾價格試算、窗簾線上估價、百葉窗價格試算、價格指南與台北新北到府丈量入口。';
+const HOME_TITLE = '窗簾推薦｜1 分鐘價格試算、免費到府丈量｜宏森窗簾';
+const HOME_DESCRIPTION = '找窗簾推薦？先用 1 分鐘試算比較布簾、紗簾、調光簾與百葉窗價格；宏森提供台北新北免費到府丈量，依窗型、採光與預算確認方案。';
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
@@ -110,44 +110,44 @@ export default function HomePage() {
   const geoGroups = [
     {
       key: 'wave-a',
-      title: '波次 A｜台北核心 4 區',
-      desc: '優先服務量最高的台北核心區。',
-      linkLabel: '查看台北核心服務',
+      title: '台北核心服務區｜4 區到府丈量',
+      desc: '台北市詢問度高的重點服務區，可先線上估價再安排丈量。',
+      linkLabel: '查看台北服務',
       areas: waveA,
     },
     {
       key: 'wave-b',
-      title: '波次 B｜新北轉單 4 區',
-      desc: '承接核心需求的新北高詢問區。',
-      linkLabel: '查看新北轉單服務',
+      title: '新北熱門服務區｜4 區快速估價',
+      desc: '新北主要住宅與商辦服務區，適合先比較價格再預約丈量。',
+      linkLabel: '查看新北服務',
       areas: waveB,
     },
     {
       key: 'phase5-wave-a',
-      title: 'Phase 5 Wave A｜台北延伸 4 區',
-      desc: '第二輪擴張的台北延伸區域入口。',
-      linkLabel: '查看台北延伸服務',
+      title: '台北延伸服務區｜4 區價格試算',
+      desc: '台北延伸生活圈入口，可依地區查看窗簾推薦與丈量流程。',
+      linkLabel: '查看台北服務',
       areas: phase5WaveA,
     },
     {
       key: 'phase5-wave-b',
-      title: 'Phase 5 Wave B｜新北延伸 4 區',
-      desc: '第二輪擴張的新北延伸區域入口。',
-      linkLabel: '查看新北延伸服務',
+      title: '新北延伸服務區｜4 區到府丈量',
+      desc: '新北延伸生活圈入口，適合比較窗簾價格、安裝費與產品搭配。',
+      linkLabel: '查看新北服務',
       areas: phase5WaveB,
     },
     {
       key: 'phase6-wave-a',
-      title: 'Phase 6 Wave A｜新北核心 4 區',
-      desc: '第三輪擴張的第一波核心區入口。',
-      linkLabel: '查看新北核心服務',
+      title: '新北核心服務區｜4 區窗簾推薦',
+      desc: '新北核心住宅區入口，可快速進入地區頁與線上估價。',
+      linkLabel: '查看新北服務',
       areas: phase6WaveA,
     },
     {
       key: 'phase6-wave-b',
-      title: 'Phase 6 Wave B｜新北延伸 4 區',
-      desc: '第三輪擴張的第二波延伸區入口。',
-      linkLabel: '查看新北延伸服務',
+      title: '新北外圍服務區｜4 區價格試算',
+      desc: '新北外圍與延伸服務區，可先抓預算再安排到府丈量。',
+      linkLabel: '查看新北服務',
       areas: phase6WaveB,
     },
   ];
@@ -191,10 +191,10 @@ export default function HomePage() {
               marginBottom: '1rem',
             }}
           >
-            宏森窗簾推薦・價格試算・台北新北丈量入口
+            宏森窗簾推薦・先比價格，再安排雙北免費丈量
           </p>
-          <h1>窗簾推薦與窗簾價格試算：宏森雙北到府丈量入口</h1>
-          <p>找窗簾或窗簾推薦時，先用尺寸比較窗簾訂製、遮光窗簾、鋁百葉、捲簾、無縫紗簾與實木百葉價格區間；再依台北、三重、板橋、鶯歌、士林或中正區服務頁安排丈量，確認窗型、布料與安裝費。</p>
+          <h1>窗簾推薦：先比價格，再安排雙北免費到府丈量</h1>
+          <p>找窗簾時，先用尺寸比較布簾、遮光窗簾、紗簾、鋁百葉、捲簾與實木百葉的價格區間；再安排台北、新北到府丈量，依窗型、採光、布料與安裝需求確認適合的方案。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />
@@ -334,7 +334,7 @@ export default function HomePage() {
           <div className="section-heading">
             <div className="tag">雙北熱門服務區域</div>
             <h2>24 區服務入口快速導覽</h2>
-            <p>首頁與產品頁同步擴充到 24 個 GEO 入口，依六組波次快速找到對應地區頁，並直接導回價格試算與價格指南。</p>
+            <p>首頁與產品頁同步整理 24 個 GEO 服務入口，可快速找到對應地區頁，並直接導回價格試算與價格指南。</p>
           </div>
 
           {geoGroups.map((group, index) => {

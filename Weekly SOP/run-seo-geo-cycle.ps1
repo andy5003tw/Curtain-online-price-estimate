@@ -1,6 +1,8 @@
 param(
   [ValidateSet('auto', 'weekly', 'monthly')]
-  [string]$Mode = 'auto'
+  [string]$Mode = 'auto',
+  [string]$RuntimeRoot = '',
+  [string]$RegistryPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -36,11 +38,70 @@ function Read-JsonIfExists {
   return (Read-Utf8Text -Path $Path | ConvertFrom-Json)
 }
 
+function Get-Sha256Text {
+  param([string]$Text)
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes([string]$Text)
+    return ([System.BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+  } finally {
+    $sha.Dispose()
+  }
+}
+
+function Get-Sha256File {
+  param([string]$Path)
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+  $stream = [System.IO.File]::OpenRead($Path)
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    return ([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '').ToLowerInvariant()
+  } finally {
+    $sha.Dispose()
+    $stream.Dispose()
+  }
+}
+
+function Get-RelativePortablePath {
+  param(
+    [string]$BasePath,
+    [string]$Path
+  )
+  if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
+  $baseFull = [System.IO.Path]::GetFullPath($BasePath).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+  $pathFull = [System.IO.Path]::GetFullPath($Path)
+  $baseUri = [System.Uri]$baseFull
+  $pathUri = [System.Uri]$pathFull
+  if ($baseUri.Scheme -ne $pathUri.Scheme) { return $pathFull.Replace('\', '/') }
+  return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($pathUri).ToString()).Replace('\', '/')
+}
+
+function Resolve-RuntimePath {
+  param(
+    [string]$WeeklyRoot,
+    [string]$Value
+  )
+  if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+  if ([System.IO.Path]::IsPathRooted($Value)) { return [System.IO.Path]::GetFullPath($Value) }
+  return [System.IO.Path]::GetFullPath((Join-Path $WeeklyRoot ($Value.Replace('/', '\'))))
+}
+
+function Resolve-ManifestPath {
+  param(
+    [string]$WeeklyRoot,
+    [string]$Value
+  )
+  if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+  return Resolve-RuntimePath -WeeklyRoot $WeeklyRoot -Value $Value
+}
+
 function Get-WindowFreshness {
   param(
+    [string]$WeeklyRoot,
     [string]$LatestDir,
     [string]$Window,
-    [int]$MaxAgeDays
+    [int]$MaxAgeDays,
+    [string]$ExpectedHost
   )
 
   $manifestPath = Join-Path $LatestDir 'weekly-sop-last-run.json'
@@ -83,7 +144,24 @@ function Get-WindowFreshness {
       age_days = $null
       run_time = $manifest.run_time
       manifest_path = $manifestPath
-      report_folder = $manifest.report_folder
+      report_folder = (Resolve-ManifestPath -WeeklyRoot $WeeklyRoot -Value ([string]$manifest.report_folder))
+      missing_reports = @()
+    }
+  }
+
+  $manifestHost = ([string]$manifest.expected_host).Trim().TrimEnd('.').ToLowerInvariant()
+  $foreignRows = if ($manifest.host_counts) { [int]$manifest.host_counts.foreign } else { -1 }
+  $targetRows = if ($manifest.host_counts) { [int]$manifest.host_counts.target } else { 0 }
+  if ($manifestHost -ne $ExpectedHost -or $foreignRows -ne 0 -or $targetRows -le 0) {
+    return [PSCustomObject]@{
+      window = $Window
+      fresh = $false
+      status = 'invalid-host'
+      text = "Latest $Window failed host validation (expected=$ExpectedHost manifest=$manifestHost target=$targetRows foreign=$foreignRows)"
+      age_days = $null
+      run_time = $manifest.run_time
+      manifest_path = $manifestPath
+      report_folder = (Resolve-ManifestPath -WeeklyRoot $WeeklyRoot -Value ([string]$manifest.report_folder))
       missing_reports = @()
     }
   }
@@ -98,7 +176,7 @@ function Get-WindowFreshness {
       age_days = $null
       run_time = $manifest.run_time
       manifest_path = $manifestPath
-      report_folder = $manifest.report_folder
+      report_folder = (Resolve-ManifestPath -WeeklyRoot $WeeklyRoot -Value ([string]$manifest.report_folder))
       missing_reports = @()
     }
   }
@@ -106,14 +184,22 @@ function Get-WindowFreshness {
   $missingReports = @()
   if ($manifest.latest_reports) {
     foreach ($prop in $manifest.latest_reports.PSObject.Properties) {
-      if (-not (Test-Path -LiteralPath ([string]$prop.Value) -PathType Leaf)) {
-        $missingReports += [string]$prop.Value
+      $resolvedReport = Resolve-ManifestPath -WeeklyRoot $WeeklyRoot -Value ([string]$prop.Value)
+      if (-not (Test-Path -LiteralPath $resolvedReport -PathType Leaf)) {
+        $missingReports += $resolvedReport
       }
     }
   }
 
-  $ageDays = [int][Math]::Floor(((Get-Date) - $runTime).TotalDays)
+  $endDate = [datetime]::MinValue
+  $hasCompleteRange = [bool]$manifest.date_range_complete -and [datetime]::TryParseExact([string]$manifest.end_date, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$endDate)
+  $ageAnchor = if ($hasCompleteRange) { $endDate } else { $runTime }
+  $ageDays = [int][Math]::Floor(((Get-Date).Date - $ageAnchor.Date).TotalDays)
   $isFresh = ($ageDays -le $MaxAgeDays -and $missingReports.Count -eq 0)
+  $dataConfidence = if ([string]::IsNullOrWhiteSpace([string]$manifest.data_confidence)) { 'unknown' } else { [string]$manifest.data_confidence }
+  $bootstrapped = [bool]($manifest.baseline -and $manifest.baseline.bootstrapped)
+  $queryPageAvailable = [bool]$manifest.query_page_available
+  $decisionReady = ($dataConfidence -eq 'decision_ready' -and -not $bootstrapped -and $hasCompleteRange -and $queryPageAvailable)
   $status = if ($missingReports.Count -gt 0) { 'missing-report' } elseif ($ageDays -gt $MaxAgeDays) { 'stale' } else { 'fresh' }
   $text = if ($isFresh) {
     "Latest $Window is fresh ($ageDays days old)"
@@ -130,8 +216,20 @@ function Get-WindowFreshness {
     text = $text
     age_days = $ageDays
     run_time = $manifest.run_time
+    data_confidence = $dataConfidence
+    decision_ready = $decisionReady
+    bootstrapped = $bootstrapped
+    start_date = [string]$manifest.start_date
+    end_date = [string]$manifest.end_date
+    snapshot_family_id = [string]$manifest.snapshot_family_id
+    query_page_available = $queryPageAvailable
+    date_range_complete = $hasCompleteRange
+    run_id = [string]$manifest.run_id
+    input_sha256 = ([string]$manifest.input_sha256).ToLowerInvariant()
+    manifest_sha256 = Get-Sha256File -Path $manifestPath
+    manifest = $manifest
     manifest_path = $manifestPath
-    report_folder = $manifest.report_folder
+    report_folder = (Resolve-ManifestPath -WeeklyRoot $WeeklyRoot -Value ([string]$manifest.report_folder))
     missing_reports = $missingReports
   }
 }
@@ -284,138 +382,102 @@ function Normalize-PageUrl {
   }
 }
 
-function Get-ReportRows {
+function Get-NormalizedBaselineRows {
   param([string]$Path)
-  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
-  $text = Read-Utf8Text -Path $Path
-  $rawRows = Get-MarkdownTable -Text $text -HeadingPrefix '## 決策明細'
-  if ($rawRows.Count -eq 0) {
-    $rawRows = Get-FirstMarkdownTable -Text $text
-  }
+  if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
   $rows = @()
-  foreach ($row in $rawRows) {
-    $page = Normalize-PageUrl -Page ([string]$row.'頁面')
-    if ([string]::IsNullOrWhiteSpace($page)) { $page = [string]$row.'頁面' }
+  foreach ($row in @(Import-Csv -LiteralPath $Path -Encoding utf8)) {
+    $page = [string]$row.page
+    if ($page -and $page -ne '(all pages)') { $page = Normalize-PageUrl -Page $page }
     $rows += [PSCustomObject]@{
-      title               = [string]$row.'網頁中文抬頭'
-      page                = $page
-      query               = [string]$row.'查詢'
-      beforeImpressions   = [int](Parse-Number -Value $row.'改版前曝光')
-      impressions         = [int](Parse-Number -Value $row.'改版後曝光')
-      growth              = (Parse-Number -Value $row.'曝光成長率')
-      beforePosition      = (Parse-Number -Value $row.'改版前排名')
-      position            = (Parse-Number -Value $row.'改版後排名')
-      positionImprovement = (Parse-Number -Value $row.'排名改善')
-      beforeCtr           = (Parse-Number -Value $row.'改版前CTR')
-      ctr                 = (Parse-Number -Value $row.'改版後CTR')
-      ctrDiff             = (Parse-Number -Value $row.'CTR差異(百分點)')
+      query       = ([string]$row.query).Trim()
+      page        = $page
+      clicks      = [int](Parse-Number -Value $row.clicks)
+      impressions = [int](Parse-Number -Value $row.impressions)
+      ctr         = [double](Parse-Number -Value $row.ctr)
+      position    = [double](Parse-Number -Value $row.position)
     }
   }
   return $rows
 }
 
-function Get-KpiDiffs {
-  param([string]$Path)
-  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
-  $text = Read-Utf8Text -Path $Path
-  $rows = Get-MarkdownTable -Text $text -HeadingPrefix '## KPI 摘要'
-  return @($rows | ForEach-Object { Parse-Number -Value $_.'差異' })
-}
-
-function Test-BaselineRefresh {
-  param([string[]]$Paths)
-  $diffs = @()
-  foreach ($path in $Paths) {
-    $diffs += Get-KpiDiffs -Path $path
-  }
-  if ($diffs.Count -eq 0) { return $false }
-  foreach ($diff in $diffs) {
-    if ([Math]::Abs([double]$diff) -gt 0.0001) { return $false }
-  }
-  return $true
-}
-
-function Resolve-ReportPath {
+function Get-BaselinePathFromManifest {
   param(
-    [string]$Dir,
-    [string]$BaseName
+    [string]$WeeklyRoot,
+    [object]$Manifest,
+    [ValidateSet('query', 'page')]
+    [string]$Kind,
+    [bool]$Required = $false
   )
-  $full = Join-Path $Dir "$BaseName-full.md"
-  if (Test-Path -LiteralPath $full -PathType Leaf) { return $full }
-  return (Join-Path $Dir "$BaseName.md")
+  $value = $null
+  if ($Manifest -and $Manifest.baseline) {
+    $value = if ($Kind -eq 'query') { [string]$Manifest.baseline.query } else { [string]$Manifest.baseline.page }
+  }
+  $path = Resolve-ManifestPath -WeeklyRoot $WeeklyRoot -Value $value
+  if ($Required -and ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf))) {
+    throw "Missing normalized current $Kind baseline referenced by manifest: $value"
+  }
+  return $path
 }
 
-function Get-LatestKeywordPoolPath {
-  param([string]$WeeklyRoot)
-  $pool = Get-ChildItem -LiteralPath $WeeklyRoot -File -Filter '12-keyword-pool-v*.md' |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
-  if (-not $pool) {
-    throw "Missing keyword pool: $WeeklyRoot\12-keyword-pool-v*.md"
+function Convert-OwnerUrl {
+  param(
+    [string]$OwnerUrl,
+    [string]$ExpectedHost
+  )
+  if ([string]::IsNullOrWhiteSpace($OwnerUrl)) { return '' }
+  if ([System.Uri]::IsWellFormedUriString($OwnerUrl, [System.UriKind]::Absolute)) {
+    return Normalize-PageUrl -Page $OwnerUrl
   }
-  return $pool.FullName
+  $baseUri = [System.Uri]("https://$ExpectedHost/")
+  return Normalize-PageUrl -Page ([System.Uri]::new($baseUri, $OwnerUrl).AbsoluteUri)
 }
 
-function Get-KeywordPoolRows {
-  param([string]$Path)
-  $text = Read-Utf8Text -Path $Path
-  $rawRows = @()
-  foreach ($prefix in @('## 3)', '## 2)')) {
-    $rawRows = @(Get-MarkdownTable -Text $text -HeadingPrefix $prefix)
-    if ($rawRows.Count -gt 0) { break }
-  }
-  $rows = @()
-  foreach ($row in $rawRows) {
-    $keyword = Remove-MdCode -Value $row.'主攻詞（產品/交易/GEO 意圖）'
-    $owner = Normalize-PageUrl -Page $row.'綁定主頁'
-    $rootQuery = Remove-MdCode -Value $row.'依據根詞（GSC）'
-    $signal = Remove-MdCode -Value $row.'7d / 28d 訊號'
-    if ([string]::IsNullOrWhiteSpace($keyword)) {
-      $keyword = Remove-MdCode -Value $row.keyword
-    }
-    if ([string]::IsNullOrWhiteSpace($owner)) {
-      $owner = Normalize-PageUrl -Page $row.'owner page'
-    }
-    if ([string]::IsNullOrWhiteSpace($signal)) {
-      $evidence = Remove-MdCode -Value $row.'28d / 7d evidence'
-      $actionType = Remove-MdCode -Value $row.'action type'
-      $signal = (@($evidence, $actionType) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join '；'
-    }
-    if ([string]::IsNullOrWhiteSpace($keyword) -or [string]::IsNullOrWhiteSpace($owner)) { continue }
-    $rows += [PSCustomObject]@{
-      order        = [int](Parse-Number -Value $row.'#')
-      keyword      = $keyword
-      rootQuery    = $rootQuery
-      signal       = $signal
-      ownerPage    = $owner
-    }
-  }
-  if ($rows.Count -eq 0) {
-    throw "Could not parse keyword-owner rows from $Path"
-  }
-  return $rows
-}
+function Get-RegistryOwners {
+  param(
+    [string]$Path,
+    [string]$ExpectedHost
+  )
+  $registry = Read-JsonIfExists -Path $Path
+  if (-not $registry -or -not $registry.targets) { throw "Missing or invalid target registry: $Path" }
 
-function Get-BatchPagesFromPool {
-  param([string]$Path)
-  $lines = @((Read-Utf8Text -Path $Path) -split "`r?`n")
-  $inside = $false
-  $pages = @()
-  foreach ($line in $lines) {
-    if ($line -match '^##\s+\d+\).*(執行順序|優化順序)') {
-      $inside = $true
-      continue
+  $owners = @()
+  $ownerUrls = @{}
+  $keywords = @{}
+  $order = 1
+  foreach ($target in @($registry.targets | Where-Object { ([string]$_.status).ToLowerInvariant() -eq 'active' })) {
+    $keyword = ([string]$target.primaryKeyword).Trim()
+    $ownerPage = Convert-OwnerUrl -OwnerUrl ([string]$target.ownerUrl) -ExpectedHost $ExpectedHost
+    if ([string]::IsNullOrWhiteSpace($keyword) -or [string]::IsNullOrWhiteSpace($ownerPage)) {
+      throw "Active registry target is missing primaryKeyword or ownerUrl: $($target.clusterId)"
     }
-    if (-not $inside -and $line -match '^##\s+4\)') {
-      $inside = $true
-      continue
+    if ($ownerUrls.ContainsKey($ownerPage)) { throw "Duplicate active owner URL in target registry: $ownerPage" }
+    if ($keywords.ContainsKey($keyword)) { throw "Duplicate active primary keyword in target registry: $keyword" }
+    $ownerUrls[$ownerPage] = $true
+    $keywords[$keyword] = $true
+    $owners += [PSCustomObject]@{
+      order          = $order
+      clusterId      = [string]$target.clusterId
+      layer          = [string]$target.layer
+      primaryKeyword = $keyword
+      variants       = @($target.variants | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ })
+      intent          = [string]$target.intent
+      ownerPath       = [string]$target.ownerUrl
+      ownerPage       = $ownerPage
+      pageType        = [string]$target.pageType
+      priority        = [string]$target.priority
+      schemaProfile   = [string]$target.schemaProfile
+      businessValue   = [string]$target.businessValue
+      lastChangedAt   = [string]$target.lastChangedAt
+      status          = [string]$target.status
     }
-    if ($inside -and $line -like '## *') { break }
-    if ($inside -and $line -match '^\s*\d+\.\s+`([^`]+)`') {
-      $pages += (Normalize-PageUrl -Page $Matches[1])
-    }
+    $order++
   }
-  return @($pages | Where-Object { $_ } | Select-Object -Unique)
+  if ($owners.Count -eq 0) { throw "Target registry has no active owners: $Path" }
+  return [PSCustomObject]@{
+    registry = $registry
+    owners = $owners
+  }
 }
 
 function Index-RowsByPage {
@@ -442,13 +504,12 @@ function Index-RowsByQuery {
 }
 
 function Get-QueryTerms {
-  param([object[]]$Rows)
-  $terms = @()
-  foreach ($row in $Rows) {
-    $terms += [string]$row.keyword
-    $terms += @(([string]$row.rootQuery) -split '\s*/\s*')
-  }
-  return @($terms | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -ne '服務交易意圖擴寫' -and $_ -ne '產品交易意圖擴寫' } | Select-Object -Unique)
+  param([object]$Owner)
+  $terms = @([string]$Owner.primaryKeyword) + @($Owner.variants)
+  return @($terms |
+    ForEach-Object { ([string]$_).Trim() } |
+    Where-Object { $_ } |
+    Select-Object -Unique)
 }
 
 function Get-BestQueryMetric {
@@ -493,6 +554,31 @@ function Get-ActionType {
   return '觀察'
 }
 
+function Get-PerformanceOpportunity {
+  param(
+    [object]$PageMetric28d,
+    [object]$QueryMetric28d
+  )
+  # Content compliance is a quality floor, not a reason to ignore proven
+  # search-performance opportunities. Keep this gate deliberately strict so
+  # a normal low-volume fluctuation does not create a source-change Round.
+  $metric = if ($PageMetric28d) { $PageMetric28d } elseif ($QueryMetric28d) { $QueryMetric28d.row } else { $null }
+  if (-not $metric) { return [PSCustomObject]@{ qualifies = $false; reason = '' } }
+  $impressions = [double]$metric.impressions
+  $position = [double]$metric.position
+  $ctr = [double]$metric.ctr
+  $targetCtr = Get-TargetCtr -Position $position
+  $ctrGap = $targetCtr - $ctr
+  if ($impressions -lt 250 -or $position -lt 6 -or $position -gt 15 -or $ctrGap -lt 0.4) {
+    return [PSCustomObject]@{ qualifies = $false; reason = '' }
+  }
+  $queryText = if ($QueryMetric28d) { "; owner query=$($QueryMetric28d.term), impr=$($QueryMetric28d.row.impressions), pos=$(Format-Decimal -Value ([double]$QueryMetric28d.row.position)), CTR=$(Format-Ctr -Value ([double]$QueryMetric28d.row.ctr))" } else { '' }
+  return [PSCustomObject]@{
+    qualifies = $true
+    reason = "28d page impr=$impressions, pos=$(Format-Decimal -Value $position), CTR=$(Format-Ctr -Value $ctr)，低於該排名目標 CTR $(Format-Ctr -Value $targetCtr) $queryText"
+  }
+}
+
 function Get-IntentType {
   param(
     [string]$Page,
@@ -523,10 +609,16 @@ function Get-PageTask {
     $base += '價格指南頁優先補「合理價格、安裝費、試算差異」摘要與 CTA。'
   } elseif ($Page -like '*/calculator/*') {
     $base += '估價頁優先補「1 分鐘試算、基本安裝費、同尺寸比較」首屏與 FAQ。'
+  } elseif ($Page -like '*/products/' -or $Page -like '*/products') {
+    $base += '產品總覽頁聚焦品類比較與估價分流，不取代單一產品 owner page。'
   } elseif ($Page -like '*/products/*') {
     $base += '產品頁聚焦材質/價格/適用情境，不寫成重複 GEO 頁。'
   } elseif ($Page -like '*/location/*') {
     $base += 'GEO 頁需在 title、H1、FAQ、內鏈都看得到地區詞。'
+  } elseif ($Page -like '*/about/*' -or $Page -like '*/about') {
+    $base += '品牌頁只補工廠、服務流程與信任證據，不定位成首頁或產品交易入口。'
+  } elseif ($Page -like '*/cases/*' -or $Page -like '*/cases') {
+    $base += '案例頁聚焦完工情境、材質與服務證據，不定位成首頁或搶產品 owner 詞。'
   } else {
     $base += '首頁定位為品牌與估價入口，不與產品頁或 GEO 頁搶同一長尾詞。'
   }
@@ -536,67 +628,99 @@ function Get-PageTask {
 function New-ActionRow {
   param(
     [int]$Priority,
-    [string]$Page,
-    [object[]]$OwnerRows,
+    [object]$Owner,
     [object]$PageMetric7d,
     [object]$PageMetric28d,
-    [object]$QueryMetric,
-    [string]$Mode,
-    [int]$StrategicOrder,
-    [bool]$BaselineRefresh
+    [object]$QueryMetric7d,
+    [object]$QueryMetric28d,
+    [object]$Compliance,
+    [ValidateSet('content_gap', 'performance')][string]$EligibilityKind = 'content_gap',
+    [string]$EligibilityReason = ''
   )
 
-  $metric = if ($Mode -eq 'monthly' -and $PageMetric28d) { $PageMetric28d } else { $PageMetric7d }
-  if (-not $metric -and $QueryMetric) { $metric = $QueryMetric.row }
+  $page = [string]$Owner.ownerPage
+  $metric = if ($PageMetric28d) { $PageMetric28d } elseif ($QueryMetric28d) { $QueryMetric28d.row } elseif ($PageMetric7d) { $PageMetric7d } elseif ($QueryMetric7d) { $QueryMetric7d.row } else { $null }
 
+  $clicks7d = if ($PageMetric7d) { [int]$PageMetric7d.clicks } else { 0 }
   $impressions7d = if ($PageMetric7d) { [int]$PageMetric7d.impressions } else { 0 }
+  $ctr7d = if ($PageMetric7d) { [double]$PageMetric7d.ctr } else { 0.0 }
+  $position7d = if ($PageMetric7d) { [double]$PageMetric7d.position } else { 0.0 }
+  $clicks28d = if ($PageMetric28d) { [int]$PageMetric28d.clicks } else { 0 }
   $impressions28d = if ($PageMetric28d) { [int]$PageMetric28d.impressions } else { 0 }
+  $ctr28d = if ($PageMetric28d) { [double]$PageMetric28d.ctr } else { 0.0 }
+  $position28d = if ($PageMetric28d) { [double]$PageMetric28d.position } else { 0.0 }
   $ctr = if ($metric) { [double]$metric.ctr } else { 0.0 }
   $position = if ($metric) { [double]$metric.position } else { 0.0 }
   $impressions = if ($metric) { [double]$metric.impressions } else { 0.0 }
   $targetCtr = Get-TargetCtr -Position $position
   $ctrGap = [Math]::Max(0.0, $targetCtr - $ctr)
   $edgeBonus = if ($position -ge 8 -and $position -le 15) { 45 } elseif ($position -gt 15 -and $position -le 25) { 25 } elseif ($position -gt 0 -and $position -le 10) { 35 } else { 0 }
-  $score = ($impressions * $ctrGap / 10.0) + $edgeBonus + [Math]::Max(0, 30 - ($StrategicOrder * 3))
-  $keywords = @($OwnerRows | Sort-Object order | ForEach-Object { $_.keyword })
-  $queryEvidence = if ($QueryMetric) {
-    $queryTerm = [string]$QueryMetric.term
-    $queryWindow = [string]$QueryMetric.window
-    $queryRow = $QueryMetric.row
-    "$queryWindow query $queryTerm impr=$($queryRow.impressions), pos=$(Format-Decimal -Value $queryRow.position), CTR=$(Format-Ctr -Value $queryRow.ctr)"
-  } else {
-    '無 exact query match，依 owner pool 與 page metric 判讀'
+  $priorityBonus = switch ([string]$Owner.priority) { 'P0' { 30 } 'P1' { 20 } default { 10 } }
+  $businessBonus = switch ([string]$Owner.businessValue) { 'critical' { 25 } 'high' { 15 } 'medium' { 8 } default { 0 } }
+  $score = ($impressions * $ctrGap / 10.0) + $edgeBonus + $priorityBonus + $businessBonus + [Math]::Max(0, 20 - [int]$Owner.order)
+  $keywords = @([string]$Owner.primaryKeyword) + @($Owner.variants)
+  $queryEvidence = @()
+  foreach ($queryMetric in @($QueryMetric7d, $QueryMetric28d)) {
+    if ($queryMetric) {
+      $queryEvidence += "$($queryMetric.window) query $($queryMetric.term) impr=$($queryMetric.row.impressions), pos=$(Format-Decimal -Value $queryMetric.row.position), CTR=$(Format-Ctr -Value $queryMetric.row.ctr)"
+    }
   }
-  $pageEvidence = if ($metric) {
-    "page impr=$($metric.impressions), pos=$(Format-Decimal -Value $metric.position), CTR=$(Format-Ctr -Value $metric.ctr)"
-  } else {
-    'page metric n/a'
-  }
-  if ($BaselineRefresh) {
-    $pageEvidence += '；same-baseline，僅作現況機會判讀'
-  }
+  if ($queryEvidence.Count -eq 0) { $queryEvidence += '無 exact owner query match' }
+  $pageEvidence = "7d page clicks=$clicks7d, impr=$impressions7d, pos=$(Format-Decimal -Value $position7d), CTR=$(Format-Ctr -Value $ctr7d)；28d page clicks=$clicks28d, impr=$impressions28d, pos=$(Format-Decimal -Value $position28d), CTR=$(Format-Ctr -Value $ctr28d)"
 
-  $actionType = Get-ActionType -Position $position -Ctr $ctr -Impressions $impressions -Mode $Mode
+  $actionType = Get-ActionType -Position $position -Ctr $ctr -Impressions $impressions -Mode 'monthly'
+  $fixedActions = if ($EligibilityKind -eq 'performance') {
+    "以既有 owner keyword 為限，優先優化 title/meta description 的價格、材質與 CTA 表達；首屏短答案須直接對齊搜尋意圖；檢查 2-3 個內鏈錨文字是否將泛用詞導回正確 owner；不要為了補字數重做已合規的 FAQ/Schema，也不要搶其他 owner 詞。"
+  } else {
+    Get-PageTask -Page $page -Keywords $keywords
+  }
+  $gapText = (@($Compliance.missing) | Sort-Object) -join ','
+  $keywordFingerprintText = (@($keywords | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ } | Sort-Object -Unique)) -join '|'
+  $fingerprint = Get-Sha256Text -Text (@(
+    'seo-geo-action-v3',
+    [string]$Owner.clusterId,
+    $page,
+    $keywordFingerprintText,
+    $gapText,
+    $fixedActions,
+    $(if ($EligibilityKind -eq 'performance') { 'performance_opportunity' } else { '' })
+  ) -join "`n")
+  $safeCluster = ([string]$Owner.clusterId) -replace '[^A-Za-z0-9_-]', '-'
+  $requiredValidations = @(
+    'node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs',
+    'npm.cmd run build',
+    'npm.cmd run seo:check',
+    'npm.cmd run seo:preflight'
+  )
   return [PSCustomObject]@{
+    action_id          = "seo-$safeCluster-$($fingerprint.Substring(0, 12))"
+    fingerprint        = $fingerprint
     priority           = $Priority
-    page               = $Page
+    clusterId          = [string]$Owner.clusterId
+    page               = $page
     ownerKeywords      = ($keywords -join ' / ')
-    intentType         = (Get-IntentType -Page $Page -ActionType $actionType)
+    intentType         = (Get-IntentType -Page $page -ActionType $actionType)
+    '7d clicks'        = $clicks7d
     '7d impressions'   = $impressions7d
+    '7d CTR'           = (Format-Ctr -Value $ctr7d)
+    '7d position'      = (Format-Decimal -Value $position7d)
+    '28d clicks'       = $clicks28d
     '28d impressions'  = $impressions28d
-    CTR                = (Format-Ctr -Value $ctr)
-    position           = (Format-Decimal -Value $position)
+    '28d CTR'          = (Format-Ctr -Value $ctr28d)
+    '28d position'     = (Format-Decimal -Value $position28d)
     actionType         = $actionType
+    eligibility_kind   = $EligibilityKind
     score              = (Format-Decimal -Value $score)
-    reason             = "$pageEvidence；$queryEvidence"
-    fixedActions       = (Get-PageTask -Page $Page -Keywords $keywords)
-    validationCommands = 'node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs; npm.cmd run build; npm.cmd run seo:check; npm.cmd run seo:preflight'
+    reason             = "$pageEvidence；$($queryEvidence -join '；')；eligibility=$EligibilityKind；$EligibilityReason；source gaps=$gapText"
+    fixedActions       = $fixedActions
+    required_validations = $requiredValidations
+    validationCommands = ($requiredValidations -join "`n")
   }
 }
 
 function Convert-ActionsToMarkdownTable {
   param([object[]]$Rows)
-  $headers = @('priority', 'page', 'ownerKeywords', 'intentType', '7d impressions', '28d impressions', 'CTR', 'position', 'actionType', 'reason', 'fixedActions', 'validationCommands')
+  $headers = @('priority', 'action_id', 'page', 'ownerKeywords', 'intentType', '7d impressions', '7d CTR', '7d position', '28d impressions', '28d CTR', '28d position', 'actionType', 'reason', 'fixedActions', 'validationCommands')
   $lines = @()
   $lines += '| ' + (($headers | ForEach-Object { Escape-MdCell -Value $_ }) -join ' | ') + ' |'
   $lines += '| ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- |'
@@ -609,7 +733,7 @@ function Convert-ActionsToMarkdownTable {
 
 function Convert-ActionsToHtmlTable {
   param([object[]]$Rows)
-  $headers = @('priority', 'page', 'ownerKeywords', 'intentType', '7d impressions', '28d impressions', 'CTR', 'position', 'actionType', 'reason', 'fixedActions', 'validationCommands')
+  $headers = @('priority', 'action_id', 'page', 'ownerKeywords', 'intentType', '7d impressions', '7d CTR', '7d position', '28d impressions', '28d CTR', '28d position', 'actionType', 'reason', 'fixedActions', 'validationCommands')
   $html = @('<table><thead><tr>')
   foreach ($h in $headers) { $html += '<th>' + (Escape-Html -Value $h) + '</th>' }
   $html += '</tr></thead><tbody>'
@@ -640,13 +764,13 @@ function Get-RequiredSourceForPage {
     $sources += 'src/app/calculator/page.tsx'
     $sources += 'src/app/calculator/CalculatorClient.tsx'
     $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/products/*') {
-    $sources += 'src/data/products.ts'
-    $sources += 'src/app/products/[slug]/page.tsx'
-    $sources += 'src/lib/seo.ts'
   } elseif ($Page -like '*/products/' -or $Page -like '*/products') {
     $sources += 'src/app/products/page.tsx'
     $sources += 'src/data/products.ts'
+    $sources += 'src/lib/seo.ts'
+  } elseif ($Page -like '*/products/*') {
+    $sources += 'src/data/products.ts'
+    $sources += 'src/app/products/[slug]/page.tsx'
     $sources += 'src/lib/seo.ts'
   } elseif ($Page -like '*/location/*') {
     $sources += 'src/data/locationPages.ts'
@@ -660,6 +784,7 @@ function Get-RequiredSourceForPage {
     $sources += 'src/app/about/page.tsx'
     $sources += 'src/lib/seo.ts'
   } elseif ($Page -like '*/cases/*' -or $Page -like '*/cases') {
+    $sources += 'src/app/cases/layout.tsx'
     $sources += 'src/app/cases/page.tsx'
     $sources += 'src/lib/seo.ts'
   } else {
@@ -670,6 +795,275 @@ function Get-RequiredSourceForPage {
   return @($sources | Select-Object -Unique)
 }
 
+function Test-TextContains {
+  param(
+    [string]$Text,
+    [string]$Value
+  )
+  if ([string]::IsNullOrWhiteSpace($Text) -or [string]::IsNullOrWhiteSpace($Value)) { return $false }
+  return $Text.IndexOf($Value, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
+function Get-OwnerSourceCompliance {
+  param(
+    [object]$Owner,
+    [string]$RepoRoot
+  )
+  $relativePaths = @(Get-RequiredSourceForPage -Page $Owner.ownerPage)
+  $sourceTexts = @()
+  $missingFiles = @()
+  foreach ($relativePath in $relativePaths) {
+    $fullPath = Join-Path $RepoRoot ($relativePath.Replace('/', '\'))
+    if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
+      $sourceTexts += Read-Utf8Text -Path $fullPath
+    } else {
+      $missingFiles += $relativePath
+    }
+  }
+  $text = $sourceTexts -join "`n"
+  $keyword = Test-TextContains -Text $text -Value ([string]$Owner.primaryKeyword)
+  $metadata = ((Test-TextContains -Text $text -Value 'meta_title') -and (Test-TextContains -Text $text -Value 'meta_description')) -or
+    ((Test-TextContains -Text $text -Value 'metadata') -and (Test-TextContains -Text $text -Value 'title') -and (Test-TextContains -Text $text -Value 'description'))
+  $h1 = Test-TextContains -Text $text -Value '<h1'
+  $faq = (Test-TextContains -Text $text -Value 'FAQPage') -or (Test-TextContains -Text $text -Value 'faqs') -or (Test-TextContains -Text $text -Value 'faqSchema')
+  $jsonLd = (Test-TextContains -Text $text -Value 'application/ld+json') -or (Test-TextContains -Text $text -Value 'JSON.stringify')
+  $internalLink = (Test-TextContains -Text $text -Value '<Link') -or (Test-TextContains -Text $text -Value 'internalLinks') -or (Test-TextContains -Text $text -Value 'href=')
+  $checks = [ordered]@{
+    keyword = $keyword
+    metadata = $metadata
+    h1 = $h1
+    faq = $faq
+    json_ld = $jsonLd
+    internal_link = $internalLink
+    source_files = ($missingFiles.Count -eq 0)
+  }
+  $missing = @($checks.Keys | Where-Object { -not [bool]($checks[$_]) })
+  return [PSCustomObject]@{
+    compliant = ($missing.Count -eq 0)
+    checks = [PSCustomObject]$checks
+    missing = $missing
+    requiredSource = $relativePaths
+    missingSource = $missingFiles
+  }
+}
+
+function Get-CooldownStatus {
+  param(
+    [string]$LastChangedAt,
+    [datetime]$Now = (Get-Date),
+    [int]$Days = 28
+  )
+  if ([string]::IsNullOrWhiteSpace($LastChangedAt)) {
+    return [PSCustomObject]@{ active = $false; last_changed_at = $null; cooldown_until = $null; days_remaining = 0 }
+  }
+  $changed = [datetime]::MinValue
+  if (-not [datetime]::TryParse($LastChangedAt, [ref]$changed)) {
+    return [PSCustomObject]@{ active = $true; last_changed_at = $LastChangedAt; cooldown_until = $null; days_remaining = $Days; invalid = $true }
+  }
+  $until = $changed.Date.AddDays($Days)
+  $active = $Now.Date -lt $until
+  $remaining = if ($active) { [Math]::Max(1, [int][Math]::Ceiling(($until - $Now.Date).TotalDays)) } else { 0 }
+  return [PSCustomObject]@{
+    active = $active
+    last_changed_at = $changed.ToString('yyyy-MM-dd')
+    cooldown_until = $until.ToString('yyyy-MM-dd')
+    days_remaining = $remaining
+  }
+}
+
+function Get-ActionHistoryEntries {
+  param([string]$Path)
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
+  $document = Read-JsonIfExists -Path $Path
+  if ($null -eq $document) { return @() }
+  if ($document -is [System.Array]) { return @($document) }
+  foreach ($propertyName in @('entries', 'actions', 'history')) {
+    if ($document.PSObject.Properties.Name -contains $propertyName) {
+      return @($document.$propertyName)
+    }
+  }
+  if ($document.PSObject.Properties.Name -contains 'fingerprint' -or
+      $document.PSObject.Properties.Name -contains 'action_fingerprint' -or
+      $document.PSObject.Properties.Name -contains 'action_fingerprints') {
+    return @($document)
+  }
+  return @()
+}
+
+function Get-ActionHistoryCooldown {
+  param(
+    [object[]]$Entries,
+    [string]$Fingerprint,
+    [datetime]$Now = (Get-Date),
+    [int]$Days = 28
+  )
+  $matches = @()
+  foreach ($entry in @($Entries)) {
+    if (-not $entry) { continue }
+    $fingerprints = @()
+    foreach ($propertyName in @('fingerprint', 'action_fingerprint', 'action_fingerprints')) {
+      if ($entry.PSObject.Properties.Name -contains $propertyName) {
+        $fingerprints += @($entry.$propertyName)
+      }
+    }
+    $fingerprints = @($fingerprints | ForEach-Object { ([string]$_).Trim().ToLowerInvariant() } | Where-Object { $_ } | Select-Object -Unique)
+    if ($fingerprints -notcontains $Fingerprint.ToLowerInvariant()) { continue }
+
+    $status = if ($entry.PSObject.Properties.Name -contains 'status') { ([string]$entry.status).Trim().ToLowerInvariant() } else { '' }
+    if ($status -in @('failed', 'cancelled', 'canceled', 'rejected')) { continue }
+
+    $timestampText = ''
+    foreach ($propertyName in @('completed_at', 'validated_at', 'deployed_at', 'changed_at', 'created_at', 'generated_at', 'timestamp')) {
+      if ($entry.PSObject.Properties.Name -contains $propertyName -and -not [string]::IsNullOrWhiteSpace([string]$entry.$propertyName)) {
+        $timestampText = [string]$entry.$propertyName
+        break
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($timestampText)) { continue }
+    $timestamp = [datetime]::MinValue
+    if (-not [datetime]::TryParse($timestampText, [ref]$timestamp)) { continue }
+    $until = $timestamp.Date.AddDays($Days)
+    if ($Now.Date -lt $until) {
+      $matches += [PSCustomObject]@{
+        timestamp = $timestamp
+        completed_at = $timestamp.ToString('yyyy-MM-dd')
+        cooldown_until = $until.ToString('yyyy-MM-dd')
+        days_remaining = [Math]::Max(1, [int][Math]::Ceiling(($until - $Now.Date).TotalDays))
+        queue_id = if ($entry.PSObject.Properties.Name -contains 'queue_id') { [string]$entry.queue_id } else { $null }
+        action_id = if ($entry.PSObject.Properties.Name -contains 'action_id') { [string]$entry.action_id } else { $null }
+      }
+    }
+  }
+  if ($matches.Count -eq 0) {
+    return [PSCustomObject]@{ active = $false; completed_at = $null; cooldown_until = $null; days_remaining = 0; queue_id = $null; action_id = $null }
+  }
+  $latest = @($matches | Sort-Object timestamp -Descending | Select-Object -First 1)[0]
+  return [PSCustomObject]@{
+    active = $true
+    completed_at = $latest.completed_at
+    cooldown_until = $latest.cooldown_until
+    days_remaining = $latest.days_remaining
+    queue_id = $latest.queue_id
+    action_id = $latest.action_id
+  }
+}
+
+function Get-SourceProvenance {
+  param(
+    [object[]]$Owners,
+    [string]$RepoRoot
+  )
+  $paths = @()
+  $ownerBindings = @()
+  foreach ($owner in $Owners) {
+    $ownerPaths = @(Get-RequiredSourceForPage -Page $owner.ownerPage)
+    $paths += $ownerPaths
+    $ownerBindings += [PSCustomObject]@{
+      cluster_id = [string]$owner.clusterId
+      owner_url = [string]$owner.ownerPage
+      source_files = @($ownerPaths | Sort-Object -Unique)
+    }
+  }
+  $parts = @()
+  $files = @()
+  foreach ($relativePath in @($paths | Select-Object -Unique | Sort-Object)) {
+    $fullPath = Join-Path $RepoRoot ($relativePath.Replace('/', '\'))
+    $hash = Get-Sha256File -Path $fullPath
+    $hashMaterial = if ([string]::IsNullOrWhiteSpace($hash)) { 'missing' } else { $hash }
+    $files += [PSCustomObject]@{ path = $relativePath.Replace('\', '/'); sha256 = $hash }
+    $parts += "$relativePath=$hashMaterial"
+  }
+  return [PSCustomObject]@{
+    source_files = $files
+    owners = $ownerBindings
+    source_fingerprint = Get-Sha256Text -Text ($parts -join "`n")
+  }
+}
+
+function New-ObservationRow {
+  param(
+    [object]$Owner,
+    [object]$PageMetric7d,
+    [object]$PageMetric28d,
+    [object]$QueryMetric7d,
+    [object]$QueryMetric28d,
+    [object]$Compliance,
+    [object]$RegistryCooldown,
+    [object]$ActionHistoryCooldown,
+    [string]$ActionFingerprint,
+    [string]$Disposition,
+    [string]$Reason
+  )
+  $p7 = if ($PageMetric7d) { $PageMetric7d } else { [PSCustomObject]@{ clicks = 0; impressions = 0; ctr = 0.0; position = 0.0 } }
+  $p28 = if ($PageMetric28d) { $PageMetric28d } else { [PSCustomObject]@{ clicks = 0; impressions = 0; ctr = 0.0; position = 0.0 } }
+  $q7 = if ($QueryMetric7d) { $QueryMetric7d.row } else { [PSCustomObject]@{ clicks = 0; impressions = 0; ctr = 0.0; position = 0.0 } }
+  $q28 = if ($QueryMetric28d) { $QueryMetric28d.row } else { [PSCustomObject]@{ clicks = 0; impressions = 0; ctr = 0.0; position = 0.0 } }
+  return [PSCustomObject]@{
+    order = [int]$Owner.order
+    cluster_id = [string]$Owner.clusterId
+    page = [string]$Owner.ownerPage
+    primary_keyword = [string]$Owner.primaryKeyword
+    variants = (@($Owner.variants) -join ' / ')
+    '7d clicks' = [int]$p7.clicks
+    '7d impressions' = [int]$p7.impressions
+    '7d CTR' = (Format-Ctr -Value ([double]$p7.ctr))
+    '7d position' = (Format-Decimal -Value ([double]$p7.position))
+    '7d query' = if ($QueryMetric7d) { [string]$QueryMetric7d.term } else { '' }
+    '7d query clicks' = [int]$q7.clicks
+    '7d query impressions' = [int]$q7.impressions
+    '7d query CTR' = (Format-Ctr -Value ([double]$q7.ctr))
+    '7d query position' = (Format-Decimal -Value ([double]$q7.position))
+    '28d clicks' = [int]$p28.clicks
+    '28d impressions' = [int]$p28.impressions
+    '28d CTR' = (Format-Ctr -Value ([double]$p28.ctr))
+    '28d position' = (Format-Decimal -Value ([double]$p28.position))
+    '28d query' = if ($QueryMetric28d) { [string]$QueryMetric28d.term } else { '' }
+    '28d query clicks' = [int]$q28.clicks
+    '28d query impressions' = [int]$q28.impressions
+    '28d query CTR' = (Format-Ctr -Value ([double]$q28.ctr))
+    '28d query position' = (Format-Decimal -Value ([double]$q28.position))
+    source_compliant = [bool]$Compliance.compliant
+    compliance_missing = (@($Compliance.missing) -join ', ')
+    action_fingerprint = $ActionFingerprint
+    registry_last_changed_at = $RegistryCooldown.last_changed_at
+    registry_cooldown_until = $RegistryCooldown.cooldown_until
+    action_history_completed_at = $ActionHistoryCooldown.completed_at
+    action_history_cooldown_until = $ActionHistoryCooldown.cooldown_until
+    cooldown_source = if ($RegistryCooldown.active) { 'registry_lastChangedAt' } elseif ($ActionHistoryCooldown.active) { 'action_history' } else { '' }
+    cooldown_until = if ($RegistryCooldown.active) { $RegistryCooldown.cooldown_until } elseif ($ActionHistoryCooldown.active) { $ActionHistoryCooldown.cooldown_until } else { $null }
+    disposition = $Disposition
+    reason = $Reason
+  }
+}
+
+function Convert-ObservationsToMarkdownTable {
+  param([object[]]$Rows)
+  $headers = @('order', 'page', 'primary_keyword', '7d clicks', '7d impressions', '7d CTR', '7d position', '7d query', '7d query impressions', '28d clicks', '28d impressions', '28d CTR', '28d position', '28d query', '28d query impressions', 'source_compliant', 'cooldown_source', 'cooldown_until', 'disposition', 'reason')
+  $lines = @()
+  $lines += '| ' + ($headers -join ' | ') + ' |'
+  $lines += '| ---: | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |'
+  foreach ($row in $Rows) {
+    $cells = foreach ($header in $headers) { Escape-MdCell -Value ([string]$row.$header) }
+    $lines += '| ' + ($cells -join ' | ') + ' |'
+  }
+  return ($lines -join "`n")
+}
+
+function Convert-ObservationsToHtmlTable {
+  param([object[]]$Rows)
+  $headers = @('order', 'page', 'primary_keyword', '7d clicks', '7d impressions', '7d CTR', '7d position', '28d clicks', '28d impressions', '28d CTR', '28d position', 'source_compliant', 'cooldown_source', 'cooldown_until', 'disposition', 'reason')
+  $html = @('<table><thead><tr>')
+  foreach ($header in $headers) { $html += '<th>' + (Escape-Html -Value $header) + '</th>' }
+  $html += '</tr></thead><tbody>'
+  foreach ($row in $Rows) {
+    $html += '<tr>'
+    foreach ($header in $headers) { $html += '<td>' + (Escape-Html -Value ([string]$row.$header)) + '</td>' }
+    $html += '</tr>'
+  }
+  $html += '</tbody></table>'
+  return ($html -join '')
+}
+
 function Copy-ActionRowForQueue {
   param(
     [object]$Row,
@@ -677,18 +1071,27 @@ function Copy-ActionRowForQueue {
   )
 
   return [PSCustomObject]@{
+    action_id          = $Row.action_id
+    fingerprint        = $Row.fingerprint
     priority           = $Priority
+    clusterId          = $Row.clusterId
     page               = $Row.page
     ownerKeywords      = $Row.ownerKeywords
     intentType         = $Row.intentType
+    '7d clicks'        = $Row.'7d clicks'
     '7d impressions'   = $Row.'7d impressions'
+    '7d CTR'           = $Row.'7d CTR'
+    '7d position'      = $Row.'7d position'
+    '28d clicks'       = $Row.'28d clicks'
     '28d impressions'  = $Row.'28d impressions'
-    CTR                = $Row.CTR
-    position           = $Row.position
+    '28d CTR'          = $Row.'28d CTR'
+    '28d position'     = $Row.'28d position'
     actionType         = $Row.actionType
+    eligibility_kind   = $Row.eligibility_kind
     score              = $Row.score
     reason             = $Row.reason
     fixedActions       = $Row.fixedActions
+    required_validations = @($Row.required_validations)
     validationCommands = $Row.validationCommands
   }
 }
@@ -710,6 +1113,12 @@ function New-QueueRound {
   foreach ($row in $rows) {
     $requiredSource += @(Get-RequiredSourceForPage -Page $row.page)
   }
+  $requiredValidations = @(
+    'node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs',
+    'npm.cmd run build',
+    'npm.cmd run seo:check',
+    'npm.cmd run seo:preflight'
+  )
 
   return [PSCustomObject]@{
     round              = $Round
@@ -719,13 +1128,11 @@ function New-QueueRound {
     targetCount        = $rows.Count
     targets            = @($rows | ForEach-Object { $_.page })
     ownerKeywords      = @($rows | ForEach-Object { $_.ownerKeywords })
+    action_ids         = @($rows | ForEach-Object { $_.action_id })
+    action_fingerprints = @($rows | ForEach-Object { $_.fingerprint })
     requiredSource     = @($requiredSource | Select-Object -Unique)
-    validationCommands = @(
-      'node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs',
-      'npm.cmd run build',
-      'npm.cmd run seo:check',
-      'npm.cmd run seo:preflight'
-    )
+    required_validations = $requiredValidations
+    validationCommands = $requiredValidations
     actions            = $rows
   }
 }
@@ -733,24 +1140,13 @@ function New-QueueRound {
 function New-ActionQueue {
   param(
     [object[]]$CandidateItems,
-    [string[]]$BatchPages,
-    [int]$BatchSize = 6,
+    [int]$BatchSize = 5,
+    [int]$MaximumBatchSize = 6,
     [int]$MaxRounds = 3
   )
 
-  $orderedItems = @()
-  if ($BatchPages.Count -gt 0) {
-    foreach ($page in $BatchPages) {
-      $item = @($CandidateItems | Where-Object { $_.page -eq $page } | Select-Object -First 1)
-      if ($item) { $orderedItems += $item }
-    }
-    $orderedItems += @($CandidateItems |
-      Where-Object { $BatchPages -notcontains $_.page } |
-      Sort-Object -Property @{ Expression = { [double]$_.row.score }; Descending = $true }, strategicOrder)
-  } else {
-    $orderedItems = @($CandidateItems |
-      Sort-Object -Property @{ Expression = { [double]$_.row.score }; Descending = $true }, strategicOrder)
-  }
+  $orderedItems = @($CandidateItems |
+    Sort-Object -Property @{ Expression = { [double]$_.row.score }; Descending = $true }, strategicOrder)
 
   $deduped = @()
   $seen = @{}
@@ -762,10 +1158,13 @@ function New-ActionQueue {
   }
 
   $rounds = @()
+  if ($deduped.Count -lt 2) { return $rounds }
   $index = 0
   $round = 1
   while ($index -lt $deduped.Count -and $round -le $MaxRounds) {
-    $take = [Math]::Min($BatchSize, $deduped.Count - $index)
+    $remaining = $deduped.Count - $index
+    $take = if ($remaining -le $MaximumBatchSize) { $remaining } else { [Math]::Min($BatchSize, $remaining) }
+    if ($take -lt 2) { break }
     $items = @($deduped | Select-Object -Skip $index -First $take)
     if ($items.Count -gt 0) {
       $rounds += (New-QueueRound -Round $round -Items $items)
@@ -782,7 +1181,10 @@ function New-RoundSlimPrompt {
     [object]$Round,
     [string]$RequestedMode,
     [string]$EffectiveMode,
-    [string]$ModeLabel
+    [string]$ModeLabel,
+    [string]$QueueId,
+    [string]$CycleKey,
+    [string]$ReceiptPath
   )
 
   $lines = @()
@@ -812,16 +1214,57 @@ function New-RoundSlimPrompt {
   $lines += ''
   $lines += '## Validation'
   $lines += ''
-  $lines += '- `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`'
-  $lines += '- `npm.cmd run build`'
-  $lines += '- `npm.cmd run seo:check`'
-  $lines += '- `npm.cmd run seo:preflight`'
+  foreach ($command in @($Round.required_validations)) { $lines += ('- `{0}`' -f $command) }
+  $lines += ''
+  $lines += '## Validation Receipt Writer'
+  $lines += ''
+  $lines += '- 只有上述所有命令 exit code 皆為 0，才可呼叫 receipt writer；不要手寫或直接覆蓋 receipt JSON。'
+  $lines += ('- 固定使用 `scripts/write-seo-geo-validation-receipt.ps1`，它會核對 queue/cycle/round/action_ids/action_fingerprints 並寫入 `{0}`。' -f $ReceiptPath)
+  $lines += ('- 固定參數：`-RuntimeRoot . -QueueId ''{0}'' -CycleKey ''{1}'' -Round {2}`。' -f $QueueId, $CycleKey, [int]$Round.round)
+  $lines += '- 有修改 source 時使用 `-Result implemented -ChangedFiles <實際修改檔案>`；確認無需修改時使用 `-Result no_change_verified` 且不要傳 ChangedFiles。'
+  $lines += '- `-ValidationResultsJson` 必須是 JSON array，逐項包含與 Validation 完全相同的 `command`、`status: passed`、`exit_code: 0`。'
+  $lines += '- 任一驗證失敗時不要呼叫 receipt writer；回報失敗命令與最後錯誤。'
   $lines += ''
   $lines += '## Report Back'
   $lines += ''
   $lines += ('- 回報已修改的 source files、Round {0} 頁面、驗證 pass/fail。' -f $Round.round)
   $lines += '- build/deploy/FTP log 只回報摘要與最後錯誤，不貼逐檔清單。'
 
+  return $lines
+}
+
+function New-MonitoringPrompt {
+  param(
+    [object[]]$Rows,
+    [string]$RequestedMode,
+    [string]$EffectiveMode,
+    [string]$Reason
+  )
+  $lines = @()
+  $lines += 'PLEASE REVIEW THIS MONITORING LIST:'
+  $lines += ''
+  $lines += '# Curtain Online SEO/GEO Observation Only'
+  $lines += ''
+  $lines += '本週資料只供監控；沒有可執行 Round，也不授權修改 source。'
+  $lines += ''
+  $lines += '## Slim Rules'
+  $lines += ''
+  $lines += '- 不要重新選頁、選詞或重做策略。'
+  $lines += '- 不要讀 raw CSV、reports/history、All_plan 或 Phase 歷史。'
+  $lines += '- 不要修改 source、不要跑 build、不要部署、不要建立 validation receipt。'
+  $lines += ('- 只根據 {0} 個 active owner 的 7d/28d 完整 baseline metrics 回報異常或下一次應觀察項目。' -f @($Rows).Count)
+  $lines += ''
+  $lines += "Mode: $RequestedMode -> $EffectiveMode"
+  $lines += "Reason: $Reason"
+  $lines += ''
+  $lines += '## Monitoring List'
+  $lines += ''
+  $lines += (Convert-ObservationsToMarkdownTable -Rows $Rows)
+  $lines += ''
+  $lines += '## Report Back'
+  $lines += ''
+  $lines += '- 短摘要回報：是否繼續觀察、最多 1-3 個異常 owner、原因。'
+  $lines += '- 不提出 source 實作步驟；等待新的 decision-ready 28d cycle。'
   return $lines
 }
 
@@ -850,7 +1293,7 @@ function New-OptionalOpportunitiesPrompt {
   $lines += '- 不要重新選頁、重新選詞或重新做策略分析。'
   $lines += '- 不要讀 raw 7d/28d CSV、`Weekly SOP/reports/`、`Weekly SOP/history/`、`All_plan/` 或 Phase 歷史。'
   $lines += '- 只根據本清單判斷：值得做 / 先觀察 / 不建議做。'
-  $lines += '- 若建議加做，最多挑 1-3 頁，並說明原因；不要自行擴大成新一輪完整 6 頁。'
+  $lines += '- 若建議加做，最多挑 1-3 頁，並說明原因；不要自行擴大成新的完整 ranking cycle。'
   $lines += '- 省 token 回覆：不要重述整份表格；只列建議頁面、原因、建議修改類型。'
   $lines += '- 如果使用者決定要做，等待使用者另外下短指令，例如：`請依剛剛建議，實作 A 頁和 B 頁的小幅 SEO/GEO 優化。`'
   $lines += ''
@@ -877,131 +1320,236 @@ function New-OptionalOpportunitiesPrompt {
   return $lines
 }
 
-$weeklyRoot = Join-Path $PSScriptRoot '.'
+$weeklyRoot = if ([string]::IsNullOrWhiteSpace($RuntimeRoot)) {
+  [System.IO.Path]::GetFullPath($PSScriptRoot)
+} else {
+  [System.IO.Path]::GetFullPath($RuntimeRoot)
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
+Ensure-Dir -Path $weeklyRoot
+
+$registryFullPath = if ([string]::IsNullOrWhiteSpace($RegistryPath)) {
+  Join-Path $weeklyRoot 'config\target-registry.json'
+} else {
+  Resolve-RuntimePath -WeeklyRoot $weeklyRoot -Value $RegistryPath
+}
+$siteConfigPath = Join-Path $weeklyRoot 'config\site-config.json'
+$siteConfig = Read-JsonIfExists -Path $siteConfigPath
+if (-not $siteConfig -or [string]::IsNullOrWhiteSpace([string]$siteConfig.expectedHost)) {
+  throw "Missing or invalid site config expectedHost: $siteConfigPath"
+}
+$expectedHost = ([string]$siteConfig.expectedHost).Trim().TrimEnd('.').ToLowerInvariant()
+
 $latestRoot = Join-Path $weeklyRoot 'latest'
 $latest7d = Join-Path $latestRoot '7d'
 $latest28d = Join-Path $latestRoot '28d'
-$fresh7d = Get-WindowFreshness -LatestDir $latest7d -Window '7d' -MaxAgeDays 10
-$fresh28d = Get-WindowFreshness -LatestDir $latest28d -Window '28d' -MaxAgeDays 35
+Ensure-Dir -Path $latestRoot
+$fresh7d = Get-WindowFreshness -WeeklyRoot $weeklyRoot -LatestDir $latest7d -Window '7d' -MaxAgeDays 10 -ExpectedHost $expectedHost
+$fresh28d = Get-WindowFreshness -WeeklyRoot $weeklyRoot -LatestDir $latest28d -Window '28d' -MaxAgeDays 35 -ExpectedHost $expectedHost
+if (-not $fresh7d.fresh) {
+  throw "Cannot generate SEO/GEO action plan: latest 7d snapshot is not fresh. $($fresh7d.text)"
+}
 
 $requestedMode = $Mode
-if ($Mode -eq 'auto') {
-  if (-not $fresh7d.fresh) {
-    throw "Cannot generate SEO/GEO action plan: latest 7d report is not fresh. $($fresh7d.text)"
-  }
-  $effectiveMode = if ($fresh28d.fresh) { 'monthly' } else { 'weekly' }
-} else {
-  $effectiveMode = $Mode
-  if (-not $fresh7d.fresh) {
-    throw "Cannot generate SEO/GEO action plan: latest 7d report is not fresh. $($fresh7d.text)"
-  }
-  if ($effectiveMode -eq 'monthly' -and -not $fresh28d.fresh) {
-    throw "Cannot generate monthly SEO/GEO action plan: latest 28d report is not fresh. $($fresh28d.text)"
-  }
+$sameSnapshotFamily = ($fresh7d.snapshot_family_id -and $fresh7d.snapshot_family_id -eq $fresh28d.snapshot_family_id -and $fresh7d.end_date -eq $fresh28d.end_date)
+$snapshotDecisionReady = [bool]($fresh7d.fresh -and $fresh28d.fresh -and $fresh7d.decision_ready -and $fresh28d.decision_ready -and $sameSnapshotFamily)
+if ($Mode -eq 'monthly' -and -not $snapshotDecisionReady) {
+  throw "Cannot generate monthly SEO/GEO action plan: 7d/28d snapshots are not decision-ready (7d=$($fresh7d.data_confidence), 28d=$($fresh28d.data_confidence))."
 }
+$cycleDecisionReady = [bool](($Mode -eq 'monthly' -or $Mode -eq 'auto') -and $snapshotDecisionReady)
+$effectiveMode = if ($cycleDecisionReady) { 'monthly' } else { 'weekly' }
 
-$query7dPath = Resolve-ReportPath -Dir $latest7d -BaseName 'gsc-query-kpi-diff-report(查詢-7天)'
-$page7dPath = Resolve-ReportPath -Dir $latest7d -BaseName 'gsc-page-kpi-diff-report(網頁-7天)'
-$query28dPath = Resolve-ReportPath -Dir $latest28d -BaseName 'gsc-query-kpi-diff-report(查詢-28天)'
-$page28dPath = Resolve-ReportPath -Dir $latest28d -BaseName 'gsc-page-kpi-diff-report(網頁-28天)'
+$registryResult = Get-RegistryOwners -Path $registryFullPath -ExpectedHost $expectedHost
+$registry = $registryResult.registry
+$owners = @($registryResult.owners)
+$registryRelativePath = Get-RelativePortablePath -BasePath $weeklyRoot -Path $registryFullPath
+$registrySha = Get-Sha256File -Path $registryFullPath
+$registryVersion = if ($null -ne $registry.schemaVersion) { [int]$registry.schemaVersion } else { 1 }
 
-if (-not (Test-Path -LiteralPath $query7dPath -PathType Leaf)) {
-  throw "Missing latest 7d query report: $query7dPath. Please upload the 7-day GSC ZIP first."
-}
-if (-not (Test-Path -LiteralPath $page7dPath -PathType Leaf)) {
-  throw "Missing latest 7d page report: $page7dPath. Please upload the 7-day GSC ZIP first."
-}
-if ($effectiveMode -eq 'monthly' -and -not (Test-Path -LiteralPath $query28dPath -PathType Leaf)) {
-  throw "Missing latest 28d query report: $query28dPath. Use -Mode weekly or upload the 28-day GSC ZIP first."
-}
-if ($effectiveMode -eq 'monthly' -and -not (Test-Path -LiteralPath $page28dPath -PathType Leaf)) {
-  throw "Missing latest 28d page report: $page28dPath. Use -Mode weekly or upload the 28-day GSC ZIP first."
-}
+$query7dPath = Get-BaselinePathFromManifest -WeeklyRoot $weeklyRoot -Manifest $fresh7d.manifest -Kind query -Required $true
+$page7dPath = Get-BaselinePathFromManifest -WeeklyRoot $weeklyRoot -Manifest $fresh7d.manifest -Kind page -Required $true
+$query28dPath = Get-BaselinePathFromManifest -WeeklyRoot $weeklyRoot -Manifest $fresh28d.manifest -Kind query -Required $false
+$page28dPath = Get-BaselinePathFromManifest -WeeklyRoot $weeklyRoot -Manifest $fresh28d.manifest -Kind page -Required $false
 
-Ensure-Dir -Path $latestRoot
-
-$poolPath = Get-LatestKeywordPoolPath -WeeklyRoot $weeklyRoot
-$poolRows = Get-KeywordPoolRows -Path $poolPath
-$batchPages = @(Get-BatchPagesFromPool -Path $poolPath | Select-Object -First 6)
-
-$queryRows7d = Get-ReportRows -Path $query7dPath
-$pageRows7d = Get-ReportRows -Path $page7dPath
-$queryRows28d = if (Test-Path -LiteralPath $query28dPath -PathType Leaf) { Get-ReportRows -Path $query28dPath } else { @() }
-$pageRows28d = if (Test-Path -LiteralPath $page28dPath -PathType Leaf) { Get-ReportRows -Path $page28dPath } else { @() }
-
+$queryRows7d = @(Get-NormalizedBaselineRows -Path $query7dPath)
+$pageRows7d = @(Get-NormalizedBaselineRows -Path $page7dPath)
+$queryRows28d = @(Get-NormalizedBaselineRows -Path $query28dPath)
+$pageRows28d = @(Get-NormalizedBaselineRows -Path $page28dPath)
 $queryMap7d = Index-RowsByQuery -Rows $queryRows7d
 $queryMap28d = Index-RowsByQuery -Rows $queryRows28d
 $pageMap7d = Index-RowsByPage -Rows $pageRows7d
 $pageMap28d = Index-RowsByPage -Rows $pageRows28d
 
-$baselinePaths = @($query7dPath, $page7dPath)
-if (Test-Path -LiteralPath $query28dPath -PathType Leaf) { $baselinePaths += $query28dPath }
-if (Test-Path -LiteralPath $page28dPath -PathType Leaf) { $baselinePaths += $page28dPath }
-$baselineRefresh = Test-BaselineRefresh -Paths $baselinePaths
-
-$grouped = $poolRows | Group-Object ownerPage
+$sourceProvenance = Get-SourceProvenance -Owners $owners -RepoRoot $repoRoot
+$sourceFiles = @($sourceProvenance.source_files)
+$sourceOwnerBindings = @($sourceProvenance.owners)
+$sourceFingerprint = [string]$sourceProvenance.source_fingerprint
+$actionHistoryPath = Join-Path $weeklyRoot 'history\curtain-online\seo-geo-action-history.json'
+$actionHistoryRelativePath = Get-RelativePortablePath -BasePath $weeklyRoot -Path $actionHistoryPath
+$actionHistorySha = Get-Sha256File -Path $actionHistoryPath
+$actionHistoryEntries = @(Get-ActionHistoryEntries -Path $actionHistoryPath)
+$actionHistoryBinding = [ordered]@{
+  path = $actionHistoryRelativePath
+  sha256 = $actionHistorySha
+  entry_count = $actionHistoryEntries.Count
+}
 $candidateItems = @()
-foreach ($group in $grouped) {
-  $page = [string]$group.Name
-  $ownerRows = @($group.Group)
-  $terms = Get-QueryTerms -Rows $ownerRows
-  $queryMetric = Get-BestQueryMetric -Terms $terms -Map7d $queryMap7d -Map28d $queryMap28d -Mode $effectiveMode
-  $m7 = if ($pageMap7d.ContainsKey($page)) { $pageMap7d[$page] } else { $null }
-  $m28 = if ($pageMap28d.ContainsKey($page)) { $pageMap28d[$page] } else { $null }
-  $strategicOrder = 99
-  $batchIndex = [Array]::IndexOf($batchPages, $page)
-  if ($batchIndex -ge 0) {
-    $strategicOrder = $batchIndex + 1
-  } else {
-    $strategicOrder = [int](@($ownerRows | Sort-Object order | Select-Object -First 1).order)
+$observations = @()
+$ownerAnalyses = @()
+foreach ($owner in $owners) {
+  $page = [string]$owner.ownerPage
+  $terms = @(Get-QueryTerms -Owner $owner)
+  $queryMetric7d = Get-BestQueryMetric -Terms $terms -Map7d $queryMap7d -Map28d @{} -Mode 'weekly'
+  $queryMetric28d = Get-BestQueryMetric -Terms $terms -Map7d @{} -Map28d $queryMap28d -Mode 'monthly'
+  $pageMetric7d = if ($pageMap7d.ContainsKey($page)) { $pageMap7d[$page] } else { $null }
+  $pageMetric28d = if ($pageMap28d.ContainsKey($page)) { $pageMap28d[$page] } else { $null }
+  $compliance = Get-OwnerSourceCompliance -Owner $owner -RepoRoot $repoRoot
+  $registryCooldown = Get-CooldownStatus -LastChangedAt ([string]$owner.lastChangedAt)
+  $row = New-ActionRow -Priority 0 -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance
+  $actionHistoryCooldown = Get-ActionHistoryCooldown -Entries $actionHistoryEntries -Fingerprint ([string]$row.fingerprint)
+  $performanceOpportunity = Get-PerformanceOpportunity -PageMetric28d $pageMetric28d -QueryMetric28d $queryMetric28d
+
+  $disposition = 'actionable'
+  $reason = 'decision-ready，source 尚有缺口，且不在 registry/action-history 28d cooldown。'
+  if (-not $cycleDecisionReady) {
+    $disposition = 'monitor_only'
+    $reason = 'snapshot 尚未 decision-ready，只記錄完整 metrics。'
+  } elseif ($registryCooldown.active) {
+    $disposition = 'registry_cooldown'
+    $reason = "registry lastChangedAt=$($registryCooldown.last_changed_at)，28d cooldown 至 $($registryCooldown.cooldown_until)。"
+  } elseif ($actionHistoryCooldown.active) {
+    $disposition = 'action_history_cooldown'
+    $reason = "相同 action fingerprint 已於 $($actionHistoryCooldown.completed_at) 完成，action-history 28d cooldown 至 $($actionHistoryCooldown.cooldown_until)。"
+  } elseif ($compliance.compliant -and $performanceOpportunity.qualifies) {
+    $disposition = 'performance_actionable'
+    $reason = "source 已合規，但符合成效優化門檻：$($performanceOpportunity.reason)"
+    $row = New-ActionRow -Priority 0 -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance -EligibilityKind performance -EligibilityReason $performanceOpportunity.reason
+    $actionHistoryCooldown = Get-ActionHistoryCooldown -Entries $actionHistoryEntries -Fingerprint ([string]$row.fingerprint)
+    if ($actionHistoryCooldown.active) {
+      $disposition = 'action_history_cooldown'
+      $reason = "相同性能優化 action fingerprint 已於 $($actionHistoryCooldown.completed_at) 完成，action-history 28d cooldown 至 $($actionHistoryCooldown.cooldown_until)。"
+    }
+  } elseif ($compliance.compliant) {
+    $disposition = 'source_compliant'
+    $reason = 'keyword、metadata、H1、FAQ、JSON-LD、internal link 已符合，且未達成效優化門檻。'
   }
-  $row = New-ActionRow -Priority 0 -Page $page -OwnerRows $ownerRows -PageMetric7d $m7 -PageMetric28d $m28 -QueryMetric $queryMetric -Mode $effectiveMode -StrategicOrder $strategicOrder -BaselineRefresh $baselineRefresh
-  $candidateItems += [PSCustomObject]@{
-    page = $page
-    strategicOrder = $strategicOrder
-    row = $row
+
+  $observation = New-ObservationRow -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance -RegistryCooldown $registryCooldown -ActionHistoryCooldown $actionHistoryCooldown -ActionFingerprint ([string]$row.fingerprint) -Disposition $disposition -Reason $reason
+  $observations += $observation
+  $analysis = [PSCustomObject]@{
+    owner = $owner
+    pageMetric7d = $pageMetric7d
+    pageMetric28d = $pageMetric28d
+    queryMetric7d = $queryMetric7d
+    queryMetric28d = $queryMetric28d
+    compliance = $compliance
+    registryCooldown = $registryCooldown
+    actionHistoryCooldown = $actionHistoryCooldown
+    observation = $observation
+  }
+  $ownerAnalyses += $analysis
+  if ($cycleDecisionReady -and ($disposition -eq 'actionable' -or $disposition -eq 'performance_actionable') -and -not $registryCooldown.active -and -not $actionHistoryCooldown.active) {
+    $candidateItems += [PSCustomObject]@{ page = $page; strategicOrder = [int]$owner.order; row = $row }
   }
 }
 
-$pageBatchSize = if ($batchPages.Count -gt 0 -and $batchPages.Count -lt 6) { $batchPages.Count } else { 6 }
-$actionQueue = @(New-ActionQueue -CandidateItems $candidateItems -BatchPages $batchPages -BatchSize $pageBatchSize -MaxRounds 3)
-if ($actionQueue.Count -eq 0) {
-  throw 'No SEO/GEO action candidates could be generated from latest reports and keyword pool.'
-}
-
-$currentRound = $actionQueue[0]
-$actions = @($currentRound.actions)
-$round1Source = @($currentRound.requiredSource)
+$actionQueue = @(
+  if ($cycleDecisionReady) {
+    New-ActionQueue -CandidateItems $candidateItems -BatchSize 5 -MaximumBatchSize 6 -MaxRounds 3
+  }
+)
 $queuedPages = @($actionQueue | ForEach-Object { $_.targets } | Select-Object -Unique)
-
-$selectedPages = @($actions | ForEach-Object { $_.page })
-$watchlist = @()
-$watchPriority = 1
-foreach ($item in @($candidateItems | Where-Object { $selectedPages -notcontains $_.page } | Sort-Object -Property @{ Expression = { [double]$_.row.score }; Descending = $true }, strategicOrder | Select-Object -First 8)) {
-  $row = $item.row
-  $row.priority = $watchPriority
-  $watchlist += $row
-  $watchPriority++
+foreach ($observation in $observations) {
+  if ($queuedPages -contains $observation.page) {
+    $observation.disposition = 'queued'
+    $observation.reason = 'decision-ready 且通過 action eligibility；已排入動態 Round。'
+  } elseif ($observation.disposition -eq 'actionable') {
+    $observation.disposition = 'observation'
+    $observation.reason = if ($candidateItems.Count -lt 2) { '可行 owner 少於 2 頁，不建立單頁 Round。' } else { '超出本 cycle 最多 3 個 Round，保留觀察。' }
+  }
 }
 
+# The queue is the single source of truth for execution state. Deriving this
+# from its concrete rounds avoids a stale boolean producing an observation
+# summary after a valid Round has already been created.
+$isObservationOnly = (@($actionQueue).Count -eq 0)
+$currentRound = if ($actionQueue.Count -gt 0) { $actionQueue[0] } else { $null }
+$actions = @(if ($currentRound) { $currentRound.actions })
+$round1Source = @(if ($currentRound) { $currentRound.requiredSource })
+$pageBatchSize = if ($currentRound) { [int]$currentRound.targetCount } else { 0 }
 $minorOpportunities = @()
-$minorPriority = 1
-foreach ($item in @($candidateItems |
-  Where-Object { $queuedPages -notcontains $_.page } |
-  Sort-Object -Property @{ Expression = { [double]$_.row.score }; Descending = $true }, strategicOrder |
-  Select-Object -First 12)) {
-  $minorOpportunities += (Copy-ActionRowForQueue -Row $item.row -Priority $minorPriority)
-  $minorPriority++
-}
+$watchlist = $observations
 
-if ($actions.Count -eq 0) {
-  throw 'No SEO/GEO action candidates could be generated from latest reports and keyword pool.'
+$monitorReasons = @()
+if ($requestedMode -eq 'weekly') { $monitorReasons += 'weekly mode 固定只產生 observation' }
+if (-not $fresh28d.fresh) { $monitorReasons += "28d=$($fresh28d.status)" }
+if (-not $fresh7d.decision_ready) { $monitorReasons += "7d confidence=$($fresh7d.data_confidence)" }
+if (-not $fresh28d.decision_ready) { $monitorReasons += "28d confidence=$($fresh28d.data_confidence)" }
+if ($fresh7d.bootstrapped -or $fresh28d.bootstrapped) { $monitorReasons += 'bootstrap baseline 尚無前期比較' }
+if (-not $sameSnapshotFamily) { $monitorReasons += '7d/28d snapshot family 或資料截止日不一致' }
+if ($cycleDecisionReady -and $actionQueue.Count -eq 0) { $monitorReasons += '所有 owner 皆無內容缺口／成效優化機會、正在 cooldown，或可行頁少於 2' }
+$monitorReason = if ($monitorReasons.Count -gt 0) { $monitorReasons -join '；' } else { 'decision-ready' }
+$baselineLabel = if ($isObservationOnly) {
+  if ($fresh7d.bootstrapped -or $fresh28d.bootstrapped) { 'bootstrap_monitor_only' } else { 'observation_only' }
+} else {
+  'decision_ready'
 }
-
+$modeLabel = if ($isObservationOnly) { '7d/28d observation only' } else { '28d 正式決策 + 7d 異常觀察' }
 $generatedAt = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-$modeLabel = if ($effectiveMode -eq 'monthly') { '28d 正式決策 + 7d 異常觀察' } else { '7d weekly watchlist' }
-$baselineLabel = if ($baselineRefresh) { 'same-baseline / 現況機會判讀' } else { '前後期差異判讀' }
+
+function New-SnapshotBinding {
+  param(
+    [object]$Freshness,
+    [string]$QueryPath,
+    [string]$PagePath,
+    [string]$WeeklyRoot
+  )
+  if (-not $Freshness -or -not $Freshness.manifest) { return $null }
+  return [ordered]@{
+    run_id = [string]$Freshness.run_id
+    sha256 = [string]$Freshness.input_sha256
+    manifest_path = Get-RelativePortablePath -BasePath $WeeklyRoot -Path $Freshness.manifest_path
+    manifest_sha256 = [string]$Freshness.manifest_sha256
+    query_baseline = [ordered]@{
+      path = Get-RelativePortablePath -BasePath $WeeklyRoot -Path $QueryPath
+      sha256 = Get-Sha256File -Path $QueryPath
+    }
+    page_baseline = [ordered]@{
+      path = Get-RelativePortablePath -BasePath $WeeklyRoot -Path $PagePath
+      sha256 = Get-Sha256File -Path $PagePath
+    }
+    data_confidence = [string]$Freshness.data_confidence
+    decision_ready = [bool]$Freshness.decision_ready
+    bootstrapped = [bool]$Freshness.bootstrapped
+  }
+}
+
+$snapshot = [ordered]@{
+  '7d' = New-SnapshotBinding -Freshness $fresh7d -QueryPath $query7dPath -PagePath $page7dPath -WeeklyRoot $weeklyRoot
+  '28d' = New-SnapshotBinding -Freshness $fresh28d -QueryPath $query28dPath -PagePath $page28dPath -WeeklyRoot $weeklyRoot
+}
+$registryBinding = [ordered]@{
+  path = $registryRelativePath
+  sha256 = $registrySha
+  version = $registryVersion
+  owners = $sourceOwnerBindings
+}
+$provenance = [ordered]@{
+  snapshot = $snapshot
+  registry = $registryBinding
+  action_history = $actionHistoryBinding
+  source_files = $sourceFiles
+  source_fingerprint = $sourceFingerprint
+}
+$cycleMaterial = [ordered]@{
+  schema_version = 2
+  provenance = $provenance
+}
+$cycleHash = Get-Sha256Text -Text ($cycleMaterial | ConvertTo-Json -Depth 8 -Compress)
+$cycleKey = "seo-geo-v2-$($cycleHash.Substring(0, 24))"
+$queueId = "seo-geo-$($cycleHash.Substring(0, 16))"
+$receiptRelativePath = 'latest/seo-geo-validation-receipt.json'
+
 $outputMd = Join-Path $latestRoot 'seo-geo-action-plan.md'
 $outputHtml = Join-Path $latestRoot 'seo-geo-action-plan.html'
 $outputAi = Join-Path $latestRoot 'seo-geo-action-plan.ai.md'
@@ -1011,354 +1559,277 @@ $outputJson = Join-Path $latestRoot 'seo-geo-action-plan.json'
 $outputQueueMd = Join-Path $latestRoot 'seo-geo-action-queue.md'
 $outputQueueJson = Join-Path $latestRoot 'seo-geo-action-queue.json'
 $outputQueueStateJson = Join-Path $latestRoot 'seo-geo-action-queue-state.json'
-
-$fixedWorkflow = @(
-  '每週先匯入 latest 7d 與 28d GSC Search Performance ZIP。',
-  '7d 只看異常、曝光突增但低 CTR、排名急退與 watchlist 微調。',
-  '28d 作正式決策：先救 CTR，再推排名 8-15 的前 10 邊緣詞。',
-  '固定以 SEO/GEO 任務佇列執行；Round 1 是 AI 本輪要做的頁面批次，Round 2/3 只作後續預排。',
-  '頁面批次維持最多 6 頁；維持 1 keyword = 1 owner page。',
-  '每頁固定調整 title、meta description、H1/首屏、FAQ、內鏈錨文字、JSON-LD 對齊。',
-  '技術型 SEO/GEO 任務放入 technical queue，由驗證命令與 schema/content source truth 控制，不消耗 AI 重新判讀 token。',
-  '不新增頁面、不改公開 API/型別/後台邏輯/計價邏輯、不直接修改 out/。'
-)
+$lineFeed = [string][char]10
 
 $validation = @(
   'node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs',
   'npm.cmd run build',
   'npm.cmd run seo:check',
-  'npm.cmd run seo:preflight',
-  'npm.cmd run deploy:ftp:dry',
-  'npm.cmd run deploy:ftp'
+  'npm.cmd run seo:preflight'
 )
-
-$lineFeed = [string][char]10
-
 $technicalTasks = @(
   [PSCustomObject]@{
-    priority           = 1
-    type               = 'validation-deploy'
-    title              = 'Build / SEO check / preflight 摘要驗收'
-    scope              = '技術型 SEO/GEO 任務，預設只跑固定驗證並回報摘要；只有失敗時才讀 scripts 或完整 log。'
-    requiredSource     = @('scripts/seo-check.mjs', 'scripts/seo-preflight.mjs')
-    validationCommands = @('npm.cmd run build', 'npm.cmd run seo:check', 'npm.cmd run seo:preflight')
-    aiTokenRule        = '不要貼逐檔 build/deploy log；回報 passed/failed 與最後錯誤即可。'
+    priority = 1
+    type = 'validation'
+    title = 'Build / SEO check / preflight 本機驗收'
+    scope = '只有 decision-ready Round 需要執行；observation_only 不執行。'
+    requiredSource = @('scripts/seo-check.mjs', 'scripts/seo-preflight.mjs')
+    validationCommands = $validation
+    aiTokenRule = '只回報 passed/failed 與最後錯誤。'
   }
 )
+
+# Round prompt files are generated artifacts for the current queue only. Remove
+# stale numbered prompts first so an observation-only cycle cannot leave an old
+# executable instruction behind in latest/.
+Get-ChildItem -LiteralPath $latestRoot -Filter 'seo-geo-action-plan.round-*.slim.ai.md' -File -ErrorAction SilentlyContinue |
+  Remove-Item -Force -ErrorAction Stop
+
+$roundPromptFiles = @()
+if ($isObservationOnly) {
+  $monitorPrompt = New-MonitoringPrompt -Rows $observations -RequestedMode $requestedMode -EffectiveMode $effectiveMode -Reason $monitorReason
+  Write-Utf8NoBom -Path $outputSlimAi -Text ($monitorPrompt -join $lineFeed)
+  Write-Utf8NoBom -Path $outputAi -Text ($monitorPrompt -join $lineFeed)
+} else {
+  foreach ($round in $actionQueue) {
+    $roundPromptPath = Join-Path $latestRoot ('seo-geo-action-plan.round-{0}.slim.ai.md' -f $round.round)
+    $roundPrompt = New-RoundSlimPrompt -Round $round -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel -QueueId $queueId -CycleKey $cycleKey -ReceiptPath $receiptRelativePath
+    Write-Utf8NoBom -Path $roundPromptPath -Text ($roundPrompt -join $lineFeed)
+    $roundPromptFiles += [PSCustomObject]@{
+      round = [int]$round.round
+      path = Get-RelativePortablePath -BasePath $weeklyRoot -Path $roundPromptPath
+      targetCount = [int]$round.targetCount
+      targets = @($round.targets)
+      action_ids = @($round.action_ids)
+      action_fingerprints = @($round.action_fingerprints)
+      required_validations = @($round.required_validations)
+    }
+    if ($round.round -eq 1) {
+      Write-Utf8NoBom -Path $outputSlimAi -Text ($roundPrompt -join $lineFeed)
+      Write-Utf8NoBom -Path $outputAi -Text ($roundPrompt -join $lineFeed)
+    }
+  }
+}
+
+$optionalPrompt = New-OptionalOpportunitiesPrompt -Rows @() -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel
+Write-Utf8NoBom -Path $outputOptionalAi -Text ($optionalPrompt -join $lineFeed)
 
 $queueMd = @()
 $queueMd += '# Curtain Online SEO/GEO Action Queue'
 $queueMd += ''
 $queueMd += "- 產生時間：$generatedAt"
-$queueMd += "- 模式：$requestedMode -> $effectiveMode（$modeLabel）"
-$queueMd += "- Queue 原則：AI 只實作 Round 1；Round 2/3 是後續排程參考，不要在同一輪一起修改。"
-$queueMd += "- Token 原則：策略判讀已由本機 SOP 完成；不要重新讀 raw CSV、reports/history、All_plan 或 Phase 歷史。"
+$queueMd += "- 狀態：$(if ($isObservationOnly) { 'observation_only' } else { 'active' })"
+$queueMd += "- Cycle key：$cycleKey"
+$queueMd += "- Registry：$registryRelativePath (v$registryVersion)"
 $queueMd += ''
-foreach ($round in $actionQueue) {
-  $queueMd += "## Round $($round.round) - $($round.type)"
+if ($isObservationOnly) {
+  $queueMd += '## Observation Only'
   $queueMd += ''
-  $queueMd += "- 目標數：$($round.targetCount)"
-  $queueMd += "- AI 執行：$(if ($round.round -eq 1) { 'YES，本輪 Slim 指令只包含這一輪' } else { 'NO，保留給下一輪' })"
-  $queueMd += "- 需要讀的 source：$((@($round.requiredSource) | Select-Object -Unique) -join '；')"
+  $queueMd += "- $monitorReason"
+  $queueMd += '- 本 cycle 有 0 個 Round，不執行 source 修改或 validation receipt。'
   $queueMd += ''
-  $queueMd += (Convert-ActionsToMarkdownTable -Rows $round.actions)
-  $queueMd += ''
-}
-$queueMd += '## Optional Opportunities / 小幅可優化參考清單'
-$queueMd += ''
-$queueMd += '- 這一區只供人工判斷，不會被「複製下一輪 Slim AI 指令」自動複製。'
-$queueMd += '- 若 Round 1/2/3 都完成後仍想加做，請另開新一輪或明確指定頁面。'
-$queueMd += ''
-if ($minorOpportunities.Count -gt 0) {
-  $queueMd += (Convert-ActionsToMarkdownTable -Rows $minorOpportunities)
+  $queueMd += (Convert-ObservationsToMarkdownTable -Rows $observations)
 } else {
-  $queueMd += '- Round 1/2/3 已涵蓋目前 keyword-owner pool 內可排序的頁面，沒有額外小幅參考頁。'
+  foreach ($round in $actionQueue) {
+    $queueMd += "## Round $($round.round)"
+    $queueMd += ''
+    $queueMd += "- 目標數：$($round.targetCount)"
+    $queueMd += "- action_ids：$($round.action_ids -join '；')"
+    $queueMd += "- Required Source：$($round.requiredSource -join '；')"
+    $queueMd += ''
+    $queueMd += (Convert-ActionsToMarkdownTable -Rows $round.actions)
+    $queueMd += ''
+  }
+  $queueMd += '## Observation / Excluded Owners'
+  $queueMd += ''
+  $queueMd += (Convert-ObservationsToMarkdownTable -Rows @($observations | Where-Object { $_.disposition -ne 'queued' }))
 }
-$queueMd += ''
-$queueMd += '## Technical Queue'
-$queueMd += ''
-foreach ($task in $technicalTasks) {
-  $queueMd += "- P$($task.priority) / $($task.type)：$($task.title)"
-  $queueMd += "  - Scope：$($task.scope)"
-  $queueMd += "  - Required source when debugging：$($task.requiredSource -join '；')"
-  $queueMd += "  - Validation：$($task.validationCommands -join '；')"
-  $queueMd += "  - Token rule：$($task.aiTokenRule)"
-}
-
 Write-Utf8NoBom -Path $outputQueueMd -Text ($queueMd -join $lineFeed)
-Write-Utf8NoBom -Path $outputQueueJson -Text ([ordered]@{
-  status = 'success'
+
+$queuePayload = [ordered]@{
+  schema_version = 2
+  status = if ($isObservationOnly) { 'observation_only' } else { 'active' }
   generated_at = $generatedAt
+  queue_id = $queueId
+  cycle_key = $cycleKey
   requested_mode = $requestedMode
   mode = $effectiveMode
+  provenance = $provenance
+  snapshot = $snapshot
+  registry = $registryBinding
+  action_history = $actionHistoryBinding
+  source_files = $sourceFiles
+  source_fingerprint = $sourceFingerprint
   page_batch_size = $pageBatchSize
-  queue_rule = 'AI only implements Round 1. Later rounds are queued for future cycles.'
   rounds = $actionQueue
+  observations = $observations
   technical_tasks = $technicalTasks
-  optional_opportunities = $minorOpportunities
-} | ConvertTo-Json -Depth 10)
+  optional_opportunities = @()
+}
+Write-Utf8NoBom -Path $outputQueueJson -Text ($queuePayload | ConvertTo-Json -Depth 12)
+
+$stateRounds = @($actionQueue | ForEach-Object {
+  [PSCustomObject]@{
+    round = [int]$_.round
+    action_ids = @($_.action_ids)
+    action_fingerprints = @($_.action_fingerprints)
+    required_validations = @($_.required_validations)
+  }
+})
+$queueState = [ordered]@{
+  schema_version = 2
+  status = if ($isObservationOnly) { 'observation_only' } else { 'active' }
+  queue_id = $queueId
+  cycle_key = $cycleKey
+  generated_at = $generatedAt
+  provenance = $provenance
+  snapshot = $snapshot
+  registry = $registryBinding
+  action_history = $actionHistoryBinding
+  source_files = $sourceFiles
+  source_fingerprint = $sourceFingerprint
+  active_round = if ($actionQueue.Count -gt 0) { 1 } else { 0 }
+  next_round = if ($actionQueue.Count -gt 0) { 1 } else { 0 }
+  completed_rounds = @()
+  copied_rounds = @()
+  total_rounds = $actionQueue.Count
+  rounds = $stateRounds
+  prompt_files = $roundPromptFiles
+  receipt_path = $receiptRelativePath
+  note = if ($isObservationOnly) { 'Observation only; no executable Round.' } else { 'Advance requires a matching passed validation receipt.' }
+}
+$existingState = Read-JsonIfExists -Path $outputQueueStateJson
+# Preserve execution progress only when the regenerated queue contains the
+# exact same actions. A selector change can keep the same provenance cycle key
+# while adding/removing actions; carrying an old observation state into that
+# new queue would incorrectly disable its Round.
+$existingActionIds = @()
+$existingFingerprints = @()
+if ($existingState -and $existingState.PSObject.Properties.Name -contains 'rounds') {
+  $existingActionIds = @($existingState.rounds | ForEach-Object { @($_.action_ids) } | Sort-Object -Unique)
+  $existingFingerprints = @($existingState.rounds | ForEach-Object { @($_.action_fingerprints) } | Sort-Object -Unique)
+}
+$newActionIds = @($stateRounds | ForEach-Object { @($_.action_ids) } | Sort-Object -Unique)
+$newFingerprints = @($stateRounds | ForEach-Object { @($_.action_fingerprints) } | Sort-Object -Unique)
+$sameActionBinding = (($existingActionIds -join '|') -ceq ($newActionIds -join '|')) -and (($existingFingerprints -join '|') -ceq ($newFingerprints -join '|'))
+if ($existingState -and [string]$existingState.cycle_key -eq $cycleKey -and $sameActionBinding -and
+    ($isObservationOnly -or [string]$existingState.status -ne 'observation_only')) {
+  foreach ($name in @('queue_id', 'generated_at', 'status', 'active_round', 'next_round', 'completed_rounds', 'copied_rounds', 'last_copied_round', 'last_copied_at', 'last_validated_round', 'last_validation_receipt', 'last_validated_at', 'local_validated_at')) {
+    if ($existingState.PSObject.Properties.Name -contains $name) { $queueState[$name] = $existingState.$name }
+  }
+  if ($isObservationOnly) {
+    $queueState.status = 'observation_only'
+    $queueState.active_round = 0
+    $queueState.next_round = 0
+    $queueState.completed_rounds = @()
+    $queueState.copied_rounds = @()
+  }
+}
+Write-Utf8NoBom -Path $outputQueueStateJson -Text ($queueState | ConvertTo-Json -Depth 12)
 
 $md = @()
 $md += '# Curtain Online SEO/GEO Action Plan'
 $md += ''
 $md += "- 產生時間：$generatedAt"
+$md += "- 狀態：$baselineLabel"
 $md += "- 模式：$requestedMode -> $effectiveMode（$modeLabel）"
-$md += "- 判讀狀態：$baselineLabel"
-$md += "- 7d freshness：$($fresh7d.status) / $($fresh7d.text)"
-$md += "- 28d freshness：$($fresh28d.status) / $($fresh28d.text)"
-$md += "- keyword-owner 來源：$poolPath"
-$md += "- 7d query 來源：$query7dPath"
-$md += "- 7d page 來源：$page7dPath"
-if (Test-Path -LiteralPath $query28dPath -PathType Leaf) { $md += "- 28d query 來源：$query28dPath" }
-if (Test-Path -LiteralPath $page28dPath -PathType Leaf) { $md += "- 28d page 來源：$page28dPath" }
+$md += "- Registry：$registryRelativePath (v$registryVersion)"
+$md += "- 7d manifest：$($snapshot['7d'].manifest_path)"
+if ($snapshot['28d']) { $md += "- 28d manifest：$($snapshot['28d'].manifest_path)" }
 $md += ''
-$md += '## 固定優化流程'
-$md += ''
-foreach ($item in $fixedWorkflow) { $md += "- $item" }
-$md += ''
-$md += '## Round 1 本輪行動批次'
-$md += ''
-$md += (Convert-ActionsToMarkdownTable -Rows $actions)
-$md += ''
-$md += '## Round 2/3 預排佇列'
-$md += ''
-if ($actionQueue.Count -gt 1) {
-  foreach ($round in @($actionQueue | Select-Object -Skip 1)) {
-    $md += "### Round $($round.round)"
+if ($isObservationOnly) {
+  $md += '## Observation Only / 0 Rounds'
+  $md += ''
+  $md += "- $monitorReason"
+  $md += ''
+  $md += (Convert-ObservationsToMarkdownTable -Rows $observations)
+} else {
+  foreach ($round in $actionQueue) {
+    $md += "## Round $($round.round)"
     $md += ''
     $md += (Convert-ActionsToMarkdownTable -Rows $round.actions)
     $md += ''
   }
-} else {
-  $md += '- 目前 keyword-owner pool 已全部納入 Round 1。'
+  $md += '## Compliant / Cooldown Observations'
+  $md += ''
+  $md += (Convert-ObservationsToMarkdownTable -Rows @($observations | Where-Object { $_.disposition -ne 'queued' }))
 }
-$md += ''
-$md += '## Technical Queue'
-$md += ''
-foreach ($task in $technicalTasks) {
-  $md += "- $($task.type)：$($task.title)；$($task.aiTokenRule)"
-}
-$md += ''
-$md += '## Optional Opportunities / 小幅可優化參考清單'
-$md += ''
-$md += '- 這一區只供人工判斷，不會進入自動複製的 Round。'
-$md += '- 若 Round 1/2/3 已完成，仍想補做其中頁面，請另開新一輪或明確指定頁面。'
-$md += ''
-if ($minorOpportunities.Count -gt 0) {
-  $md += (Convert-ActionsToMarkdownTable -Rows $minorOpportunities)
-} else {
-  $md += '- 目前沒有額外小幅可優化參考頁。'
-}
-$md += ''
-$md += '## AI 執行規則'
-$md += ''
-$md += '- AI 執行時請直接依照「Round 1 本輪行動批次」修改 source，不需要重新做選頁/選詞策略分析。'
-$md += '- Round 2/3 只作後續排程參考，不要在同一輪一起修改，避免任務和 token 膨脹。'
-$md += '- AI 執行時使用 Slim Mode：不要重新讀 raw 7d/28d CSV、不要掃 `Weekly SOP/reports/`、不要讀 `All_plan/` 或 Phase 歷史。'
-$md += '- 只讀本報告、`plan.md`、目標頁相關 source 與必要 source truth；產品頁讀 `src/data/products.ts`，GEO 頁讀 `src/data/locationPages.ts`，Blog 頁讀 `src/data/knowledgePosts.ts`。'
-$md += '- 若報告顯示 same-baseline，只把它視為現況機會判讀，不判定成 SEO/GEO 失敗。'
-$md += '- 僅允許 SEO/GEO/schema/content/internal-link 相關 source 修改。'
-$md += '- 不直接修改 `out/`，由 build 重新產生。'
-$md += ''
-$md += '## 固定驗證命令'
-$md += ''
-foreach ($item in $validation) { $md += ('- `{0}`' -f $item) }
-
 Write-Utf8NoBom -Path $outputMd -Text ($md -join $lineFeed)
 
-$ai = @()
-$ai += 'PLEASE IMPLEMENT THIS PLAN:'
-$ai += ''
-$ai += '# Curtain Online SEO/GEO 固定優化行動報告'
-$ai += ''
-$ai += '請依這份 AI 執行指令實作，不要重新選詞/選頁。'
-$ai += ''
-$ai += "本報告已依 latest 7d / 28d GSC 報表與最新 keyword-owner pool 產生。SEO 判斷已由 Weekly SOP 腳本完成，AI 只負責照本指令精準修改 source。"
-$ai += ''
-$ai += '## Slim Mode Rules'
-$ai += ''
-$ai += '- 不要重新選頁、重新選詞或重新做策略分析，除非使用者明確要求。'
-$ai += '- 不要讀 raw 7d/28d CSV、`Weekly SOP/reports/`、`Weekly SOP/history/`、`All_plan/` 或 Phase 歷史。'
-$ai += '- 只讀本 AI 指令、`plan.md`、本輪 6 頁相關 source 與必要 source truth。'
-$ai += '- 產品頁只在需要時讀 `src/data/products.ts` 與 `src/app/products/[slug]/page.tsx`。'
-$ai += '- GEO 頁只在需要時讀 `src/data/locationPages.ts` 與 `src/app/location/[area]/page.tsx`。'
-$ai += '- Blog 頁只在需要時讀 `src/data/knowledgePosts.ts` 與 `src/app/blog/[id]/page.tsx`。'
-$ai += '- 首頁、估價頁或跨頁 SEO helper 只在需要時讀對應 page file 與 `src/lib/seo.ts`。'
-$ai += '- 不直接修改 `out/`，所有網站內容修改都回到 source。'
-$ai += ''
-$ai += "- Requested mode: $requestedMode"
-$ai += "- Effective mode: $effectiveMode（$modeLabel）"
-$ai += "- 7d freshness: $($fresh7d.status) / $($fresh7d.text)"
-$ai += "- 28d freshness: $($fresh28d.status) / $($fresh28d.text)"
-$ai += ''
-$ai += '## Scope'
-$ai += ''
-$ai += '- 僅修改 source 內 SEO/GEO/schema/content/internal-link 相關內容。'
-$ai += '- 不新增頁面，不修改公開 API、型別、後台邏輯或計價邏輯。'
-$ai += '- 不直接修改 `out/`。'
-$ai += '- 只實作 Round 1；Round 2/3 是後續排程，不要在本輪一起修改。'
-$ai += '- 頁面批次最多 6 頁，維持 `1 keyword = 1 owner page`。'
-$ai += ''
-$ai += '## Fixed Weekly SOP'
-$ai += ''
-foreach ($item in $fixedWorkflow) { $ai += "- $item" }
-$ai += ''
-$ai += '## Round 1 Task Queue To Implement'
-$ai += ''
-$ai += (Convert-ActionsToMarkdownTable -Rows $actions)
-$ai += ''
-$ai += '## Required Source For Round 1'
-$ai += ''
-foreach ($item in $round1Source) { $ai += ('- `{0}`' -f $item) }
-$ai += ''
-$ai += '## Technical Queue'
-$ai += ''
-$ai += '- 本輪只需跑固定驗證並摘要回報；只有 build/seo check/preflight 失敗時才讀 `scripts/seo-check.mjs` 或 `scripts/seo-preflight.mjs`。'
-$ai += '- 不要貼完整 build/deploy/FTP 逐檔 log。'
-$ai += ''
-$ai += '## Validation'
-$ai += ''
-foreach ($item in $validation) { $ai += ('- `{0}`' -f $item) }
-$ai += ''
-$ai += '## Reporting'
-$ai += ''
-$ai += '- 回報修改頁面、資料來源、驗證結果、deploy dry-run 結果。'
-$ai += '- 若缺 FTP 帳密，停止正式上傳並明確回報未 live 驗收。'
-
-Write-Utf8NoBom -Path $outputAi -Text ($ai -join $lineFeed)
-
-$roundPromptFiles = @()
-foreach ($round in $actionQueue) {
-  $roundPromptPath = Join-Path $latestRoot ('seo-geo-action-plan.round-{0}.slim.ai.md' -f $round.round)
-  $roundPrompt = New-RoundSlimPrompt -Round $round -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel
-  Write-Utf8NoBom -Path $roundPromptPath -Text ($roundPrompt -join $lineFeed)
-  $roundPromptFiles += [PSCustomObject]@{
-    round = $round.round
-    path = $roundPromptPath
-    targetCount = $round.targetCount
-    targets = $round.targets
+$html = @()
+$html += '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+$html += '<title>Curtain Online SEO/GEO Action Plan</title>'
+$html += '<style>body{font-family:"Microsoft JhengHei",Arial,sans-serif;margin:0;background:#f6f8fb;color:#18324a}main{max-width:1280px;margin:0 auto;padding:28px}h1{color:#0b2f4a}h2{margin-top:28px;border-left:5px solid #2f7d68;padding-left:10px}.meta,.note{background:#fff;border:1px solid #d9e3ec;border-radius:8px;padding:14px 16px;margin:14px 0;line-height:1.7;overflow:auto}table{width:100%;border-collapse:collapse;background:#fff;font-size:12px}th,td{border:1px solid #d9e3ec;padding:7px;vertical-align:top}th{background:#eaf2f8;text-align:left}</style>'
+$html += '</head><body><main><h1>Curtain Online SEO/GEO Action Plan</h1>'
+$html += '<div class="meta">狀態：' + (Escape-Html -Value $baselineLabel) + '<br>Cycle：' + (Escape-Html -Value $cycleKey) + '<br>Registry：' + (Escape-Html -Value $registryRelativePath) + '</div>'
+if ($isObservationOnly) {
+  $html += '<h2>Observation Only / 0 Rounds</h2><div class="note">' + (Escape-Html -Value $monitorReason) + '</div>'
+  $html += Convert-ObservationsToHtmlTable -Rows $observations
+} else {
+  foreach ($round in $actionQueue) {
+    $html += '<h2>Round ' + (Escape-Html -Value ([string]$round.round)) + '</h2>'
+    $html += Convert-ActionsToHtmlTable -Rows $round.actions
   }
-  if ($round.round -eq 1) {
-    Write-Utf8NoBom -Path $outputSlimAi -Text ($roundPrompt -join $lineFeed)
-  }
+  $html += '<h2>Compliant / Cooldown Observations</h2>'
+  $html += Convert-ObservationsToHtmlTable -Rows @($observations | Where-Object { $_.disposition -ne 'queued' })
 }
+$html += '</main></body></html>'
+Write-Utf8NoBom -Path $outputHtml -Text ($html -join $lineFeed)
 
-$queueId = 'seo-geo-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
-$queueState = [ordered]@{
-  status = 'active'
-  queue_id = $queueId
-  generated_at = $generatedAt
-  active_round = 1
-  next_round = 1
-  completed_rounds = @()
-  copied_rounds = @()
-  total_rounds = $actionQueue.Count
-  prompt_files = $roundPromptFiles
-  note = 'Use the HTA copy button to copy the active round. Confirm completion to advance.'
+$freshnessPublic = [ordered]@{
+  '7d' = [ordered]@{ status = $fresh7d.status; text = $fresh7d.text; data_confidence = $fresh7d.data_confidence; decision_ready = $fresh7d.decision_ready; bootstrapped = $fresh7d.bootstrapped; run_time = $fresh7d.run_time }
+  '28d' = [ordered]@{ status = $fresh28d.status; text = $fresh28d.text; data_confidence = $fresh28d.data_confidence; decision_ready = $fresh28d.decision_ready; bootstrapped = $fresh28d.bootstrapped; run_time = $fresh28d.run_time }
 }
-Write-Utf8NoBom -Path $outputQueueStateJson -Text ($queueState | ConvertTo-Json -Depth 8)
-
-$optionalPrompt = New-OptionalOpportunitiesPrompt -Rows $minorOpportunities -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel
-Write-Utf8NoBom -Path $outputOptionalAi -Text ($optionalPrompt -join $lineFeed)
-
 $json = [ordered]@{
+  schema_version = 2
   status = 'success'
+  workflow_status = if ($isObservationOnly) { 'observation_only' } else { [string]$queueState.status }
   generated_at = $generatedAt
+  queue_id = $queueId
+  cycle_key = $cycleKey
   requested_mode = $requestedMode
   mode = $effectiveMode
   mode_label = $modeLabel
   baseline_status = $baselineLabel
-  freshness = [ordered]@{
-    '7d' = $fresh7d
-    '28d' = $fresh28d
-  }
-  keyword_pool = $poolPath
-  batch_pages = $batchPages
+  freshness = $freshnessPublic
+  provenance = $provenance
+  snapshot = $snapshot
+  registry = $registryBinding
+  action_history = $actionHistoryBinding
+  source_files = $sourceFiles
+  source_fingerprint = $sourceFingerprint
+  active_owner_count = $owners.Count
   page_batch_size = $pageBatchSize
-  outputs = @{
-    markdown = $outputMd
-    html = $outputHtml
-    ai_prompt = $outputAi
-    slim_ai_prompt = $outputSlimAi
-    optional_ai_prompt = $outputOptionalAi
-    queue_markdown = $outputQueueMd
-    queue_json = $outputQueueJson
-    queue_state_json = $outputQueueStateJson
+  outputs = [ordered]@{
+    markdown = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputMd
+    html = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputHtml
+    ai_prompt = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputAi
+    slim_ai_prompt = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputSlimAi
+    optional_ai_prompt = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputOptionalAi
+    queue_markdown = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputQueueMd
+    queue_json = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputQueueJson
+    queue_state_json = Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputQueueStateJson
     round_prompts = $roundPromptFiles
   }
   action_count = $actions.Count
   queue_round_count = $actionQueue.Count
   current_round = $currentRound
   queue = $actionQueue
+  observations = $observations
   technical_tasks = $technicalTasks
-  optional_opportunities = $minorOpportunities
+  optional_opportunities = @()
   actions = $actions
   watchlist = $watchlist
 }
-Write-Utf8NoBom -Path $outputJson -Text ($json | ConvertTo-Json -Depth 8)
-
-$html = @()
-$html += '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
-$html += '<title>Curtain Online SEO/GEO Action Plan</title>'
-$html += '<style>body{font-family:"Microsoft JhengHei",Arial,sans-serif;margin:0;background:#f6f8fb;color:#18324a}main{max-width:1240px;margin:0 auto;padding:28px}h1{font-size:28px;margin:0 0 14px;color:#0b2f4a}h2{font-size:20px;margin-top:28px;border-left:5px solid #2f7d68;padding-left:10px}.meta,.note{background:#fff;border:1px solid #d9e3ec;border-radius:8px;padding:14px 16px;margin:14px 0;line-height:1.7}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #d9e3ec;font-size:13px}th,td{border:1px solid #d9e3ec;padding:8px;vertical-align:top}th{background:#eaf2f8;text-align:left}tr:nth-child(even) td{background:#fbfdff}code{background:#eef4fa;padding:2px 5px;border-radius:4px}ul{background:#fff;border:1px solid #d9e3ec;border-radius:8px;padding:14px 28px;line-height:1.7}.status{display:inline-block;border-radius:999px;padding:4px 10px;background:#e9f7ef;color:#1b6846;font-weight:700}.warning{background:#fff8e6;border-color:#f0d58a}</style>'
-$html += '</head><body><main>'
-$html += '<h1>Curtain Online SEO/GEO Action Plan</h1>'
-$html += '<div class="meta">'
-$html += '<div>產生時間：' + (Escape-Html -Value $generatedAt) + '</div>'
-$html += '<div>模式：' + (Escape-Html -Value "$requestedMode -> $effectiveMode（$modeLabel）") + '</div>'
-$html += '<div>判讀狀態：<span class="status">' + (Escape-Html -Value $baselineLabel) + '</span></div>'
-$html += '<div>7d freshness：' + (Escape-Html -Value "$($fresh7d.status) / $($fresh7d.text)") + '</div>'
-$html += '<div>28d freshness：' + (Escape-Html -Value "$($fresh28d.status) / $($fresh28d.text)") + '</div>'
-$html += '<div>keyword-owner 來源：' + (Escape-Html -Value $poolPath) + '</div>'
-$html += '<div>7d query/page：' + (Escape-Html -Value "$query7dPath / $page7dPath") + '</div>'
-if (Test-Path -LiteralPath $page28dPath -PathType Leaf) { $html += '<div>28d query/page：' + (Escape-Html -Value "$query28dPath / $page28dPath") + '</div>' }
-$html += '</div>'
-$html += '<h2>固定優化流程</h2>'
-$html += Convert-ListToHtml -Items $fixedWorkflow
-$html += '<h2>Round 1 本輪行動批次</h2>'
-$html += Convert-ActionsToHtmlTable -Rows $actions
-$html += '<h2>Round 2/3 預排佇列</h2>'
-if ($actionQueue.Count -gt 1) {
-  foreach ($round in @($actionQueue | Select-Object -Skip 1)) {
-    $html += '<h3>Round ' + (Escape-Html -Value ([string]$round.round)) + '</h3>'
-    $html += Convert-ActionsToHtmlTable -Rows $round.actions
-  }
-} else {
-  $html += '<div class="note">目前 keyword-owner pool 已全部納入 Round 1。</div>'
-}
-$html += '<h2>Technical Queue</h2>'
-$html += Convert-ListToHtml -Items @($technicalTasks | ForEach-Object { "$($_.type)：$($_.title)；$($_.aiTokenRule)" })
-$html += '<h2>Optional Opportunities / 小幅可優化參考清單</h2>'
-if ($minorOpportunities.Count -gt 0) {
-  $html += '<div class="note">這一區只供人工判斷，不會被「複製下一輪 Slim AI 指令」自動複製。</div>'
-  $html += Convert-ActionsToHtmlTable -Rows $minorOpportunities
-} else {
-  $html += '<div class="note">目前沒有額外小幅可優化參考頁。</div>'
-}
-$html += '<h2>AI 執行規則</h2>'
-$html += Convert-ListToHtml -Items @(
-  '直接依本報告的 Round 1 執行，不需要重新做選頁/選詞策略分析。',
-  'Round 2/3 是後續排程，不要在同一輪一起修改。',
-  '只修改 SEO/GEO/schema/content/internal-link 相關 source。',
-  '不新增頁面、不改公開 API/型別/後台邏輯/計價邏輯、不直接修改 out/。',
-  '完成後依固定驗證命令驗收。'
-)
-$html += '<h2>固定驗證命令</h2>'
-$html += Convert-ListToHtml -Items $validation
-$html += '<div class="note warning">AI 可直接使用的 Slim 版本已輸出：' + (Escape-Html -Value $outputSlimAi) + '<br>完整任務佇列已輸出：' + (Escape-Html -Value $outputQueueMd) + '</div>'
-$html += '</main></body></html>'
-Write-Utf8NoBom -Path $outputHtml -Text ($html -join $lineFeed)
+Write-Utf8NoBom -Path $outputJson -Text ($json | ConvertTo-Json -Depth 12)
 
 Write-Host 'SEO/GEO action plan completed.'
-Write-Host "Requested mode: $requestedMode"
-Write-Host "Effective mode: $effectiveMode"
-Write-Host "7d freshness: $($fresh7d.status) / $($fresh7d.text)"
-Write-Host "28d freshness: $($fresh28d.status) / $($fresh28d.text)"
-Write-Host "Status: $baselineLabel"
+Write-Host "Workflow status: $(if ($isObservationOnly) { 'observation_only' } else { $queueState.status })"
+Write-Host "Cycle key: $cycleKey"
+Write-Host "Active owners: $($owners.Count)"
 Write-Host "Queue rounds: $($actionQueue.Count)"
-Write-Host "Slim AI prompt: $outputSlimAi"
-Write-Host "Keyword pool: $poolPath"
-Write-Host "Next batch: $((@($actions | ForEach-Object { $_.page }) -join ', '))"
-Write-Host "Markdown: $outputMd"
-Write-Host "HTML: $outputHtml"
-Write-Host "AI prompt: $outputAi"
+Write-Host "Slim AI prompt: $(Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputSlimAi)"
+Write-Host "Registry: $registryRelativePath"
+Write-Host "Markdown: $(Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputMd)"
+Write-Host "HTML: $(Get-RelativePortablePath -BasePath $weeklyRoot -Path $outputHtml)"
+return

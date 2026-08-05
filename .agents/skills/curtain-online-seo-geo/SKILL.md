@@ -35,8 +35,8 @@ Use this for requests like "implement the latest SEO/GEO action plan", "依最�
 Use this only when the user asks to analyze 7d/28d data, create or replace a keyword pool, choose the next 6 pages, or decide whether to keep/replace/expand keywords.
 
 1. Read `references/seo-batch-workflow.md`.
-2. Read the latest `Weekly SOP/12-keyword-pool-v*.md`.
-3. Read only the needed latest 7d/28d summaries or current baseline CSV files. Do not recursively scan `Weekly SOP/reports/` or old history files.
+2. Read `Weekly SOP/config/target-registry.json` as the canonical keyword-owner portfolio. Treat `Weekly SOP/12-keyword-pool-v*.md` as legacy history unless the user explicitly asks to audit it.
+3. Read only the needed validated 7d/28d current baseline CSV files referenced by the latest manifests. Do not recursively scan `Weekly SOP/reports/` or old history files.
 4. Run `keyword-owner-check.mjs` after proposing or editing owner mappings.
 
 ### Deploy / Validation Mode
@@ -56,7 +56,7 @@ Read `references/windows-sandbox-troubleshooting.md` only after sandbox, permiss
 ## Reference Routing
 
 - Project map and ownership: read `references/repo-map.md` only when source ownership, moved docs, or repo boundaries are unclear.
-- GSC, keyword-owner, and 6-page ranking batch work: read `references/seo-batch-workflow.md` only in Strategy / Re-selection Mode.
+- GSC, keyword-owner, and dynamic ranking-batch work: read `references/seo-batch-workflow.md` only in Strategy / Re-selection Mode.
 - Content, FAQ, AI-answer, and schema alignment: read `references/content-schema-standards.md` only when changing visible FAQ/content/schema contracts or resolving schema/content mismatch.
 - Build, SEO check, FTP upload SOP, export, deploy, and live verification: read `references/validation-deploy.md` only in Deploy / Validation Mode or before a real upload.
 - Windows sandbox failures such as `os error 740` or `CreateProcessAsUserW failed: 1312`: read `references/windows-sandbox-troubleshooting.md` only after those failures appear.
@@ -66,7 +66,11 @@ Read `references/windows-sandbox-troubleshooting.md` only after sandbox, permiss
 - Treat `plan.md` as the compact live control file; treat `All_plan/` and `Phase*.md` as completed history for tracebacks only.
 - In routine implementation, prefer `Weekly SOP/latest/seo-geo-action-plan.ai.md` over raw 7d/28d data. Begin from raw 7d/28d baselines only in Strategy / Re-selection Mode.
 - Maintain `1 keyword = 1 owner page`.
-- Execute ranking work in complete 6-page batches unless the user explicitly changes the batch size.
+- Use `Weekly SOP/config/target-registry.json` as the canonical owner source. Do not let a legacy `12-keyword-pool-v*.md` override it.
+- Use a focused 2-5 page ranking batch by default, with 6 pages as the hard maximum. Do not add filler pages to reach a fixed size.
+- When the latest snapshot is `monitor_only` or not `decision_ready`, produce an observation list only. Do not emit a `PLEASE IMPLEMENT` prompt.
+- Do not mark a Round locally validated until its queue-bound validation receipt matches the queue id, cycle key, round, action ids/fingerprints, snapshot and registry bindings, source fingerprints, and required passing commands.
+- After a receipt-backed Round advances, persist its action history; an implemented Round also updates the owner registry `lastChangedAt`. Treat matching fingerprints and registry changes as 28-day cooldown evidence.
 - If `Weekly SOP/latest/seo-geo-action-plan.ai.md` exists, do not reselect pages, reselect keywords, or redo strategy analysis unless the user explicitly requests it.
 - Use shared SEO helpers in `src/lib/seo.ts` for canonical, product paths, absolute URLs, OG/Twitter, and calculator URLs.
 - Edit source files only. Do not edit generated `out/` files directly.

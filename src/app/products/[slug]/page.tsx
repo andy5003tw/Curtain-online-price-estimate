@@ -42,12 +42,12 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P001: {
     features: ['優異遮光效果', '良好隔音性能', '多種布料與花色選擇', '耐洗耐用'],
     useCases: ['臥室', '客廳', '辦公室'],
-    fullDesc: '窗簾訂製價格怎麼開始最有效率？建議先看窗戶尺寸、遮光需求、布料手感、雙層搭配與安裝方式，再用同一尺寸比較做窗簾價格、訂製窗簾價格、客廳布簾、臥室遮光布簾與基本安裝費。一般窗簾是居家最經典的選擇，兼顧遮光、隔音與垂墜感，特別適合客廳主窗、臥室與書房先抓預算，再安排三重、板橋、內湖或樹林到府丈量。',
+    fullDesc: '窗簾訂製價格先從同一尺寸開始比較布料、遮光等級、軌道與基本安裝費；想知道做窗簾價格，可先線上估價，再由到府丈量確認正式報價。一般布簾兼顧遮光、隔音與垂墜感，適合客廳主窗、臥室與書房的訂製需求。',
   },
   P002: {
     features: ['無縫設計、視覺更純淨', '透光不透人的遮蔽效果', '輕薄飄逸，極具美感', '適合搭配遮光布簾使用'],
     useCases: ['客廳', '餐廳', '書房'],
-    fullDesc: '紗簾價格與透光不透人紗簾怎麼看最快？建議先固定同一尺寸，比較無縫紗簾效果、雙層窗簾搭配、軌道、窗高與基本安裝費，再安排台北、士林或中正區到府丈量確認正式報價。無縫紗簾適合想兼顧採光、隱私與空間通透感的人，透過整幅布料減少接縫干擾，白天能柔化採光、保留隱私，夜晚再搭配遮光布簾補足遮蔽效果，特別適合客廳、書房與落地窗場景先比較風格與預算。',
+    fullDesc: '透光不透人紗簾價格先固定同一尺寸，比較無縫紗簾、雙層搭配、軌道、窗高與基本安裝費；可先線上估價，再安排到府看樣與丈量。無縫紗簾兼顧白天採光、隱私與空間通透感，適合客廳、書房與落地窗。',
   },
   P003: {
     features: ['獨特 S 型曲線設計', '布料垂墜感極佳', '適合落地窗使用', '展現現代奢華風格'],
@@ -67,12 +67,12 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P006: {
     features: ['鋁合金材質堅固耐用', '精確調光', '防潮耐洗', '現代簡約外觀'],
     useCases: ['衛浴', '廚房', '辦公室'],
-    fullDesc: '百葉窗價格試算怎麼做最快？建議先用同一尺寸比較鋁百葉、實木百葉與風琴簾，再看百葉窗簾價格、百葉窗價格、鋁百葉窗價格、葉片寬度、防潮、清潔與基本安裝費。鋁百葉是兼顧預算與耐用度的高實用選擇，葉片可精準調光且防潮耐洗，特別適合浴室、廚房、內湖商辦、樹林透天小窗與需要高頻清潔的辦公空間。',
+    fullDesc: '百葉窗價格試算若以防潮與好清潔為優先，先鎖定鋁百葉的葉片寬度、窗型與基本安裝費，再用同一尺寸線上估價確認鋁百葉窗價格。鋁百葉可精準調光且防潮耐洗，適合浴室、廚房、商辦與需要高頻清潔的小窗；重視木質感時，再比較實木百葉專頁。',
   },
   P007: {
     features: ['天然木材質感溫潤', '提升空間高級感', '自然紋理獨一無二', '多種木種與色系'],
     useCases: ['客廳', '書房', '餐廳'],
-    fullDesc: '實木百葉窗價格試算怎麼判斷合理？先看窗戶尺寸、木種、葉片寬度、表面塗裝、窗型與安裝高度。建議先做同尺寸試算，快速比較木百葉窗簾價格、客廳落地窗木百葉方案、台北與板橋常見基本安裝費，再搭配中正區書房或景觀窗情境評估木質感、五金配件與正式報價。',
+    fullDesc: '實木百葉窗價格試算先看窗戶尺寸、木種、葉片寬度、表面塗裝、窗型與基本安裝費；可用同尺寸估價比較木百葉窗簾價格，再由到府丈量確認正式報價。實木百葉適合客廳、書房與重視木質感的景觀窗；若需求是防潮好清潔，請改看鋁百葉價格試算。',
   },
   P008: {
     features: ['古樸東方韻味', '透氣性極佳', '輕盈自然材質', '環保天然'],
@@ -82,7 +82,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P009: {
     features: ['蜂巢結構隔熱效果顯著', '節能省電', '隔音效果佳', '輕薄美觀'],
     useCases: ['客廳', '臥室', '節能住宅'],
-    fullDesc: '風琴簾價格試算適合先從西曬隔熱、臥室控溫、蜂巢簾價格試算與蜂巢層數開始比較。風琴簾（蜂巢簾）採中空蜂巢結構，可有效阻隔熱傳導並提升室內舒適度，對西曬窗、士林透天高窗、新莊景觀宅與臥室控溫特別有感。',
+    fullDesc: '風琴簾價格試算先比較蜂巢簾隔熱、透光等級、蜂巢層數與基本安裝費，再用同尺寸線上估價抓預算。風琴簾的中空蜂巢結構適合西曬窗、臥室控溫與高窗；確認需求後再安排到府丈量。',
   },
   P010: {
     features: ['斑馬紋雙層交錯設計', '靈活切換透光/隱私模式', '現代時尚外觀', '操作便利'],
@@ -674,13 +674,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
   const productHeroTitleMap: Record<string, string> = {
-    P001: '窗簾訂製價格｜做窗簾價格、訂製窗簾價格與安裝費',
-    P002: '紗簾價格｜透光不透人紗簾、無縫紗簾與安裝費',
+    P001: '窗簾訂製價格試算｜布簾、安裝費與到府丈量',
+    P002: '紗簾價格試算｜透光不透人紗簾、安裝費與到府看樣',
     P005: '捲簾價格試算｜遮光捲簾、捲簾安裝價格與線上估價',
-    P006: '百葉窗價格試算｜百葉窗簾價格、鋁百葉窗價格與安裝費',
-    P007: '實木百葉窗價格試算｜木百葉窗簾價格、客廳搭配與安裝費',
+    P006: '百葉窗價格試算｜鋁百葉防潮、安裝費與線上估價',
+    P007: '實木百葉窗價格試算｜木種、安裝費與到府丈量',
     P008: '竹簾訂製｜竹簾、和室窗簾、日式窗簾與價格試算',
-    P009: '風琴簾價格試算｜蜂巢簾價格、隔熱窗簾與臥室控溫',
+    P009: '風琴簾價格試算｜蜂巢簾隔熱、安裝費與線上估價',
     P010: '調光簾價格試算｜斑馬簾價格、客廳控光與安裝費',
     P011: '柔紗簾價格試算｜柔紗簾訂製、透光窗簾與精品住宅搭配',
     P012: '醫院隔簾價格｜醫療隔簾、防焰抗菌布與診所施工',
@@ -783,6 +783,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     ],
     P007: [
       { href: '/calculator/?product=P007', label: '實木百葉窗價格試算：直接帶入木百葉品項與基本安裝費' },
+      { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：防潮好清潔時改看鋁百葉與安裝費' },
       { href: '/calculator/?product=P007&area=taipei', label: '台北實木百葉窗價格試算：先抓安裝預算' },
       { href: '/location/sanchong/', label: '三重窗簾價格試算入口：對照實木百葉窗價格' },
       { href: '/location/taipei/', label: '台北窗簾價格試算入口：對照客廳木百葉窗價格' },
@@ -1177,6 +1178,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                     borderRadius: '0.85rem',
                     background: 'var(--stone-50)',
                     padding: '0.9rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
                   }}
                 >
                   <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--stone-900)' }}>
@@ -1185,11 +1189,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                   <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.85rem', color: 'var(--stone-600)', lineHeight: 1.6 }}>
                     {area.shortDescription}
                   </p>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem', flexWrap: 'wrap' }}>
-                    <Link href={`/location/${area.id}/`} className="btn-outline" style={{ flex: 1, justifyContent: 'center' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.6rem', marginTop: 'auto', paddingTop: '0.8rem' }}>
+                    <Link href={`/location/${area.id}/`} className="btn-outline" style={{ display: 'flex', width: '100%', minWidth: 0, boxSizing: 'border-box', minHeight: '3.35rem', justifyContent: 'center', alignItems: 'center', padding: '0.65rem 0.5rem', textAlign: 'center', lineHeight: 1.35, whiteSpace: 'normal' }}>
                       查看地區頁
                     </Link>
-                    <Link href={buildCalculatorUrl(product.id, area.id)} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                    <Link href={buildCalculatorUrl(product.id, area.id)} className="btn-primary" style={{ display: 'flex', width: '100%', minWidth: 0, boxSizing: 'border-box', minHeight: '3.35rem', justifyContent: 'center', alignItems: 'center', padding: '0.65rem 0.5rem', textAlign: 'center', lineHeight: 1.35, whiteSpace: 'normal' }}>
                       直接帶入估價
                     </Link>
                   </div>

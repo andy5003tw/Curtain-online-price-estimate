@@ -32,6 +32,8 @@ Weekly SOP/*
 !Weekly SOP/*.hta
 !Weekly SOP/*.ps1
 !Weekly SOP/*change-log.md
+!Weekly SOP/config/
+!Weekly SOP/config/*.json
 plan.md
 
 private/users.php

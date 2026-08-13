@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
+import { calculatorFaq } from '@/data/calculatorFaq';
 
 const CALCULATOR_SNIPPET_VARIANTS = {
   A: {
@@ -34,103 +35,23 @@ export const metadata: Metadata = {
 
 const calculatorSchema = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
+  '@type': 'WebApplication',
+  '@id': `${absoluteUrl('/calculator/')}#web-application`,
   name: '宏森窗簾線上估價系統',
   applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Windows, macOS, Android, iOS',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'TWD'
-  },
+  operatingSystem: 'Any',
+  url: absoluteUrl('/calculator/'),
   description: '宏森窗簾計算機可快速完成窗簾價格試算與窗簾線上估價，輸入尺寸即可比較百葉窗、實木百葉、捲簾、調光簾與安裝預算。'
 };
 
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: '窗簾價格試算和窗簾線上估價差在哪裡？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '兩者在本頁是同一個流程：先輸入寬高與品項做窗簾價格試算，系統即時完成窗簾線上估價，並把材料與基本安裝費放進預算區間。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '窗簾價格試算和正式報價會差很多嗎？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '通常差異不大，但窗型、配件與施工條件會影響最終金額；建議先做窗簾價格試算，再以現場丈量確認正式報價。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '窗簾價格試算怎麼判斷合理？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '建議固定同一組尺寸比較 2 到 3 種品項，並一起看材料、基本安裝費、窗型與丈量條件。線上估價先抓合理區間，正式報價再由現場確認。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '窗簾線上估價適合先比較哪些品項？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '若你是第一次比價，建議先固定同一尺寸比較捲簾、鋁百葉、實木百葉與調光簾，再依遮光、清潔、木質感與安裝條件收斂到 1 到 2 個方案。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '百葉窗價格試算要先比較哪些品項？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '建議先用同一尺寸比較鋁百葉、實木百葉與風琴簾，再依防潮、木質感、隔熱與安裝條件判斷最適合的方案。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '估價結果會包含安裝費嗎？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '會。系統會依品項規則估算材料費與安裝費，並回傳總價。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '三重窗簾價格試算後如何比價最有效率？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '建議固定同一尺寸比較捲簾、調光簾、實木百葉窗三個品項，再從三重窗簾服務頁預約丈量，能最快確認正式報價。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '窗簾價格試算要先看價格指南還是直接輸入尺寸？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '如果已經有寬高尺寸，可直接用本頁線上估價；若還在比款式，可先看 2026 窗簾價格指南，再回來用同尺寸比較各品項。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '窗簾價格試算怎麼判斷合理？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '建議用同一組尺寸比較 2 到 3 種品項，並同時看材料、基本安裝費、窗型與丈量條件。線上估價適合先抓合理區間，正式報價仍以現場丈量為準。'
-      }
-    },
-    {
-      '@type': 'Question',
-      name: '實木百葉窗價格試算適合從哪裡開始？',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: '建議先切到木百葉品項並套用三重或台北區域，再到實木百葉產品頁確認木種、葉片與安裝條件。'
-      }
-    }
-  ]
+  mainEntity: calculatorFaq.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
 };
 
 const breadcrumbSchema = {

@@ -26,11 +26,11 @@ const processSteps = [
   { title: '即時報價', desc: '根據選定材質現場提供透明報價。', icon: <Calculator size={24} /> },
   { title: '工廠訂製', desc: '確認訂單後，工廠開始裁剪縫製、品質控管。', icon: <Factory size={24} /> },
   { title: '專業施工', desc: '專業師傅約定時間到府安裝，確保穩固與平整。', icon: <ShieldCheck size={24} /> },
-  { title: '售後服務', desc: '完善的保固與諮詢，不怕窗簾變孤兒。', icon: <Clock size={24} /> },
+  { title: '售後聯絡', desc: '安裝後若需調整或維護，可沿用同一公司聯絡窗口確認處理方式。', icon: <Clock size={24} /> },
 ];
 
 const advantages = [
-  { title: '價格優勢', desc: '省去實體門市抽成與盤商利潤，將成本直接回饋給客戶，讓您以最實惠價格獲得高品質產品。' },
+  { title: '報價流程', desc: '先以線上工具抓預算，再依丈量、材質、配件與施工條件確認書面報價。' },
   { title: '品質管控', desc: '每一窗窗簾皆在自有工廠監製，從車工細節、對花精準度到摺皺倍數，皆能嚴格把關。' },
   { title: '交貨速度', desc: '自有工廠不需轉單外包，大幅縮短製作時程，從丈量到安裝都能提供最迅速的彈性服務。' },
 ];
@@ -211,9 +211,9 @@ export default function AboutPage() {
                <img src={withBasePath('/Curtain installation_img/Curtain installation_04.webp')} alt="台大等指標客戶指定選用" loading="lazy" />
             </div>
             <div className="about-text">
-              <div className="tag">在地深耕・權威認證</div>
+              <div className="tag">在地服務・規格文件確認</div>
               <h2>台大、立法院多次選用</h2>
-              <p>宏森開發不僅服務萬戶住家，更有幸獲得諸多頂尖機構的信任。我們深耕三重國小捷運站周邊及大台北各地區，提供符合消防局認可的「防焰標籤」窗簾，是商辦與醫療院所的第一選擇。若你正在比較工廠直營窗簾、台北窗簾推薦與台北窗簾免費丈量服務，這一頁就是品牌信任入口。</p>
+              <p>宏森開發提供三重與大台北地區的住宅、商辦及醫療空間窗簾丈量與施工諮詢。若專案需要防焰、抗菌或耐洗規格，應在報價時逐項確認實際選用材料、適用標準與供應商文件；網站不以通用文案替代個別材料證明。</p>
               
               <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--stone-50)', borderRadius: '1rem', border: '1px solid var(--stone-200)' }}>
                 <h4 style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '1rem' }}>指標性服務客戶</h4>
@@ -227,7 +227,7 @@ export default function AboutPage() {
                 </ul>
               </div>
               <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--amber-700)', fontWeight: 600 }}>
-                * 提供消防局認可防焰標籤，確保安全無虞。
+                * 防焰或其他特殊規格以實際材料標示與供應商文件為準。
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function AboutPage() {
             <div className="about-text">
               <div className="tag">實體服務據點</div>
               <h2>在地聯絡資訊與位置</h2>
-              <p>我們深耕三重與大台北地區，工廠直營，提供最高品質的在地服務。歡迎先做窗簾價格試算，再預約台北窗簾免費丈量或新北到府量尺與估價，快速確認最適合的窗簾方案。</p>
+              <p>我們服務三重與大台北地區。歡迎先做窗簾價格試算，再預約台北或新北到府量尺與估價，依實際窗型、材料及施工條件確認方案。</p>
               
               <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>

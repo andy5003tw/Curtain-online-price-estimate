@@ -26,7 +26,9 @@ function Write-Utf8NoBom {
 function New-GscZip {
   param(
     [string]$Path,
-    [string]$DomainHost
+    [string]$DomainHost,
+    [string[]]$Dates = @(),
+    [switch]$IncludeDiagnostics
   )
 
   $sourceDir = Join-Path $testRoot ([System.IO.Path]::GetFileNameWithoutExtension($Path))
@@ -45,6 +47,20 @@ function New-GscZip {
     'Filter,Value'
     'Date,Last 7 days'
   ) -join "`r`n")
+  if ($IncludeDiagnostics) {
+    Write-Utf8NoBom -Path (Join-Path $sourceDir 'query-page.csv') -Text (@(
+      'Query,Page,Clicks,Impressions,CTR,Position'
+      "窗簾,https://$DomainHost/,3,100,3%,9.5"
+      "調光簾,https://$DomainHost/products/zebra-blinds/,1,25,4%,12.0"
+    ) -join "`r`n")
+    Write-Utf8NoBom -Path (Join-Path $sourceDir 'date-page.csv') -Text ((@('Date,Page,Clicks,Impressions,CTR,Position') + @($Dates | ForEach-Object { "$_,https://$DomainHost/,1,10,10%,9" })) -join "`r`n")
+    Write-Utf8NoBom -Path (Join-Path $sourceDir 'device-page.csv') -Text ((@('Date,Device,Page,Clicks,Impressions,CTR,Position') + @($Dates | ForEach-Object { "$_,MOBILE,https://$DomainHost/,1,10,10%,9" })) -join "`r`n")
+    Write-Utf8NoBom -Path (Join-Path $sourceDir 'country-page.csv') -Text ((@('Date,Country,Page,Clicks,Impressions,CTR,Position') + @($Dates | ForEach-Object { "$_,twn,https://$DomainHost/,1,10,10%,9" })) -join "`r`n")
+    Write-Utf8NoBom -Path (Join-Path $sourceDir 'device-query.csv') -Text ((@('Date,Device,Query,Clicks,Impressions,CTR,Position') + @($Dates | ForEach-Object { "$_,MOBILE,窗簾,1,10,10%,9" })) -join "`r`n")
+  }
+  if ($Dates.Count -gt 0) {
+    Write-Utf8NoBom -Path (Join-Path $sourceDir 'date.csv') -Text ((@('Date,Clicks,Impressions,CTR,Position') + @($Dates | ForEach-Object { "$_,1,10,10%,9" })) -join "`r`n")
+  }
   Compress-Archive -Path (Join-Path $sourceDir '*') -DestinationPath $Path -Force
 }
 
@@ -71,8 +87,16 @@ Ensure-Dir -Path $testRoot
 try {
   $validZip = Join-Path $testRoot 'online-hong-sen_(2026-07-20~2026-07-26)_7d.zip'
   $foreignZip = Join-Path $testRoot 'foreign-host-7d.zip'
-  New-GscZip -Path $validZip -DomainHost 'online.hong-sen.com'
+  $nextZip = Join-Path $testRoot 'online-hong-sen_(2026-07-21~2026-07-27)_7d.zip'
+  $manualFallbackZip = Join-Path $testRoot 'online-hong-sen_(2026-07-22~2026-07-28)_manual_7d.zip'
+  $incompleteDateZip = Join-Path $testRoot 'online-hong-sen_(2026-07-23~2026-07-29)_incomplete-date_7d.zip'
+  $dates1 = @('2026-07-20','2026-07-21','2026-07-22','2026-07-23','2026-07-24','2026-07-25','2026-07-26')
+  $dates2 = @('2026-07-21','2026-07-22','2026-07-23','2026-07-24','2026-07-25','2026-07-26','2026-07-27')
+  New-GscZip -Path $validZip -DomainHost 'online.hong-sen.com' -Dates $dates1 -IncludeDiagnostics
+  New-GscZip -Path $nextZip -DomainHost 'online.hong-sen.com' -Dates $dates2 -IncludeDiagnostics
+  New-GscZip -Path $manualFallbackZip -DomainHost 'online.hong-sen.com'
   New-GscZip -Path $foreignZip -DomainHost 'twyesn.com'
+  New-GscZip -Path $incompleteDateZip -DomainHost 'online.hong-sen.com' -Dates @('2026-07-23','2026-07-24','2026-07-25','2026-07-26','2026-07-27','2026-07-28') -IncludeDiagnostics
 
   $validExit = Invoke-Import -ZipPath $validZip
   Assert-True -Condition ($validExit -eq 0) -Message "Valid host import failed with exit code $validExit"
@@ -131,6 +155,30 @@ try {
   $successManifestAfterDuplicate = Get-Content -Raw -Encoding UTF8 $windowManifestPath | ConvertFrom-Json
   Assert-True -Condition ([string]$successManifestAfterDuplicate.run_id -eq $successRunId) -Message 'Duplicate ZIP replaced the successful per-window run_id.'
 
+  $nextExit = Invoke-Import -ZipPath $nextZip
+  Assert-True -Condition ($nextExit -eq 0) -Message 'Second complete diagnostic import failed.'
+  $dailyDatePath = Join-Path $historyRoot 'diagnostics\daily\date.csv'
+  $dailyDevicePagePath = Join-Path $historyRoot 'diagnostics\daily\device_page.csv'
+  $dailyDates = @(Import-Csv -LiteralPath $dailyDatePath -Encoding UTF8 | ForEach-Object { [string]$_.Date } | Sort-Object -Unique)
+  Assert-True -Condition ($dailyDates -contains '2026-07-20' -and $dailyDates -contains '2026-07-27' -and $dailyDates.Count -eq 8) -Message 'Next diagnostic import did not preserve and deduplicate the older daily Date history.'
+  Assert-True -Condition (@(Import-Csv -LiteralPath $dailyDevicePagePath -Encoding UTF8).Count -eq 8) -Message 'Device×Page daily accumulated history was not deduplicated by date/device/page.'
+  Assert-True -Condition (Test-Path -LiteralPath (Join-Path $historyRoot 'diagnostics\snapshots\2026-07-20_2026-07-26\date.csv')) -Message 'First dated diagnostic snapshot was not preserved.'
+  Assert-True -Condition (Test-Path -LiteralPath (Join-Path $historyRoot 'diagnostics\snapshots\2026-07-21_2026-07-27\date.csv')) -Message 'Second dated diagnostic snapshot was not preserved.'
+
+  $manualExit = Invoke-Import -ZipPath $manualFallbackZip
+  Assert-True -Condition ($manualExit -eq 0) -Message 'Manual fallback ZIP should import in monitor-only mode.'
+  $manualManifest = Get-Content -Raw -Encoding UTF8 $windowManifestPath | ConvertFrom-Json
+  Assert-True -Condition (-not [bool]$manualManifest.decision_ready -and [string]$manualManifest.data_confidence -eq 'monitor_only' -and @($manualManifest.missing_diagnostic_dimensions).Count -eq 5) -Message 'Manual fallback without diagnostics was not downgraded to monitor_only.'
+
+  $queryHashBefore = (Get-FileHash -LiteralPath $queryBaseline -Algorithm SHA256).Hash
+  $pageHashBefore = (Get-FileHash -LiteralPath $pageBaseline -Algorithm SHA256).Hash
+
+  $incompleteDateExit = Invoke-Import -ZipPath $incompleteDateZip
+  Assert-True -Condition ($incompleteDateExit -ne 0) -Message 'Incomplete Date diagnostic unexpectedly updated the baseline.'
+  $incompleteDateFailure = Get-Content -Raw -Encoding UTF8 (Join-Path $runtimeRoot 'latest\weekly-sop-last-run.json') | ConvertFrom-Json
+  Assert-True -Condition ([string]$incompleteDateFailure.message -match 'Date diagnostic is incomplete' -and -not [bool]$incompleteDateFailure.baseline_updated) -Message 'Incomplete Date diagnostic did not fail with the expected no-update contract.'
+  Assert-True -Condition ($queryHashBefore -eq (Get-FileHash -LiteralPath $queryBaseline -Algorithm SHA256).Hash -and $pageHashBefore -eq (Get-FileHash -LiteralPath $pageBaseline -Algorithm SHA256).Hash) -Message 'Incomplete Date diagnostic changed a current baseline.'
+
   $foreignExit = Invoke-Import -ZipPath $foreignZip
   Assert-True -Condition ($foreignExit -ne 0) -Message 'Foreign host import unexpectedly succeeded.'
 
@@ -152,6 +200,9 @@ try {
   Write-Host 'Valid host: accepted'
   Write-Host 'Duplicate ZIP: rejected; baseline and per-window manifest unchanged'
   Write-Host 'Foreign host: rejected'
+  Write-Host 'Incomplete Date diagnostic: rejected; baseline unchanged'
+  Write-Host 'Diagnostic history: dated snapshots retained; overlapping daily rows deduplicated'
+  Write-Host 'Manual fallback without diagnostics: monitor_only / no decision-ready strategy'
   Write-Host 'Baseline hashes: unchanged after rejection'
   Write-Host 'Manifest paths: relative and resolvable'
 } finally {

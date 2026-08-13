@@ -12,6 +12,10 @@ param(
 
   [string[]]$Path = @(),
   [string]$PathFile = '',
+  [string]$ManifestPath = 'Weekly SOP/latest/seo-geo-deployment-manifest.json',
+  [string]$QueueId = '',
+  [string]$CycleKey = '',
+  [string[]]$ActionId = @(),
 
   [switch]$DryRun,
   [switch]$Force,
@@ -196,6 +200,22 @@ function Resolve-DeployPath {
   throw "Deploy path not found under ${LocalRoot}: $InputPath"
 }
 
+function Write-DeploymentManifest {
+  param([object]$Manifest)
+  $manifestFullPath = if ([System.IO.Path]::IsPathRooted($ManifestPath)) { $ManifestPath } else { Join-Path (Get-Location).Path $ManifestPath }
+  $manifestDirectory = Split-Path -Parent $manifestFullPath
+  if (-not (Test-Path -LiteralPath $manifestDirectory)) { New-Item -ItemType Directory -Path $manifestDirectory -Force | Out-Null }
+  $tempPath = "$manifestFullPath.tmp.$([guid]::NewGuid().ToString('N'))"
+  try {
+    $json = $Manifest | ConvertTo-Json -Depth 20
+    [System.IO.File]::WriteAllText($tempPath, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+    [System.IO.File]::Move($tempPath, $manifestFullPath, $true)
+  } finally {
+    if (Test-Path -LiteralPath $tempPath) { Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue }
+  }
+  return $manifestFullPath
+}
+
 $selectedFiles = switch ($Mode) {
   'quick' { @(Get-QuickFiles) }
   'all' { @(Get-ChildItem -LiteralPath $rootPath -Recurse -File) }
@@ -241,6 +261,20 @@ $items = @(
     }
   }
 )
+$manifestItems = @(
+  foreach ($item in $items) {
+    $file = [System.IO.FileInfo]$item.File
+    [ordered]@{
+      relative_path = [string]$item.RelativePath
+      size_bytes = [int64]$file.Length
+      sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+      result = if ($DryRun) { 'would_upload' } else { 'pending' }
+      remote_size_before = $null
+      attempts = 0
+      error = $null
+    }
+  }
+)
 
 Write-Host "FTP deploy mode: $Mode"
 Write-Host "Local root: $rootPath"
@@ -272,6 +306,8 @@ foreach ($item in $items) {
     $remoteSize = Get-RemoteFileSize -RelativePath $relative
     if ($null -ne $remoteSize -and [int64]$remoteSize -eq [int64]$file.Length) {
       $skipped += 1
+      $manifestItems[$index - 1].result = 'skipped_same_size'
+      $manifestItems[$index - 1].remote_size_before = [int64]$remoteSize
       Write-Host "$prefix skip $relative ($sizeKb KB, same remote size)"
       continue
     }
@@ -281,14 +317,48 @@ foreach ($item in $items) {
     Send-FtpFile -File $file -RelativePath $relative
     $uploaded += 1
     $bytesUploaded += $file.Length
+    $manifestItems[$index - 1].result = 'uploaded'
+    $manifestItems[$index - 1].attempts = 1
     Write-Host "$prefix uploaded $relative ($sizeKb KB)"
   } catch {
     $failed += 1
+    $manifestItems[$index - 1].result = 'failed'
+    $manifestItems[$index - 1].error = $_.Exception.Message
     Write-Warning "$prefix failed $relative - $($_.Exception.Message)"
   }
 }
 
 Write-Host ("Summary: uploaded={0}, skipped={1}, failed={2}, uploadedMB={3}" -f $uploaded, $skipped, $failed, [Math]::Round($bytesUploaded / 1MB, 2))
+
+$manifestStatus = if ($DryRun) { 'dry_run' } elseif ($failed -eq 0) { 'success' } else { 'failed' }
+$deploymentManifest = [ordered]@{
+  schema_version = 1
+  status = $manifestStatus
+  generated_at = (Get-Date).ToUniversalTime().ToString('o')
+  completed_at = (Get-Date).ToUniversalTime().ToString('o')
+  deploy_mode = $Mode
+  dry_run = $DryRun.IsPresent
+  force = $Force.IsPresent
+  target_host = 'online.hong-sen.com'
+  ftp_host = $HostName
+  remote_root = $remoteRootTrimmed
+  local_root = $rootPath
+  deployment_context = [ordered]@{
+    queue_id = $QueueId
+    cycle_key = $CycleKey
+    action_ids = @($ActionId | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+  }
+  summary = [ordered]@{
+    selected = $items.Count
+    uploaded = $uploaded
+    skipped = $skipped
+    failed = $failed
+    bytes_uploaded = $bytesUploaded
+  }
+  files = $manifestItems
+}
+$writtenManifestPath = Write-DeploymentManifest -Manifest $deploymentManifest
+Write-Host "Deployment manifest: $writtenManifestPath"
 
 if ($failed -gt 0) {
   throw "$failed file(s) failed to upload."

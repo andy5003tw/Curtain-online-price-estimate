@@ -52,7 +52,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P003: {
     features: ['獨特 S 型曲線設計', '布料垂墜感極佳', '適合落地窗使用', '展現現代奢華風格'],
     useCases: ['客廳落地窗', '主臥室', '高端商業空間'],
-    fullDesc: '蛇形窗簾採用特殊夾的蛇形軌道系統，讓布料呈現整齊且完美的 S 型曲線垂墜感。相較於傳統窗簾的隨機皺褶，蛇形簾每個波浪間距一致，展現如精品店般的高端視覺效果。特別適合大型落地窗，讓空間瞬間升級到另一個層次。',
+    fullDesc: '蛇形窗簾是以專用軌道與等距吊掛配件形成規律 S 型波浪的布簾做法，適合想讓客廳落地窗保有整齊垂墜與一致摺距的空間。若主要需求是葉片調光或左右收合方式，應另比較直立簾；實際波浪密度、布量、窗簾盒與軌道條件仍需在丈量後確認。',
   },
   P004: {
     features: ['層次分明的摺疊設計', '收起時佔空間小', '多種布料選擇', '適合小窗與多窗格'],
@@ -95,30 +95,24 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
     fullDesc: '柔紗簾價格試算建議先固定同一尺寸，再比較葉片角度、透光柔化、夜間隱私與安裝費。它的葉片懸浮於兩層輕薄紗布之間，光線穿透後比調光簾更柔和，適合主臥、客廳與精品住宅想保留自然採光，又希望視覺更精緻的空間。',
   },
   P012: {
-    features: ['符合CNS 防燃標準', '抗菌特殊處理', '頂部網狀通風設計', '耐工業洗滌'],
+    features: ['防焰規格可依材料文件確認', '抗菌規格需依選用布料確認', '頂部通風網可依場域需求配置', '洗滌方式依材料標示確認'],
     useCases: ['醫院', '診所', '護理之家', '公家機關'],
-    fullDesc: '醫院隔簾價格通常先看隔簾尺寸、軌道長度、防焰抗菌布料、頂部網狀通風設計與施工時段。醫療隔簾專為醫院、診所、護理之家與公家醫療空間設計，布料需符合防焰與耐洗滌需求，同時兼顧病房、診療室與護理站的分區隱私。建議先用同尺寸抓醫院隔簾價格區間，再安排現場丈量確認軌道、吊掛高度與正式報價。',
+    fullDesc: '醫院隔簾價格通常先看隔簾尺寸、軌道長度、頂部通風網、施工時段與實際材料規格。醫療院所若要求防焰、抗菌或耐洗條件，必須針對選用布料核對標示與供應商文件。建議先用同尺寸抓價格區間，再安排現場丈量確認軌道、吊掛高度與正式報價。',
   },
   P013: {
     features: ['垂直葉片左右收合', '180 度葉片轉向調光', '適合大型落地窗', '線條俐落現代感'],
     useCases: ['大型落地窗', '辦公室', '商業空間'],
-    fullDesc: '直立簾以垂直懸掛的葉片組成，可左右收合讓光線完全進入室內，也可旋轉葉片角度調整遮光程度，最大可旋轉至180度實現完全遮光。直立的線條設計在視覺上拉高空間感，特別適合寬幅的大型落地窗或辦公室隔間使用，展現現代洗鍊的辦公風格。',
+    fullDesc: '直立簾以垂直懸掛葉片組成，可左右收合並旋轉葉片調整採光與隱私。直立線條適合寬幅落地窗或辦公空間；遮光程度仍取決於葉片材質、重疊量與安裝縫隙。',
   },
 };
 
 // Per-product extended SEO data
 const productSeoExtras: Record<string, {
-  reviews: { author: string; location: string; rating: number; text: string }[];
   priceTable: { label: string; range: string }[];
   lsiParagraph: string;
   relatedBlogIds: string[];
 }> = {
   P001: {
-    reviews: [
-      { author: '陳小姐', location: '台北市大安區', rating: 5, text: '師傅量尺非常仔細，布料材質摸起來很厚實，安裝後遮光效果超好，睡覺不再被早上的陽光吵醒！' },
-      { author: '林先生', location: '新北市三重區', rating: 5, text: '從選布到安裝一條龍，價格比想像的合理，工廠直營果然不一樣，強烈推薦！' },
-      { author: '王太太', location: '新北市板橋區', rating: 5, text: '已經是第二次找宏森了，這次換客廳的大落地窗布簾，垂墜感超美，非常滿意。' },
-    ],
     priceTable: [
       { label: '窗簾訂製價格試算：標準半腰窗 (150×150 cm)', range: '約 NT$ 1,800 – 2,800 起' },
       { label: '訂製窗簾價格：標準落地窗 (200×240 cm)', range: '約 NT$ 3,500 – 5,500 起' },
@@ -128,10 +122,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001', 'blog-002'],
   },
   P002: {
-    reviews: [
-      { author: '蔡小姐', location: '台北市中正區', rating: 5, text: '無縫紗簾裝上去整個空間變得很有質感，白天透光但鄰居看不進來，完全符合需求。' },
-      { author: '黃先生', location: '新北市新莊區', rating: 5, text: '師傅安裝很有經驗，紗簾選色也給了很好的建議，搭配遮光布簾效果超好！' },
-    ],
     priceTable: [
       { label: '紗簾價格試算：標準半腰窗 (150×150 cm)', range: '約 NT$ 1,200 – 2,000 起' },
       { label: '透光不透人紗簾價格：落地窗 (200×240 cm)', range: '約 NT$ 2,200 – 3,800 起' },
@@ -141,37 +131,23 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P003: {
-    reviews: [
-      { author: '江小姐', location: '台北市信義區', rating: 5, text: '蛇形簾的波浪弧度真的超漂亮，打開時每個褶子間距都一樣，比精品飯店還有質感！' },
-      { author: '張先生', location: '新北市永和區', rating: 5, text: '特意為客廳大落地窗換成蛇形簾，整個空間瞬間升級，朋友來都誇讚。師傅施工也很俐落。' },
-      { author: '許太太', location: '台北市大安區', rating: 5, text: '顏色選擇很多，最後選了深灰色，垂墜感一流，跟北歐風裝潢完美搭配，推薦！' },
-    ],
     priceTable: [
       { label: '蛇形軌道半腰窗 (150×150 cm)', range: '約 NT$ 2,800 – 4,500 起' },
       { label: '蛇形軌道落地窗 (200×240 cm)', range: '約 NT$ 5,000 – 8,000 起' },
       { label: '大型落地窗 (300×240 cm)', range: '約 NT$ 7,500 – 12,000 起' },
     ],
-    lsiParagraph: '蛇形窗簾（S-fold curtains）是目前高端住宅與商業酒店最受歡迎的窗簾款式，透過專屬的蛇形軌道夾，讓布料呈現完美且等間距的 S 型曲線，視覺效果遠優於傳統打褶布簾。台北信義區、大安區、新北市永和區等精裝住宅大量採用。宏森工廠可依您的窗幅客製化每個波浪密度，提供最完美的垂墜比例，免費到府丈量，現場確認效果。',
+    lsiParagraph: '蛇形窗簾（S-fold curtains）是客廳落地窗常見的 S 型布簾做法，透過專用軌道與等距吊掛配件形成規律曲線。若你在比較蛇形簾、S 型窗簾、客廳窗簾或落地窗窗簾，先確認希望的是布料垂墜與固定摺距，還是葉片調光；後者可改看直立簾。規劃時要一起確認窗幅、布量、波浪密度、窗簾盒深度與軌道固定面；線上內容只能協助理解差異，最後仍以現場丈量與材料確認為準。',
     relatedBlogIds: ['blog-001'],
   },
   P004: {
-    reviews: [
-      { author: '劉小姐', location: '台北市文山區', rating: 5, text: '廚房窗戶很不規則，師傅量完之後做出來的羅馬簾完全貼合，摺疊效果很漂亮。' },
-      { author: '吳先生', location: '新北市蘆洲區', rating: 5, text: '書房用半透光的羅馬簾，既有隱私又有採光，整體很清爽，選料過程師傅建議很專業。' },
-    ],
     priceTable: [
       { label: '小型窗羅馬簾 (60×100 cm)', range: '約 NT$ 1,500 – 2,500 起' },
       { label: '標準窗羅馬簾 (120×150 cm)', range: '約 NT$ 2,500 – 4,000 起' },
     ],
-    lsiParagraph: '羅馬簾（Roman Shade）以水平折疊的精巧設計，是小空間與多窗格環境的最佳解方。相較於傳統布簾佔用大量左右空間，羅馬簾收合後幾乎不佔窗框面積，適合廚房、浴室、衛浴等小窗戶或多扇窗的空間。宏森開發提供各種材質選擇，從半透光到全遮光，從純棉到防水布料，依您的需求量身訂製，歡迎預約台北市與新北市各區免費到府丈量。',
+    lsiParagraph: '羅馬簾（Roman Shade）以水平折疊方式收合，適合小窗、多窗格或希望減少左右收納空間的情境。材質、透光程度、防潮需求與操作方式都要依安裝位置確認；廚房或衛浴使用時，應先核對所選布料的清潔與耐濕條件。',
     relatedBlogIds: ['blog-001'],
   },
   P005: {
-    reviews: [
-      { author: '陳先生', location: '台北市中山區', rating: 5, text: '辦公室全部換成捲簾，拉起來整整齊齊的，開會投影也完全不漏光，非常實用！' },
-      { author: '林小姐', location: '新北市板橋區', rating: 5, text: '廚房的捲簾防潑水效果真的很好，油煙濺上去用濕布一擦就乾淨，超級好保養！' },
-      { author: '朱先生', location: '台北市內湖區', rating: 5, text: '從丈量到安裝不到一週，速度很快，捲簾效果也符合預期，價格合理。' },
-    ],
     priceTable: [
       { label: '捲簾價格試算 (80×150 cm)', range: '約 NT$ 800 – 1,500 起' },
       { label: '遮光捲簾價格試算 (150×180 cm)', range: '約 NT$ 1,500 – 2,800 起' },
@@ -181,10 +157,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P006: {
-    reviews: [
-      { author: '蘇太太', location: '台北市南港區', rating: 5, text: '浴室安裝鋁百葉，旋轉葉片可以精確控制角度，通風採光兩不誤，比裝霧面玻璃還實用。' },
-      { author: '鄭先生', location: '新北市中和區', rating: 5, text: '廚房窗戶用鋁百葉，防水防潮效果真的很好，已經用了三年完全沒有任何問題。' },
-    ],
     priceTable: [
       { label: '百葉窗價格試算 (80×120 cm)', range: '約 NT$ 1,200 – 2,000 起' },
       { label: '鋁百葉窗價格試算 (150×180 cm)', range: '約 NT$ 2,200 – 3,500 起' },
@@ -194,11 +166,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P007: {
-    reviews: [
-      { author: '何小姐', location: '台北市士林區', rating: 5, text: '木百葉的質感真的沒話說，書房裝上去整個變高級了！陽光斜透進來的感覺超美。' },
-      { author: '廖先生', location: '新北市淡水區', rating: 5, text: '選了深胡桃木色，搭配原木家具超級協調。師傅說材質是真正的木頭，觸感完全不一樣！' },
-      { author: '馮太太', location: '台北市北投區', rating: 5, text: '客廳與書房一起換，師傅很有耐心地解說各種木種差異，最後選到最喜歡的款式。' },
-    ],
     priceTable: [
       { label: '木百葉窗簾價格 (80×120 cm)', range: '約 NT$ 2,500 – 4,500 起' },
       { label: '木百葉窗簾價格 (150×180 cm)', range: '約 NT$ 4,500 – 8,000 起' },
@@ -209,10 +176,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P008: {
-    reviews: [
-      { author: '羅先生', location: '台北市大同區', rating: 5, text: '日式茶室裝了竹簾，整個空間的禪意感直接提升三個等級，來訪的客人都問在哪裡買的！' },
-      { author: '葉小姐', location: '新北市三峽區', rating: 5, text: '竹簾透光效果很自然，光線進來感覺柔和很多，配上綠色植物真的很美。' },
-    ],
     priceTable: [
       { label: '竹簾訂製 (90×150 cm)', range: '約 NT$ 1,500 – 2,500 起' },
       { label: '和室窗簾竹簾 (150×180 cm)', range: '約 NT$ 2,800 – 4,500 起' },
@@ -222,11 +185,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P009: {
-    reviews: [
-      { author: '李先生', location: '台北市信義區', rating: 5, text: '西曬房裝了風琴簾，體感溫度明顯下降很多，冷氣開小一點就夠了，真的有節省電費！' },
-      { author: '謝小姐', location: '新北市新店區', rating: 5, text: '蜂巢簾的結構很特別，光線透進來很柔和不刺眼，睡覺品質提升很多，強烈推薦！' },
-      { author: '周太太', location: '台北市中正區', rating: 5, text: '師傅特別說明蜂巢簾的隔熱原理，選了上下都能開合的款式，功能性很強大。' },
-    ],
     priceTable: [
       { label: '風琴簾價格試算 (120×150 cm)', range: '約 NT$ 3,500 – 6,000 起' },
       { label: '蜂巢簾價格試算 (200×240 cm)', range: '約 NT$ 6,000 – 10,000 起' },
@@ -235,11 +193,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P010: {
-    reviews: [
-      { author: '徐小姐', location: '台北市松山區', rating: 5, text: '斑馬簾真的很有現代感，調整條紋對齊的角度就能控制光線，設計感和實用性都有！' },
-      { author: '楊先生', location: '新北市汐止區', rating: 5, text: '辦公室換了調光簾之後，開會不再被強烈陽光干擾，又不影響整體採光，太棒了！' },
-      { author: '潘太太', location: '台北市中山區', rating: 5, text: '臥室選了灰色調光簾，白天自然採光、夜晚完全遮光，操作很簡單，選對了！' },
-    ],
     priceTable: [
       { label: '調光簾 (120×150 cm)', range: '約 NT$ 2,500 – 4,500 起' },
       { label: '調光簾 (200×240 cm)', range: '約 NT$ 4,500 – 7,500 起' },
@@ -248,10 +201,6 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P011: {
-    reviews: [
-      { author: '馬小姐', location: '台北市大安區', rating: 5, text: '柔紗簾是我見過最漂亮的窗簾！光線透進來會有薄霧感，整個臥室變得超夢幻！' },
-      { author: '吳先生', location: '新北市永和區', rating: 5, text: '以前看飯店的窗簾一直很羨慕，沒想到宏森也可以做出一樣的效果，而且價格很合理。' },
-    ],
     priceTable: [
       { label: '柔紗簾價格試算 (150×210 cm)', range: '約 NT$ 4,500 – 7,500 起' },
       { label: '柔紗簾訂製落地窗 (200×240 cm)', range: '約 NT$ 6,000 – 10,000 起' },
@@ -260,42 +209,30 @@ const productSeoExtras: Record<string, {
     relatedBlogIds: ['blog-001'],
   },
   P012: {
-    reviews: [
-      { author: '趙護理長', location: '台北市士林區某醫院', rating: 5, text: '符合CNS防焰標準，通過醫院採購評審。安裝過程很順利，師傅有處理醫療院所施工的經驗。' },
-      { author: '陳院長', location: '新北市某診所', rating: 5, text: '醫療空間最重視防焰與清潔，宏森的隔簾完全符合規格，且抗菌處理讓感染風險降低。' },
-    ],
     priceTable: [
       { label: '醫院隔簾價格試算 (120×200 cm)', range: '約 NT$ 2,000 – 3,500 起' },
       { label: '醫療隔簾價格與軌道 (200×200 cm)', range: '約 NT$ 3,500 – 6,000 起' },
-      { label: '診所隔簾、防焰抗菌布與現場安裝', range: '依軌道長度、施工時段與場域條件確認' },
+      { label: '診所隔簾、特殊材料規格與現場安裝', range: '依材料文件、軌道長度、施工時段與場域條件確認' },
     ],
-    lsiParagraph: '醫院隔簾價格若要抓得準，通常要先確認隔簾寬高、軌道長度、防焰抗菌布料、頂部通風網、吊掛高度與是否需要低干擾施工。醫療隔簾、醫院窗簾、診所隔簾與護理之家隔簾都需要兼顧消防安全、清潔耐洗、分區隱私與後續維護。宏森提供台北與新北醫療空間到府丈量，先用尺寸抓醫院隔簾價格區間，再由現場確認軌道走向、布料規格與正式報價。',
+    lsiParagraph: '醫院隔簾價格若要抓得準，通常要先確認隔簾寬高、軌道長度、頂部通風網、吊掛高度、施工時段與材料文件。醫療隔簾、診所隔簾與護理之家隔簾需要兼顧分區隱私、清潔、維護及院所採購條件；防焰、抗菌或耐洗規格都應以實際選用材料的文件為準。',
     relatedBlogIds: ['blog-001'],
   },
   P013: {
-    reviews: [
-      { author: '游先生', location: '台北市信義區某辦公室', rating: 5, text: '公司的大型落地玻璃牆換了直立簾，視覺上整個空間變得更高挑，開合也超級順暢！' },
-      { author: '范小姐', location: '新北市林口區', rating: 5, text: '別墅的超寬落地窗用直立簾，左右可以分開控制，宴客時全開效果很氣派。' },
-      { author: '石先生', location: '台北市內湖區', rating: 5, text: '商業辦公室用直立簾很容易維護，壞掉只需換單片葉片即可，貼心的設計。' },
-    ],
     priceTable: [
       { label: '直立簾 (200×210 cm)', range: '約 NT$ 3,000 – 5,500 起' },
       { label: '直立簾 (300×240 cm)', range: '約 NT$ 5,500 – 9,500 起' },
     ],
-    lsiParagraph: '直立簾（Vertical Blind）以垂直懸掛的葉片組成，可完全左右收合或旋轉至180度實現完全遮光，垂直線條設計在視覺上拉高空間感，特別適合寬幅大型落地窗。台北市信義區辦公大樓、內湖科技園區、新北市林口區商辦廣泛採用直立簾做為空間分隔與遮陽解決方案。宏森直立簾設計易於日常維護，單片葉片損壞時可單獨更換，無需整組拆除，大台北地區提供免費到府量尺報價。',
+    lsiParagraph: '直立簾（Vertical Blind）由垂直葉片組成，可左右收合並旋轉葉片調整採光與隱私，適合寬幅落地窗或需要分區控光的空間。規劃時應確認葉片材質、重疊量、軌道長度、收納方向與維修方式；遮光程度仍會受材料與安裝縫隙影響。',
     relatedBlogIds: ['blog-001'],
   },
 };
 
 const defaultSeoExtras = {
-  reviews: [
-    { author: '客戶評價', location: '台北市', rating: 5, text: '宏森窗簾服務專業，師傅施工細心，品質令人滿意，誠摯推薦給有需要的朋友！' },
-  ],
   priceTable: [
     { label: '標準半腰窗', range: '約 NT$ 1,800 – 3,500 起' },
     { label: '標準落地窗', range: '約 NT$ 3,500 – 6,500 起' },
   ],
-  lsiParagraph: '宏森開發有限公司自1996年深耕大台北窗簾市場，提供台北市、新北市各行政區（包含三重、蘆洲、板橋、新莊、永和、中和、林口等）的專業到府丈量與施工服務。所有產品均來自自有工廠監製，確保品質一致。歡迎線上估價或致電洽詢免費丈量預約。',
+  lsiParagraph: '宏森開發有限公司提供台北市與新北市主要服務區的窗簾估價、丈量與施工諮詢。建議先用線上工具比較預算，再依實際窗型、材料、配件與施工條件確認正式報價。',
   relatedBlogIds: ['blog-001'],
 };
 
@@ -352,7 +289,7 @@ const productV3Data: Record<string, {
   P003: {
     faqs: [
       { q: '蛇形簾的軌道安裝有什麼特別之處？', a: '蛇形簾需要使用專用的蛇形軌道，軌道上有等距排列的C型鉤槽，確保每個波浪間距固定。宏森會在丈量時確認天花板結構是否適合安裝蛇形軌道，並給予最佳建議。' },
-      { q: '蛇形窗簾適合哪種裝潢風格？', a: '蛇形窗簾最適合現代簡約、輕奢、北歐及精品飯店風格。完美的S型曲線讓空間一眼就看起來非常精緻高端。不適合鄉村風或傳統中式風格。' },
+      { q: '客廳落地窗想做蛇形窗簾，要先確認什麼？', a: '先確認希望的是固定 S 型摺距與布料垂墜，還是葉片調光；前者可規劃蛇形窗簾，後者可一併比較直立簾。接著量測窗幅、窗高、窗簾盒深度與軌道固定面，正式規格仍以丈量為準。' },
       { q: '蛇形簾的清潔難度高嗎？', a: '蛇形簾清洗時需稍微注意保持褶子形狀。建議用衣架撐住後輕輕手洗或使用洗衣袋冷水機洗，洗後立即掛回軌道讓重力自然拉直，不要大力擰乾，避免破壞波浪形狀。' },
     ],
     material: '高垂墜感聚酯纖維、棉麻混紡，搭配鋁合金蛇形軌道',
@@ -508,20 +445,20 @@ const productV3Data: Record<string, {
       { feature: '清潔難易度', thisProduct: '★★（需小心保養）', vs1: '★★★★★', vs1Name: '捲簾' },
       { feature: '價格親和度', thisProduct: '★★（高端款）', vs1: '★★★★★', vs1Name: '布簾' },
     ],
-    galleryDesc: '柔紗簾五星級飯店風主臥室施工案例',
+    galleryDesc: '柔紗簾飯店風主臥室搭配示意',
   },
   P012: {
     faqs: [
       { q: '醫院隔簾價格要先看哪三件事？', a: '建議先看隔簾尺寸、軌道長度與防焰抗菌布料規格。若還有夜間施工、分區施工或拆舊需求，正式報價會再依現場條件調整。' },
-      { q: '醫療隔簾需要符合哪些法規？', a: '依台灣消防法規，醫療院所的窗簾必須通過CNS 1220防燃標準測試，並取得防焰標籤認證。宏森提供的醫院隔簾均已通過此認證，可提供正式防焰測試報告，協助醫療機構通過消防稽查。' },
-      { q: '醫院隔簾多久需要更換？', a: '醫院隔簾依使用頻率與洗滌次數而定，一般建議每2-3年更換一次以確保抗菌效果。宏森可提供大批量的採購服務，協助醫療院所定期更換，並可配合院所的洗滌習慣選擇合適的布料厚度。' },
-      { q: '抗菌處理是永久的嗎？', a: '抗菌處理通常可以維持30-50次的工業洗滌週期。超過此次數後，抗菌效果會逐漸降低，建議配合更換新隔簾或向廠商詢問抗菌重新處理的服務。' },
+      { q: '醫療隔簾的防焰或抗菌規格怎麼確認？', a: '應依院所採購條件與現場需求，逐項核對實際選用布料的標示、適用標準、測試或供應商文件；網站上的產品分類不能替代該批材料證明。' },
+      { q: '醫院隔簾多久需要更換？', a: '沒有適用所有場域的固定年限。應依材料說明、洗滌紀錄、破損、污染與院所維護規範評估，並由管理單位確認更換時點。' },
+      { q: '抗菌或耐洗效果可以直接從網站判定嗎？', a: '不可以。抗菌、耐洗與洗滌次數會因實際布料與處理方式不同，報價與採購時應要求對應材料文件及保養說明。' },
     ],
-    material: '防燃聚酯纖維布料（符合CNS 1220防焰標準），頂部網狀通風設計',
+    material: '聚酯纖維隔簾；防焰、抗菌、耐洗與頂部通風網規格依實際選用材料及文件確認',
     colorOptions: '醫院藍、醫療綠、白色、米白等8種標準醫療色系',
     comparisons: [
-      { feature: 'CNS防焰認證', thisProduct: '★★★★★（標準認證）', vs1: '★★', vs1Name: '一般布簾' },
-      { feature: '抗菌處理', thisProduct: '★★★★★', vs1: '★', vs1Name: '一般窗簾' },
+      { feature: '防焰規格', thisProduct: '依選用材料文件核對', vs1: '需另行核對', vs1Name: '一般布簾' },
+      { feature: '抗菌／耐洗規格', thisProduct: '依選用材料文件核對', vs1: '需另行核對', vs1Name: '一般窗簾' },
       { feature: '耐工業洗滌', thisProduct: '★★★★★', vs1: '★★', vs1Name: '一般布簾' },
       { feature: '居家美觀度', thisProduct: '★★★', vs1: '★★★★★', vs1Name: '柔紗簾' },
     ],
@@ -616,7 +553,7 @@ const productGallery: Record<string, { src: string; alt: string }[]> = {
   P012: [
     { src: '/images/P012_hospital curtains.webp',   alt: '醫院隔簾病房分隔施工實景' },
     { src: '/images/P012_hospital curtains02.webp', alt: '醫院窗簾診所空間專業安裝案例' },
-    { src: '/images/P012_hospital curtains03.webp', alt: '醫院隔簾防焰抗菌布料特寫展示' },
+    { src: '/images/P012_hospital curtains03.webp', alt: '醫院隔簾布料與通風網細節展示' },
     { src: '/images/P012_hospital curtains04.webp', alt: '醫院隔簾頂部通風軌道設計展示' },
   ],
   P013: [
@@ -635,7 +572,7 @@ const howToSchema = (productName: string) => ({
   step: [
     { '@type': 'HowToStep', position: 1, name: '預約免費到府丈量', text: '透過電話、LINE 或線上表單預約，專業人員攜帶樣本與色卡親赴您家丈量，完全免費。' },
     { '@type': 'HowToStep', position: 2, name: '現場選料與報價', text: '師傅於現場依您的空間、採光與風格需求，推薦最合適的布料材質，並立即提供透明報價。' },
-    { '@type': 'HowToStep', position: 3, name: '工廠訂製製作', text: '確認訂單後，自有工廠開始裁剪縫製，精心監督每道工序，確保品質達到最高標準。' },
+    { '@type': 'HowToStep', position: 3, name: '依確認規格製作', text: '確認訂單、材料與尺寸後進入製作，完成後再依約安排安裝。' },
     { '@type': 'HowToStep', position: 4, name: '專業到府安裝', text: '完工後約定時間由專業師傅上門安裝，並提供完整使用說明與售後服務諮詢。' },
   ],
 });
@@ -666,6 +603,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   const extras = productSeoExtras[product.id] || defaultSeoExtras;
   const v3 = productV3Data[product.id] || { faqs: [], material: '聚酯纖維', colorOptions: '多種顏色可選', comparisons: [], galleryDesc: '' };
+  // Render and serialize the same focused FAQ set so HTML and JSON-LD stay in parity.
+  const pageFaqs = v3.faqs.slice(0, 5);
   const gallery = (productGallery[product.id] || []).map((item) => ({
     ...item,
     src: withBasePath(item.src),
@@ -676,6 +615,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const productHeroTitleMap: Record<string, string> = {
     P001: '窗簾訂製價格試算｜布簾、安裝費與到府丈量',
     P002: '紗簾價格試算｜透光不透人紗簾、安裝費與到府看樣',
+    P003: '蛇形窗簾｜客廳落地窗 S 型布簾、軌道與線上估價',
     P005: '捲簾價格試算｜遮光捲簾、捲簾安裝價格與線上估價',
     P006: '百葉窗價格試算｜鋁百葉防潮、安裝費與線上估價',
     P007: '實木百葉窗價格試算｜木種、安裝費與到府丈量',
@@ -683,7 +623,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     P009: '風琴簾價格試算｜蜂巢簾隔熱、安裝費與線上估價',
     P010: '調光簾價格試算｜斑馬簾價格、客廳控光與安裝費',
     P011: '柔紗簾價格試算｜柔紗簾訂製、透光窗簾與精品住宅搭配',
-    P012: '醫院隔簾價格｜醫療隔簾、防焰抗菌布與診所施工',
+    P012: '醫院隔簾價格｜醫療隔簾、特殊規格文件與診所施工',
   };
   const productInternalLinksMap: Record<string, Array<{ href: string; label: string }>> = {
     P001: [
@@ -708,6 +648,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/location/taipei/', label: '台北窗簾推薦與台北窗簾價格試算入口' },
       { href: '/location/banqiao/', label: '板橋窗簾推薦與板橋窗簾價格試算入口' },
       { href: '/location/zhongzheng/', label: '中正區窗簾價格試算：客廳紗簾與調光簾比價入口' },
+    ],
+    P003: [
+      { href: '/calculator/?product=P003', label: '蛇形窗簾線上估價：先帶入客廳落地窗尺寸與蛇形軌道需求' },
+      { href: '/blog/s-curtain-vs-vertical-blind/', label: '蛇形窗簾與直立簾比較：客廳落地窗先確認垂墜或葉片調光需求' },
+      { href: '/products/custom-curtains/', label: '一般布簾訂製：比較固定 S 型摺距與傳統布簾抓褶做法' },
+      { href: '/location/sanchong/', label: '三重窗簾丈量：客廳落地窗、窗簾盒與蛇形軌道條件確認' },
+      { href: '/location/taipei/', label: '台北窗簾估價：客廳落地窗蛇形簾先抓預算與丈量條件' },
     ],
     P005: [
       { href: '/calculator/?product=P005', label: '捲簾價格試算：直接帶入捲簾品項' },
@@ -778,7 +725,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/location/zhongzheng/', label: '中正區窗簾推薦：醫療院所、診所與學區商辦丈量入口' },
       { href: '/location/shilin/', label: '士林窗簾推薦：醫院隔簾、診所窗簾與天母丈量入口' },
       { href: '/location/zhonghe/', label: '中和窗簾價格試算：診所、店面與商辦施工入口' },
-      { href: '/products/', label: '窗簾產品總覽：比較醫療隔簾、直立簾與防焰抗菌布' },
+      { href: '/products/', label: '窗簾產品總覽：比較醫療隔簾、直立簾與特殊材料規格' },
       { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：醫院隔簾價格、軌道與安裝費重點' },
     ],
     P007: [
@@ -811,38 +758,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     author: { '@type': 'Organization', name: COMPANY_NAME },
   }));
 
-  const visibleReviewCount = extras.reviews.length;
-  const visibleAverageRating = visibleReviewCount
-    ? (extras.reviews.reduce((sum, review) => sum + review.rating, 0) / visibleReviewCount).toFixed(1)
-    : '5.0';
-
-  const productSchemaWithReviews = {
+  // Legacy testimonials in productSeoExtras have no bound receipt or source URL.
+  // Keep them out of rendered HTML and structured data until verifiable evidence exists.
+  const productSchemaWithEvidence = {
     ...productSchema,
     material: v3.material,
     color: v3.colorOptions,
-    ...(visibleReviewCount > 0
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: visibleAverageRating,
-            reviewCount: visibleReviewCount,
-            bestRating: '5',
-            worstRating: '1',
-          },
-        }
-      : {}),
-    review: extras.reviews.map(r => ({
-      '@type': 'Review',
-      author: { '@type': 'Person', name: r.author },
-      reviewRating: { '@type': 'Rating', ratingValue: String(r.rating), bestRating: '5' },
-      reviewBody: r.text,
-    })),
   };
 
-  const faqSchema = v3.faqs.length > 0 ? {
+  const faqSchema = pageFaqs.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: v3.faqs.map(f => ({
+    mainEntity: pageFaqs.map(f => ({
       '@type': 'Question',
       name: f.q,
       acceptedAnswer: { '@type': 'Answer', text: f.a },
@@ -862,7 +789,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const unifiedSchema = {
     '@context': 'https://schema.org',
     '@graph': [
-      productSchemaWithReviews,
+      productSchemaWithEvidence,
       howToData,
       breadcrumbSchema,
       ...(faqSchema ? [faqSchema] : []),
@@ -917,7 +844,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem', lineHeight: 1.3 }}>
                 {productHeroTitle}
               </h1>
-              <p style={{ color: 'var(--stone-600)', lineHeight: 1.9, marginBottom: '1.5rem', fontSize: '1rem' }}>
+              <p data-ai-answer="true" style={{ color: 'var(--stone-600)', lineHeight: 1.9, marginBottom: '1.5rem', fontSize: '1rem' }}>
                 {details.fullDesc}
               </p>
 
@@ -1012,39 +939,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </tbody>
             </table>
           </div>
-          <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--stone-400)', textAlign: 'center' }}>✦ 大台北地區免費到府丈量 · 報價當場確認無隱藏費用</p>
+          <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--stone-400)', textAlign: 'center' }}>✦ 線上價格為預算參考；正式報價依材料、窗型、配件與施工條件確認</p>
           <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
             <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
               <Calculator size={16} /> {product.id === 'P007' ? '直接做實木百葉窗價格試算' : '直接線上估算我的費用'}
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Customer Reviews */}
-      <section className="py-section bg-stone-50">
-        <div className="section-container" style={{ maxWidth: '860px' }}>
-          <div className="section-heading">
-            <h2>真實顧客評價</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', marginTop: '0.5rem' }}>
-              <div style={{ display: 'flex', color: '#D97706' }}>{'★★★★★'.split('').map((s, i) => <span key={i} style={{ fontSize: '1.2rem' }}>{s}</span>)}</div>
-              <span style={{ fontWeight: 700, color: '#92400E' }}>{visibleAverageRating} / 5</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--stone-500)' }}>(本頁列出 {visibleReviewCount} 則評價)</span>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gap: '1.25rem' }}>
-            {extras.reviews.map((r, i) => (
-              <div key={i} style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid var(--stone-100)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div>
-                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{r.author}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--stone-500)', marginLeft: '0.5rem' }}>{r.location}</span>
-                  </div>
-                  <div style={{ display: 'flex', color: '#D97706' }}>{'★'.repeat(r.rating).split('').map((s, idx) => <span key={idx}>{s}</span>)}</div>
-                </div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--stone-600)', lineHeight: 1.7, margin: 0 }}>{r.text}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -1066,7 +965,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             </div>
             <div style={{ background: 'var(--amber-50)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid var(--amber-100)' }}>
               <h3 style={{ fontSize: '0.85rem', color: '#92400E', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>生產方式</h3>
-              <p style={{ fontWeight: 600, color: 'var(--stone-800)', fontSize: '0.95rem', margin: 0 }}>自有工廠監製 · 客製化裁剪 · 30年製版經驗</p>
+              <p style={{ fontWeight: 600, color: 'var(--stone-800)', fontSize: '0.95rem', margin: 0 }}>依丈量尺寸、選用材料與確認規格進行製作</p>
             </div>
           </div>
           <style dangerouslySetInnerHTML={{__html: `@media (min-width: 640px) { .spec-grid { grid-template-columns: 1fr 1fr 1fr !important; } }`}} />
@@ -1106,14 +1005,14 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       )}
 
       {/* V3: FAQ Section */}
-      {v3.faqs.length > 0 && (
+      {pageFaqs.length > 0 && (
         <section className="py-section bg-white">
           <div className="section-container" style={{ maxWidth: '860px' }}>
             <div className="section-heading">
               <h2>{product.name}常見問題 FAQ</h2>
             </div>
             <div style={{ display: 'grid', gap: '1rem' }}>
-              {v3.faqs.map((faq, i) => (
+              {pageFaqs.map((faq, i) => (
                 <details key={i} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                   <summary style={{ padding: '1.1rem 1.5rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--stone-800)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', listStyle: 'none' }}>
                     <span style={{ background: '#D97706', color: 'white', borderRadius: '50%', width: '1.5rem', height: '1.5rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0 }}>Q</span>

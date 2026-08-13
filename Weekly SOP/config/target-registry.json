@@ -1,8 +1,8 @@
-﻿{
+{
   "schemaVersion": 1,
   "siteId": "curtain-online",
   "generatedFrom": "src/data/products.ts",
-  "updatedAt": "2026-08-06",
+  "updatedAt": "2026-08-12",
   "targets": [
     {
       "clusterId": "core-curtain",
@@ -79,7 +79,7 @@
       "priority": "P1",
       "schemaProfile": "product",
       "businessValue": "high",
-      "lastChangedAt": "2026-06-24",
+      "lastChangedAt": "2026-08-12",
       "status": "active"
     },
     {
@@ -139,7 +139,7 @@
       "priority": "P0",
       "schemaProfile": "product",
       "businessValue": "critical",
-      "lastChangedAt": "2026-06-24",
+      "lastChangedAt": "2026-08-06",
       "status": "active"
     },
     {
@@ -161,7 +161,7 @@
       "priority": "P1",
       "schemaProfile": "product",
       "businessValue": "high",
-      "lastChangedAt": "2026-07-29",
+      "lastChangedAt": "2026-08-06",
       "status": "active"
     },
     {
@@ -287,6 +287,89 @@
       "businessValue": "high",
       "lastChangedAt": "2026-06-24",
       "status": "active"
+    }
+  ],
+  "monitorOnlyAssets": [
+    {
+      "id": "brand-about",
+      "label": "宏森品牌／公司頁",
+      "type": "brand",
+      "url": "/about/",
+      "monitoringTerms": [
+        "宏森窗簾",
+        "宏森窗簾評價"
+      ]
+    },
+    {
+      "id": "calculator",
+      "label": "窗簾價格試算工具",
+      "type": "calculator",
+      "url": "/calculator/",
+      "monitoringTerms": [
+        "窗簾價格試算",
+        "窗簾線上估價",
+        "百葉窗價格試算"
+      ]
+    },
+    {
+      "id": "curtain-price-guide-2026",
+      "label": "2026 窗簾價格指南",
+      "type": "price_guide",
+      "url": "/blog/curtain-price-guide-2026/",
+      "monitoringTerms": [
+        "窗簾價格多少合理",
+        "窗簾價格",
+        "窗簾安裝費用"
+      ]
+    },
+    {
+      "id": "geo-banqiao",
+      "label": "板橋窗簾服務頁",
+      "type": "geo",
+      "url": "/location/banqiao/",
+      "monitoringTerms": [
+        "板橋窗簾",
+        "板橋窗簾價格"
+      ]
+    },
+    {
+      "id": "geo-taipei",
+      "label": "台北窗簾服務頁",
+      "type": "geo",
+      "url": "/location/taipei/",
+      "monitoringTerms": [
+        "台北窗簾",
+        "台北窗簾推薦"
+      ]
+    },
+    {
+      "id": "geo-sanchong",
+      "label": "三重窗簾服務頁",
+      "type": "geo",
+      "url": "/location/sanchong/",
+      "monitoringTerms": [
+        "三重窗簾",
+        "三重窗簾推薦"
+      ]
+    },
+    {
+      "id": "geo-shulin",
+      "label": "樹林窗簾服務頁",
+      "type": "geo",
+      "url": "/location/shulin/",
+      "monitoringTerms": [
+        "樹林窗簾"
+      ]
+    },
+    {
+      "id": "geo-tucheng",
+      "label": "土城窗簾服務頁",
+      "type": "geo",
+      "url": "/location/tucheng/",
+      "monitoringTerms": [
+        "土城窗簾",
+        "土城窗簾推薦"
+      ]
     }
   ]
 }

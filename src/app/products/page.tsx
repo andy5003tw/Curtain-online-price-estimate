@@ -6,9 +6,9 @@ import { products } from '@/data/products';
 import { withBasePath } from '@/lib/base-path';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 
-const PRODUCTS_TITLE = '窗簾產品總覽｜窗簾款式比較、材質價格與適用情境';
+const PRODUCTS_TITLE = '窗簾款式比較｜布簾、捲簾、百葉與調光簾適用情境';
 const PRODUCTS_DESCRIPTION =
-  '這份窗簾產品總覽整理窗簾款式比較、材質、價格與適用情境，先縮小訂製窗簾、捲簾、百葉窗或風琴簾，再帶同尺寸進窗簾價格試算。';
+  '還沒決定款式時，先比較布簾、捲簾、百葉、調光簾與風琴簾的材質、採光與清潔情境；鎖定品項後，再進單一產品頁與線上估價。';
 
 type ProductItem = (typeof products)[number];
 
@@ -74,16 +74,9 @@ export const metadata: Metadata = {
     '窗簾款式推薦',
     '窗簾產品推薦',
     '窗簾產品比較',
-    '窗簾訂製',
-    '窗簾價格試算',
-    '百葉窗價格試算',
-    '捲簾價格試算',
-    '風琴簾價格試算',
-    '調光簾價格試算',
-    '遮光窗簾推薦',
-    '窗簾線上估價',
-    '訂製窗簾價格',
-    '鋁百葉窗價格',
+    '布簾捲簾百葉比較',
+    '窗簾材質比較',
+    '窗簾適用情境',
   ],
   ...buildOgTwitterMeta({
     title: PRODUCTS_TITLE,
@@ -155,10 +148,9 @@ export default function ProductsPage() {
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
             窗簾產品總覽 / 窗簾款式比較 / 估價分流
           </div>
-          <h1>窗簾產品總覽：先做窗簾款式比較，再進價格試算</h1>
+          <h1>窗簾款式比較：先選適合情境，再進單一產品頁估價</h1>
           <p style={{ lineHeight: 1.85 }}>
-            這份窗簾產品總覽適合先做窗簾款式比較：把訂製布簾、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾放在同一頁看材質、清潔、採光、遮光和預算方向。
-            若你正在找訂製窗簾價格、捲簾價格試算、風琴簾價格試算或百葉窗價格試算，先縮小到 2 到 3 個候選款式，再回到估價頁輸入同尺寸比較會最有效率。
+            本頁只負責款式比較，不取代首頁的窗簾推薦與到府丈量入口，也不取代單一產品頁的規格說明。先把訂製布簾、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾縮小到 2 到 3 個候選款式；已鎖定捲簾或鋁百葉時，請直接進對應產品頁確認材質、安裝條件，再帶同尺寸進線上估價。
           </p>
           <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.55rem' }}>
             {quickLinks.map(link => (

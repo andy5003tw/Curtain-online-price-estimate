@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { CalculatorForm, CalculatorProductMenu } from './CalculatorClient';
 import { products } from '@/data/products';
+import { calculatorFaq } from '@/data/calculatorFaq';
 import { buildCalculatorUrl } from '@/lib/seo';
 
 const calculatorProducts = products.map((product) => ({
@@ -11,53 +12,6 @@ const calculatorProducts = products.map((product) => ({
   canonicalSlug: product.canonicalSlug,
   requires_track: product.requires_track,
 }));
-
-const calculatorFaq = [
-  {
-    q: '窗簾價格試算和窗簾線上估價差在哪裡？',
-    a: '兩者在本頁是同一個流程：先輸入寬高與品項做窗簾價格試算，系統即時完成窗簾線上估價，並把材料與基本安裝費放進預算區間。',
-  },
-  {
-    q: '窗簾價格試算和正式報價會差很多嗎？',
-    a: '通常差異不大，但窗型、配件與施工條件會影響最終金額；建議先做窗簾價格試算，再以現場丈量確認正式報價。',
-  },
-  {
-    q: '窗簾價格試算怎麼判斷合理？',
-    a: '建議固定同一組尺寸比較 2 到 3 種品項，並一起看材料、基本安裝費、窗型與丈量條件。線上估價先抓合理區間，正式報價再由現場確認。',
-  },
-  {
-    q: '窗簾線上估價適合先比較哪些品項？',
-    a: '若你是第一次比價，建議先固定同一尺寸比較捲簾、鋁百葉、實木百葉與調光簾，再依遮光、清潔、木質感與安裝條件收斂到 1 到 2 個方案。',
-  },
-  {
-    q: '可以先估價再決定是否預約丈量嗎？',
-    a: '可以，建議先完成線上估價並保留同尺寸比較結果，再聯絡安排丈量，溝通材料、基本安裝費與正式報價會更有效率。',
-  },
-  {
-    q: '三重窗簾價格試算後如何比價最有效率？',
-    a: '建議固定同一尺寸比較捲簾、調光簾、實木百葉窗三個品項，再切到三重窗簾服務頁確認在地丈量流程。',
-  },
-  {
-    q: '百葉窗價格試算要先比較哪些品項？',
-    a: '建議先用同一尺寸比較鋁百葉、實木百葉與風琴簾，再依防潮、木質感、隔熱與安裝條件判斷最適合的方案。',
-  },
-  {
-    q: '窗簾價格試算要先看價格指南還是直接輸入尺寸？',
-    a: '如果已經有寬高尺寸，可直接用本頁線上估價；若還在比款式，可先看 2026 窗簾價格指南，再回來用同尺寸比較各品項。',
-  },
-  {
-    q: '實木百葉窗價格試算適合從哪裡開始？',
-    a: '建議先切到木百葉品項並套用三重或台北區域，再到實木百葉產品頁確認木種、葉片與安裝條件。',
-  },
-  {
-    q: '估價結果會包含安裝費嗎？',
-    a: '會。系統會依品項規則估算材料費與安裝費，並回傳總價。',
-  },
-  {
-    q: '板橋窗簾價格試算後，下一步怎麼安排最快？',
-    a: '建議先用同尺寸比較布簾、捲簾或風琴簾，再帶著試算結果安排板橋到府丈量，通常能更快收斂到正式報價。',
-  },
-];
 
 export default function CalculatorPage() {
   return (
@@ -91,11 +45,11 @@ export default function CalculatorPage() {
             <p>先用線上工具掌握窗簾價格與安裝費用區間，再由專人到府確認窗型、配件與施工條件。</p>
           </div>
           <div style={{ marginBottom: '1.25rem', display: 'grid', gap: '0.5rem' }}>
-            <Link href="/calculator/?product=P005" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              捲簾價格試算：用同尺寸快速抓入門預算
+            <Link href="/products/roller-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              已鎖定捲簾：先看捲簾產品、遮光與安裝條件
             </Link>
-            <Link href="/calculator/?product=P006" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              百葉窗價格試算：鋁百葉防潮方案先抓預算
+            <Link href="/products/aluminum-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              已鎖定鋁百葉：先看防潮需求、葉片與安裝條件
             </Link>
             <Link href="/calculator/?product=P002" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               紗簾價格試算：透光不透人紗簾與安裝費同尺寸比較

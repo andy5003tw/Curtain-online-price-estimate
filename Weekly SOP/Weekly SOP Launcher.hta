@@ -185,6 +185,20 @@
       border: 1px solid #d8e6f2;
     }
 
+    .advanced-actions-link {
+      display: inline-block;
+      margin-top: 8px;
+      color: #315d79;
+      font-size: 13px;
+    }
+
+    .advanced-seo-geo-actions {
+      display: none;
+      margin-top: 8px;
+      border: 1px dashed #8ca8b6;
+      background: #f7fbfc;
+    }
+
     .queue-panel {
       margin-top: 12px;
       border: 1px solid #cfe0ef;
@@ -286,6 +300,46 @@
       border-top: 1px solid #d8e6f2;
       padding-top: 9px;
       white-space: pre-wrap;
+    }
+
+    .six-zone-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .six-zone {
+      min-height: 174px;
+      border: 1px solid #cfe0ef;
+      border-left: 5px solid #9eb7cc;
+      border-radius: 10px;
+      background: #fbfdff;
+      padding: 11px 12px;
+    }
+
+    .six-zone.ok { border-left-color: #2f855a; background: #f7fdf9; }
+    .six-zone.warn { border-left-color: #c77918; background: #fffaf0; }
+    .six-zone.error { border-left-color: #c53030; background: #fff5f5; }
+
+    .six-zone-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0b2f4a;
+      margin-bottom: 7px;
+    }
+
+    .six-zone-body {
+      font-size: 13px;
+      line-height: 1.58;
+      color: #244763;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    @media screen and (max-width: 760px) {
+      .six-zone-grid { grid-template-columns: 1fr; }
+      .queue-rounds, .health-grid { grid-template-columns: 1fr; }
     }
 
     .health-grid {
@@ -477,6 +531,7 @@
   </style>
   <script type="text/javascript">
     var isUiBusy = false;
+    var currentSeoGeoNextAction = { type: "none", enabled: false, label: "正在判斷目前下一步", reason: "" };
 
     function getRootFolder() {
       var raw = decodeURIComponent(window.location.pathname);
@@ -895,6 +950,121 @@
         .replace(/"/g, "&quot;");
     }
 
+    function getNested(object, names, fallback) {
+      var value = object;
+      for (var i = 0; i < names.length; i++) {
+        if (value === null || typeof value === "undefined" || typeof value[names[i]] === "undefined") { return fallback; }
+        value = value[names[i]];
+      }
+      return value === null || typeof value === "undefined" || value === "" ? fallback : value;
+    }
+
+    function countWhere(items, predicate) {
+      var count = 0;
+      items = asArray(items);
+      for (var i = 0; i < items.length; i++) { if (predicate(items[i] || {})) { count++; } }
+      return count;
+    }
+
+    function diagnosticDimensionText(history, name) {
+      var item = history && history[name] ? history[name] : null;
+      if (!item) { return name + "：data unavailable（未輸出）"; }
+      var snapshot = item.snapshot || {}, daily = item.daily_history || {};
+      var period = snapshot.start_date && snapshot.end_date ? snapshot.start_date + "~" + snapshot.end_date : "日期未提供";
+      if (daily.status === "available") { return name + "：" + period + " / snapshot " + (snapshot.row_count || 0) + " rows / daily " + (daily.row_count || 0) + " rows"; }
+      return name + "：" + period + " / snapshot " + (snapshot.row_count || 0) + " rows / daily data unavailable：" + (daily.reason || "未提供原因");
+    }
+
+    function setSixZone(id, title, text, mode) {
+      var panel = document.getElementById(id);
+      if (!panel) { return; }
+      panel.className = "six-zone " + (mode || "");
+      panel.innerHTML = '<div class="six-zone-title">' + htmlEscape(title) + '</div><div class="six-zone-body">' + htmlEscape(text) + '</div>';
+    }
+
+    function renderSixZoneDashboard() {
+      var root = getRootFolder(), plan = readJsonIfExists(root + "\\latest\\seo-geo-action-plan.json");
+      var state = readJsonIfExists(root + "\\latest\\seo-geo-action-queue-state.json");
+      var projection = getEffectiveWorkflowProjection(root);
+      var effective = projection && projection.effective ? projection.effective : { status: "inconsistent", source: "missing" };
+      var projectionValid = projection && projection.consistency && projection.consistency.valid === true;
+      if (!plan) {
+        var unavailable = "尚未產生 latest/seo-geo-action-plan.json。先產生 action plan 後才會顯示本輪資料、策略與成效摘要。";
+        setSixZone("zoneDataTrust", "1. 資料可信度", unavailable, "warn");
+        setSixZone("zoneOwnerPortfolio", "2. Owner Portfolio", unavailable, "warn");
+        setSixZone("zoneDecision", "3. 7d 監控／28d 決策", unavailable, "warn");
+        setSixZone("zoneStrategy", "4. 本輪策略審核", unavailable, "warn");
+        setSixZone("zoneImplementation", "5. 實作與部署", unavailable, "warn");
+        setSixZone("zonePerformance", "6. 成效與 AI Visibility", unavailable, "warn");
+        return;
+      }
+      var fresh7 = getNested(plan, ["freshness", "7d"], {}), fresh28 = getNested(plan, ["freshness", "28d"], {});
+      var diagnostics = plan.diagnostics || {}, history = getNested(plan, ["snapshot", "28d", "diagnostic_history"], {});
+      var ready = fresh7.decision_ready === true && fresh28.decision_ready === true && diagnostics.status === "complete";
+      setSixZone("zoneDataTrust", "1. 資料可信度", [
+        "workflow=" + (plan.workflow_status || "unknown") + " / queue=" + (plan.queue_id || "n/a"),
+        "7d decision_ready=" + (fresh7.decision_ready === true) + " / 28d decision_ready=" + (fresh28.decision_ready === true),
+        "diagnostics=" + (diagnostics.status || "data unavailable") + " / required=" + asArray(diagnostics.required_dimensions).join(", "),
+        diagnosticDimensionText(history, "date"), diagnosticDimensionText(history, "date_page"), diagnosticDimensionText(history, "device_page"), diagnosticDimensionText(history, "country_page"), diagnosticDimensionText(history, "device_query")
+      ].join("\n"), ready ? "ok" : "warn");
+
+      var observations = asArray(plan.observations), registry = getTargetRegistry(root);
+      var top10 = countWhere(observations, function (row) { return Number(row["28d position"]) > 0 && Number(row["28d position"]) <= 10; });
+      var lowShare = countWhere(observations, function (row) { return Number(row["28d owner share"]) < 80 && Number(row["28d cluster impressions"]) >= 50; });
+      setSixZone("zoneOwnerPortfolio", "2. Keyword × Owner Portfolio", [
+        registry.text || "registry data unavailable",
+        "active owners=" + (plan.active_owner_count || observations.length) + " / observations=" + observations.length + " / 28d Top 10=" + top10,
+        "source compliant=" + countWhere(observations, function (row) { return row.output_compliant === true; }) + " / owner-share review=" + lowShare,
+        "每個 Owner 的 7d／28d clicks、impressions、CTR、position 請見 action plan Owner Portfolio 表。"
+      ].join("\n"), registry.mode === "ok" ? "ok" : "error");
+
+      var reviews = asArray(plan.review_windows);
+      setSixZone("zoneDecision", "3. 7d 監控／28d 決策", [
+        "7d final=" + getNested(plan, ["snapshot", "7d", "end_date"], "n/a") + "（監控／異常告警）",
+        "28d final=" + getNested(plan, ["snapshot", "28d", "end_date"], "n/a") + "（正式策略判斷）",
+        "review windows：7d eligible=" + countWhere(reviews, function (row) { return row.review_7d_status === "eligible"; }) + "/" + reviews.length + "；28d eligible=" + countWhere(reviews, function (row) { return row.review_28d_status === "eligible"; }) + "/" + reviews.length,
+        "未完成窗口會保留實際 data unavailable 原因，不可當成績效結論。"
+      ].join("\n"), ready ? "ok" : "warn");
+
+      var optional = asArray(plan.optional_opportunities), alignment = asArray(plan.alignment_candidates), first = alignment[0] || {};
+      setSixZone("zoneStrategy", "4. 本輪策略審核", [
+        "strategy snapshot=" + (plan.workflow_status || "unknown") + " / snapshot rounds=" + (plan.queue_round_count || 0) + "（immutable）",
+        "effective workflow=" + effective.status + " / source=" + effective.source,
+        "optional reviews=" + optional.length + " / alignment candidates=" + alignment.length + " / requires approval=" + countWhere(optional, function (item) { return item.requires_user_approval === true; }),
+        alignment.length ? "首項 alignment：" + (first.cluster_id || "n/a") + " / owner share=" + (first.owner_share || "n/a") + "% / impressions=" + (first.cluster_impressions || "n/a") : "無 alignment candidate",
+        projectionValid ? (effective.source === "lifecycle_state" ? "已核准 queue 由 lifecycle receipt 接管；策略快照不會被回寫。" : "僅以 validated snapshot + approved registry 產生 Round。") : "projection inconsistent：" + asArray(projection.consistency.reasons).join("；")
+      ].join("\n"), projectionValid ? (effective.status === "observation_only" ? "warn" : "ok") : "error");
+
+      var lifecycle = effective.status;
+      setSixZone("zoneImplementation", "5. 實作與部署", [
+        "lifecycle=" + lifecycle + " / active round=" + (state ? state.active_round : "n/a") + " / total rounds=" + (state ? state.total_rounds : "n/a"),
+        "data_validated → strategy_approved → implemented → local_validated → deployed → live_verified → observing_7d → reviewed_28d → completed",
+        projectionValid ? "每一步都需要 queue/cycle 綁定的 receipt evidence。" : "projection inconsistent；所有後續操作已停用。",
+        "下一步：" + (effective.next_requirement || "data unavailable")
+      ].join("\n"), projectionValid ? (lifecycle === "observation_only" ? "warn" : "ok") : "error");
+
+      var delta = plan.query_delta || {}, benchmark = plan.ctr_benchmark || {};
+      // AI Visibility is deliberately loaded from its own direct-observation
+      // receipt.  GSC ranking/CTR/impressions must never become a proxy for it.
+      var aiVisibility = readJsonIfExists(root + "\\latest\\ai-visibility-summary.json");
+      var aiMetrics = aiVisibility && aiVisibility.metrics ? aiVisibility.metrics : null;
+      var aiDirect = aiVisibility && aiVisibility.status === "complete" && aiVisibility.measurement_source === "direct_ai_engine_observation" && aiVisibility.gsc_inference_prohibited === true;
+      var aiText = aiDirect ? [
+        "AI direct observation=" + (aiVisibility.latest_snapshot.engine || "n/a") + " / " + (aiVisibility.latest_snapshot.model || "n/a") + " / " + (aiVisibility.latest_snapshot.observed_at || "n/a"),
+        "mention rate=" + aiMetrics.mention_rate + "% (" + aiMetrics.mention_count + "/" + aiMetrics.sample_size + ")",
+        "citation rate=" + aiMetrics.citation_rate + "% (" + aiMetrics.citation_count + "/" + aiMetrics.sample_size + ")",
+        "accuracy=" + (aiMetrics.accuracy_rate === null ? "N/A（尚無已審核答案）" : aiMetrics.accuracy_rate + "%") + " / evaluated=" + aiMetrics.accuracy_evaluated_count + " / unverified=" + aiMetrics.accuracy_unverified_count,
+        "monthly snapshots=" + getNested(aiVisibility, ["monthly_history", "snapshot_count"], 0) + " / receipt=" + getNested(aiVisibility, ["receipt", "path"], "n/a"),
+        "AI 指標僅來自固定問題集的 direct AI engine observation；不由 GSC 推論。"
+      ].join("\n") : "AI Visibility：data unavailable（尚無固定問題集的 direct AI engine observation receipt）。請匯入含 engine、model、日期、answer、brand mention、citation URL 與 accuracy 的完整觀測 JSON；GSC 指標不會用來推論 AI rate。";
+      setSixZone("zonePerformance", "6. 成效與 AI Visibility", [
+        "CTR benchmark=" + (benchmark.available === true ? (benchmark.start_date || "n/a") + "~" + (benchmark.end_date || "n/a") : "data unavailable：" + (benchmark.reason || "未建立")),
+        "Query delta=" + (delta.comparison_type || "data unavailable") + " / current=" + (delta.current_start_date || "n/a") + "~" + (delta.current_end_date || "n/a"),
+        "signals=" + (delta.signal_count || 0) + " / noise=" + (delta.noise_count || 0) + " / pending=" + (delta.pending_confirmation_count || 0),
+        aiText
+      ].join("\n"), aiDirect ? "ok" : "warn");
+    }
+
     function arrayContains(values, target) {
       values = values || [];
       for (var i = 0; i < values.length; i++) {
@@ -1307,6 +1477,58 @@
       btn.title = title || "";
     }
 
+    function getQueueProvenance(root) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var checker = fso.GetAbsolutePathName(root + "\\..\\scripts\\check-seo-geo-queue-provenance.ps1");
+      if (!fso.FileExists(checker)) {
+        return { stale: true, status: "stale_plan", reasons: ["provenance_checker_missing"] };
+      }
+      try {
+        var shell = new ActiveXObject("WScript.Shell");
+        var cmd = 'pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + checker.replace(/"/g, '""') +
+          '" -RuntimeRoot "' + root.replace(/"/g, '""') + '"';
+        var exec = shell.Exec(cmd);
+        var output = exec.StdOut.ReadAll();
+        var err = exec.StdErr.ReadAll();
+        if (exec.ExitCode !== 0) {
+          return { stale: true, status: "stale_plan", reasons: ["provenance_check_failed:" + (err || output || "unknown")] };
+        }
+        var result = parseJson(output);
+        if (!result || typeof result.stale === "undefined") {
+          return { stale: true, status: "stale_plan", reasons: ["provenance_check_invalid_output"] };
+        }
+        return result;
+      } catch (e) {
+        return { stale: true, status: "stale_plan", reasons: ["provenance_check_failed:" + e.message] };
+      }
+    }
+
+    function getEffectiveWorkflowProjection(root) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var writer = fso.GetAbsolutePathName(root + "\\..\\scripts\\get-seo-geo-effective-workflow.ps1");
+      if (!fso.FileExists(writer)) {
+        return { consistency: { valid: false, reasons: ["effective_workflow_projection_missing"] }, effective: { status: "inconsistent", source: "missing" } };
+      }
+      try {
+        var shell = new ActiveXObject("WScript.Shell");
+        var cmd = 'pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + writer.replace(/"/g, '""') +
+          '" -RuntimeRoot "' + root.replace(/"/g, '""') + '"';
+        var exec = shell.Exec(cmd);
+        var output = exec.StdOut.ReadAll();
+        var err = exec.StdErr.ReadAll();
+        if (exec.ExitCode !== 0) {
+          return { consistency: { valid: false, reasons: ["effective_workflow_projection_failed:" + (err || output || "unknown")] }, effective: { status: "inconsistent", source: "error" } };
+        }
+        var result = parseJson(output);
+        if (!result || !result.consistency || !result.effective) {
+          return { consistency: { valid: false, reasons: ["effective_workflow_projection_invalid_output"] }, effective: { status: "inconsistent", source: "error" } };
+        }
+        return result;
+      } catch (e) {
+        return { consistency: { valid: false, reasons: ["effective_workflow_projection_failed:" + e.message] }, effective: { status: "inconsistent", source: "error" } };
+      }
+    }
+
     function getQueueSnapshot(root) {
       var state = readJsonIfExists(root + "\\latest\\seo-geo-action-queue-state.json");
       if (!state) {
@@ -1323,12 +1545,23 @@
         };
       }
       var queue = readJsonIfExists(root + "\\latest\\seo-geo-action-queue.json");
+      var provenance = getQueueProvenance(root);
+      var projection = getEffectiveWorkflowProjection(root);
+      var projectionValid = projection && projection.consistency && projection.consistency.valid === true;
+      if (!projectionValid) {
+        provenance = {
+          stale: true,
+          status: "stale_plan",
+          reasons: asArray(provenance.reasons).concat(asArray(projection && projection.consistency ? projection.consistency.reasons : ["effective_workflow_projection_invalid"]))
+        };
+      }
       var activeRound = Number(state.active_round || state.next_round || 1);
       var totalRounds = Number(state.total_rounds || (state.prompt_files ? state.prompt_files.length : 0) || 0);
       var completed = state.completed_rounds || [];
       var copied = state.copied_rounds || [];
       var isObservation = state.status === "observation_only";
-      var isLocalValidated = state.status === "local_validated" || state.status === "completed";
+      var isAwaitingImplemented = state.status === "awaiting_implemented_receipt";
+      var isLocalValidated = ["awaiting_implemented_receipt", "implemented", "local_validated", "deployed", "live_verified", "observing_7d", "reviewed_28d", "completed"].indexOf(state.status) >= 0;
       var receiptGate = (!isObservation && !isLocalValidated && totalRounds > 0) ?
         getReceiptGate(root, state, queue, activeRound) :
         { passed: false, reason: isObservation ? "observation_only 不需執行 Round" : "本輪已完成本機驗證" };
@@ -1341,6 +1574,11 @@
         isCompleted: isLocalValidated,
         isObservation: isObservation,
         isLocalValidated: isLocalValidated,
+        isAwaitingImplemented: isAwaitingImplemented,
+        lifecycleStatus: state.status,
+        projection: projection,
+        isStale: !!provenance.stale,
+        provenance: provenance,
         isCopiedPending: !isObservation && !isLocalValidated && arrayContains(copied, activeRound) && !arrayContains(completed, activeRound),
         receiptGate: receiptGate,
         queueId: state.queue_id || "n/a",
@@ -1358,6 +1596,120 @@
       nextEl.innerText = nextStep || "";
     }
 
+    function getQueueActionIds(snapshot) {
+      var ids = [];
+      var rounds = snapshot && snapshot.queue ? asArray(snapshot.queue.rounds) : [];
+      for (var r = 0; r < rounds.length; r++) {
+        var roundIds = asArray(rounds[r] && rounds[r].action_ids);
+        for (var i = 0; i < roundIds.length; i++) {
+          if (String(roundIds[i] || "")) { ids.push(String(roundIds[i])); }
+        }
+      }
+      return uniqueSortedStrings(ids);
+    }
+
+    function getDeploymentManifestGate(root, snapshot, dryRun) {
+      var suffix = dryRun ? ".dry-run" : "";
+      var path = root + "\\latest\\seo-geo-deployment-manifest" + suffix + ".json";
+      var manifest = readJsonIfExists(path);
+      if (!manifest) { return { passed: false, reason: dryRun ? "尚未執行部署預演" : "尚未完成正式 FTP 部署", path: path }; }
+      var expectedStatus = dryRun ? "dry_run" : "success";
+      if (Number(manifest.schema_version) !== 1 || String(manifest.status || "") !== expectedStatus || !!manifest.dry_run !== !!dryRun) {
+        return { passed: false, reason: (dryRun ? "dry-run" : "正式部署") + " manifest 狀態無效", path: path, manifest: manifest };
+      }
+      var context = manifest.deployment_context || {};
+      if (String(context.queue_id || "") !== String(snapshot.state.queue_id || "") ||
+          String(context.cycle_key || "") !== String(snapshot.state.cycle_key || "") ||
+          !sameStringSet(context.action_ids, getQueueActionIds(snapshot))) {
+        return { passed: false, reason: "deployment manifest 屬於舊 queue 或 action IDs 不一致", path: path, manifest: manifest };
+      }
+      var summary = manifest.summary || {};
+      if (Number(summary.selected || 0) <= 0 || Number(summary.failed || 0) !== 0) {
+        return { passed: false, reason: "deployment manifest 摘要不完整或含失敗檔案", path: path, manifest: manifest };
+      }
+      if (!dryRun && Number(summary.uploaded || 0) + Number(summary.skipped || 0) !== Number(summary.selected || 0)) {
+        return { passed: false, reason: "正式 deployment manifest 尚未涵蓋全部檔案", path: path, manifest: manifest };
+      }
+      return { passed: true, reason: "manifest 已綁定目前 queue", path: path, manifest: manifest };
+    }
+
+    function getLifecycleNextInspection(root) {
+      try {
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var script = fso.GetParentFolderName(root) + "\\scripts\\invoke-seo-geo-lifecycle-next.ps1";
+        if (!fso.FileExists(script)) { return { ready: false, reason: "找不到 lifecycle 智慧控制器", label: "目前下一步不可用" }; }
+        var cmd = 'pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + script.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -Mode Inspect';
+        var exec = new ActiveXObject("WScript.Shell").Exec(cmd);
+        var output = exec.StdOut.ReadAll();
+        var error = exec.StdErr.ReadAll();
+        if (exec.ExitCode !== 0) { return { ready: false, reason: "lifecycle 檢查失敗：" + (error || output || exec.ExitCode), label: "目前下一步不可用" }; }
+        var result = parseJson(output);
+        return result || { ready: false, reason: "lifecycle 檢查沒有輸出", label: "目前下一步不可用" };
+      } catch (e) {
+        return { ready: false, reason: "lifecycle 檢查失敗：" + e.message, label: "目前下一步不可用" };
+      }
+    }
+
+    function getSmartReportDecision(root, queue, canGenerate, hasPlanHtml) {
+      if (!hasPlanHtml) {
+        return { action: canGenerate ? "generate" : "none", title: canGenerate ? "尚無報告；產生後自動開啟" : "尚無報告，且目前資料不足以產生" };
+      }
+      var status = queue.exists ? String(queue.lifecycleStatus || "") : "";
+      var protectedQueue = queue.exists && !queue.isStale && status !== "observation_only" && status !== "completed";
+      if (protectedQueue) { return { action: "open", title: "目前 queue 仍在進行中；只開啟既有報告，不覆寫 queue" }; }
+      var plan = readJsonIfExists(root + "\\latest\\seo-geo-action-plan.json");
+      var sevenManifest = readJsonIfExists(root + "\\latest\\7d\\weekly-sop-last-run.json");
+      var twentyEightManifest = readJsonIfExists(root + "\\latest\\28d\\weekly-sop-last-run.json");
+      var plan7 = getNested(plan, ["snapshot", "7d", "run_id"], "");
+      var plan28 = getNested(plan, ["snapshot", "28d", "run_id"], "");
+      var hasNewSnapshot = !!sevenManifest && String(sevenManifest.run_id || "") !== String(plan7 || "");
+      if (twentyEightManifest && String(twentyEightManifest.run_id || "") !== String(plan28 || "")) { hasNewSnapshot = true; }
+      if ((queue.isStale || hasNewSnapshot) && canGenerate) { return { action: "generate", title: "偵測到安全的新 snapshot；更新報告後自動開啟" }; }
+      return { action: "open", title: "目前報告已對應 latest snapshot；直接開啟" };
+    }
+
+    function configureSmartSeoGeoControls(root, hasPwsh, canGenerate, hasPlanHtml, queue, workflowConsistent, canApproveSinglePage) {
+      var reportDecision = getSmartReportDecision(root, queue, canGenerate, hasPlanHtml);
+      setButtonState("btnSeoGeoReportSmart", reportDecision.action === "none", "更新／開啟 SEO/GEO 行動報告", reportDecision.title);
+      currentSeoGeoNextAction = { type: "none", enabled: false, label: "執行目前下一步", reason: "尚未建立有效報告" };
+      if (!hasPwsh) {
+        currentSeoGeoNextAction = { type: "none", enabled: false, label: "需要 PowerShell 7", reason: "找不到 pwsh" };
+      } else if (!queue.exists || queue.isStale) {
+        currentSeoGeoNextAction = { type: "none", enabled: false, label: "先更新 SEO/GEO 行動報告", reason: queue.isStale ? "queue 已過期，請先安全更新報告" : "尚未建立 queue" };
+      } else if (!workflowConsistent) {
+        currentSeoGeoNextAction = { type: "none", enabled: false, label: "流程資料不一致，請查看提示", reason: "workflow consistency gate 未通過" };
+      } else if (queue.isObservation) {
+        currentSeoGeoNextAction = canApproveSinglePage ?
+          { type: "approve_single_page", enabled: true, label: "核准唯一單頁優化", reason: "目前有 1 個需人工核准的單頁 review" } :
+          { type: "none", enabled: false, label: "本輪只需觀察", reason: "observation_only；等待安全的新 GSC snapshot" };
+      } else if (!queue.isLocalValidated) {
+        currentSeoGeoNextAction = queue.receiptGate.passed ?
+          { type: "advance_round", enabled: true, label: "驗證通過並前進（Round " + queue.activeRound + "/" + queue.totalRounds + "）", reason: queue.receiptGate.reason } :
+          { type: "copy_round", enabled: true, label: "複製本輪 AI 工作指令（Round " + queue.activeRound + "/" + queue.totalRounds + "）", reason: queue.receiptGate.reason };
+      } else {
+        var status = String(queue.lifecycleStatus || "");
+        var inspection = getLifecycleNextInspection(root);
+        if (status === "local_validated") {
+          var actualGate = getDeploymentManifestGate(root, queue, false);
+          var dryGate = getDeploymentManifestGate(root, queue, true);
+          if (actualGate.passed) {
+            currentSeoGeoNextAction = { type: "lifecycle", enabled: !!inspection.ready, label: inspection.label || "記錄網站已上傳", reason: inspection.reason || actualGate.reason, inspection: inspection };
+          } else if (dryGate.passed) {
+            currentSeoGeoNextAction = { type: "deploy", enabled: true, label: "正式上傳網站（需確認）", reason: "部署預演已通過且綁定目前 queue" };
+          } else {
+            currentSeoGeoNextAction = { type: "dry_run", enabled: true, label: "執行部署預演（不實際上傳）", reason: dryGate.reason };
+          }
+        } else if (status === "deployed") {
+          currentSeoGeoNextAction = inspection.ready ?
+            { type: "lifecycle", enabled: true, label: inspection.label, reason: inspection.reason, inspection: inspection } :
+            { type: "live_verify", enabled: true, label: "驗證網站已正確上線", reason: inspection.reason || "尚未執行 live verify" };
+        } else {
+          currentSeoGeoNextAction = { type: "lifecycle", enabled: !!inspection.ready, label: inspection.label || "執行目前下一步", reason: inspection.reason || "等待必要 evidence", inspection: inspection };
+        }
+      }
+      setButtonState("btnSeoGeoNextSmart", !currentSeoGeoNextAction.enabled, currentSeoGeoNextAction.label, currentSeoGeoNextAction.reason);
+    }
+
     function updateWorkflowControls() {
       if (isUiBusy) { return; }
 
@@ -1373,6 +1725,10 @@
         var planHtmlPath = root + "\\latest\\seo-geo-action-plan.html";
         var optionalPath = root + "\\latest\\seo-geo-action-plan.optional.slim.ai.md";
         var queue = getQueueSnapshot(root);
+        // This is the UI boundary between the immutable plan snapshot, the approved
+        // queue and the authoritative lifecycle state.  No operational button may
+        // run when the projection cannot prove that those three artifacts agree.
+        var workflowConsistent = !!(queue.exists && !queue.isStale && queue.projection && queue.projection.consistency && queue.projection.consistency.valid === true);
 
         var canGenerate = hasPwsh && isFreshStatus(seven) && pool.mode === "ok";
         var hasPlanHtml = fso.FileExists(planHtmlPath);
@@ -1390,20 +1746,29 @@
             (!hasPwsh ? "找不到 pwsh；請先安裝 PowerShell 7" : "需先有 fresh 7d 報表與有效 target registry"));
         setButtonState("btnOpenSeoGeoActionPlan", !hasPlanHtml, "開啟最新 SEO/GEO 行動報告",
           hasPlanHtml ? "開啟 latest action plan HTML" : "尚未產生 action plan");
+        var singlePageReviewCount = asArray(optionalItems).filter(function (item) { return item && (item.review_type === "single_page_p0_review" || item.review_type === "single_page_alignment_review"); }).length;
         setButtonState("btnCopyOptionalSeoGeoPrompt", !hasOptionalPrompt,
-          optionalCount > 0 ? "複製小幅優化參考指令（" + optionalCount + "）" : "無小幅優化參考項目",
-          hasOptionalPrompt ? "複製 optional opportunities 判斷指令" :
-            (optionalCount === 0 ? "Optional Opportunities 為 0，無需複製" : "找不到 optional prompt"));
+          optionalCount > 0 ? (singlePageReviewCount > 0 ? "複製單頁優化評估指令（" + singlePageReviewCount + "）" : "複製小幅優化參考指令（" + optionalCount + "）") : "目前沒有額外小幅優化項目",
+          hasOptionalPrompt ? (singlePageReviewCount > 0 ? "複製單頁評估內容；需你明確核准後才能實作" : "複製可交給 AI 判斷的小幅優化參考") :
+            (optionalCount === 0 ? "目前沒有額外小幅優化項目，無需操作" : "找不到小幅優化參考檔"));
+        var canApproveSinglePage = hasPwsh && queue.exists && !queue.isStale && queue.isObservation && singlePageReviewCount === 1;
+        setButtonState("btnApproveSinglePageReview", !canApproveSinglePage,
+          canApproveSinglePage ? "核准單一頁面優化並建立工作項目" : "目前沒有可核准的單一頁面優化",
+          canApproveSinglePage ? "需確認頁面、核准者與理由；系統會再次驗證資料來源" : "需先有僅 1 個、等待你核准的單頁優化建議");
 
         if (!queue.exists) {
           setButtonState("btnCopySeoGeoAiPrompt", true, "複製目前 Round", "請先產生 SEO/GEO queue");
           setButtonState("btnAdvanceSeoGeoRound", true, "驗證通過後前進", "請先產生 SEO/GEO queue");
+        } else if (queue.isStale) {
+          var staleReason = asArray(queue.provenance.reasons).join("；");
+          setButtonState("btnCopySeoGeoAiPrompt", true, "Queue 已過期，請重新產生", "stale_plan：" + staleReason);
+          setButtonState("btnAdvanceSeoGeoRound", true, "Queue 已過期，請重新產生", "stale_plan：" + staleReason);
         } else if (queue.isObservation) {
           setButtonState("btnCopySeoGeoAiPrompt", true, "監控模式，無執行 Round", "observation_only 不產生實作指令");
           setButtonState("btnAdvanceSeoGeoRound", true, "監控模式，無需前進", "observation_only 不執行 Round");
         } else if (queue.isLocalValidated) {
           setButtonState("btnCopySeoGeoAiPrompt", true, "本輪已完成本機驗證", "等待部署或下一個資料週期");
-          setButtonState("btnAdvanceSeoGeoRound", true, "本輪已 local_validated", "等待部署或下一個資料週期");
+          setButtonState("btnAdvanceSeoGeoRound", true, "本輪已完成本機驗證（local_validated）", "等待部署或下一個資料週期");
         } else {
           var roundLabel = "Round " + queue.activeRound + "/" + queue.totalRounds;
           setButtonState("btnCopySeoGeoAiPrompt", false,
@@ -1413,6 +1778,43 @@
             "驗證通過並前進（" + roundLabel + "）",
             queue.receiptGate.passed ? "receipt 已通過，可前進" : queue.receiptGate.reason);
         }
+
+        var lifecycleStatus = queue.exists ? String(queue.lifecycleStatus || "") : "";
+        var canDeploy = hasPwsh && workflowConsistent && lifecycleStatus === "local_validated";
+        var canLiveVerify = hasPwsh && workflowConsistent && lifecycleStatus === "deployed";
+        var aiWriter = fso.GetParentFolderName(root) + "\\scripts\\write-ai-visibility-snapshot.ps1";
+        var aiQuestionSet = root + "\\config\\ai-visibility-question-set.json";
+        var canImportAiVisibility = hasPwsh && fso.FileExists(aiWriter) && fso.FileExists(aiQuestionSet);
+        setButtonState("btnImportAiVisibility", !canImportAiVisibility, "匯入 AI 能見度測試結果（AI Visibility）",
+          canImportAiVisibility ? "固定中文問題集；只接受 direct AI engine observation，不會以 GSC 推論" : "需要 PowerShell 7、AI Visibility writer 與固定問題集");
+        setButtonState("btnSeoGeoDeployDryRun", !canDeploy, "部署預演（FTP dry-run，不實際上傳）",
+          canDeploy ? "先產生 queue-bound deployment manifest；不會連線或上傳" : "需要 workflow consistency PASS 且 lifecycle=local_validated");
+        setButtonState("btnSeoGeoDeploy", !canDeploy, "正式上傳網站（FTP 部署）",
+          canDeploy ? "會使用既有 FTP 環境變數並寫入 queue-bound deployment manifest" : "需要 workflow consistency PASS 且 lifecycle=local_validated");
+        setButtonState("btnSeoGeoLiveVerify", !canLiveVerify, "驗證網站已正確上線（live verify）",
+          canLiveVerify ? "驗證 queue target 完整 contract 並寫入 live verification manifest" : "需要 workflow consistency PASS 且 lifecycle=deployed");
+        var lifecycleButtons = [
+          { id: "btnLifecycleImplemented", stage: "implemented", predecessor: "awaiting_implemented_receipt", label: "記錄已完成修改（implemented）" },
+          { id: "btnLifecycleLocalValidated", stage: "local_validated", predecessor: "implemented", label: "記錄本機檢查通過（local_validated）" },
+          { id: "btnLifecycleDeployed", stage: "deployed", predecessor: "local_validated", label: "記錄網站已上傳（deployed）" },
+          { id: "btnLifecycleLive", stage: "live_verified", predecessor: "deployed", label: "記錄網站已上線驗證（live_verified）" },
+          { id: "btnLifecycle7d", stage: "observing_7d", predecessor: "live_verified", label: "記錄開始觀察 7 天成效（observing_7d）" },
+          { id: "btnLifecycle28d", stage: "reviewed_28d", predecessor: "observing_7d", label: "記錄完成 28 天成效檢討（reviewed_28d）" },
+          { id: "btnLifecycleCompleted", stage: "completed", predecessor: "reviewed_28d", label: "記錄本次優化已結束（completed）" }
+        ];
+        for (var lb = 0; lb < lifecycleButtons.length; lb++) {
+          var lifecycleButton = lifecycleButtons[lb];
+          var lifecycleEnabled = hasPwsh && workflowConsistent && lifecycleStatus === lifecycleButton.predecessor;
+          var lifecycleHint = "選取符合 evidence contract 的 JSON 檔案";
+          if (lifecycleButton.stage === "observing_7d") {
+            lifecycleHint = "先匯入最新 7d／28d；需 decision_ready 7d manifest，且 end_date 已涵蓋部署後完整 7 日";
+          } else if (lifecycleButton.stage === "reviewed_28d") {
+            lifecycleHint = "先匯入最新 7d／28d；需 decision_ready 28d manifest、完整 28 日與正式成效決策";
+          }
+          setButtonState(lifecycleButton.id, !lifecycleEnabled, lifecycleButton.label,
+            lifecycleEnabled ? lifecycleHint : "需要 workflow consistency PASS 且 current queue 狀態=" + lifecycleButton.predecessor);
+        }
+        configureSmartSeoGeoControls(root, hasPwsh, canGenerate, hasPlanHtml, queue, workflowConsistent, canApproveSinglePage);
 
         if (!hasPwsh) {
           renderWorkflowPanel("error", "流程狀態：缺少 PowerShell 7（pwsh）", "上傳與產生建議已停用；請安裝 pwsh 後重新開啟 UI。不會 fallback 到 Windows PowerShell 5.1。");
@@ -1447,13 +1849,23 @@
           return;
         }
 
+        if (queue.isStale) {
+          renderWorkflowPanel("error", "流程狀態：stale_plan", "queue 建立後 registry 或 source SHA 已變更，已停用 Copy／Advance。下一步：按「產生 SEO/GEO 優化建議」建立新的 queue。原因：" + asArray(queue.provenance.reasons).join("；"));
+          return;
+        }
+
         if (queue.isObservation) {
-          renderWorkflowPanel("warn", "流程狀態：observation_only 監控", "目前資料只供觀察，不可複製或前進 Round；等待 decision_ready 的新 28d baseline。");
+          renderWorkflowPanel("warn", "流程狀態：observation_only（僅觀察）", currentSeoGeoNextAction.reason + "。主按鈕會在新資料可安全更新時重新判斷。");
+          return;
+        }
+
+        if (queue.isAwaitingImplemented) {
+          renderWorkflowPanel("warn", "流程狀態：等待 implemented receipt", "所有 Round 的 validation receipt 已通過；下一步需以 queue-bound evidence 記錄 implemented，才可進入 local_validated。");
           return;
         }
 
         if (queue.isLocalValidated) {
-          renderWorkflowPanel("ok", "流程狀態：local_validated", "所有 Round 已有匹配 receipt 並完成本機驗證；後續部署／live verification 不由此按鈕自動完成。");
+          renderWorkflowPanel(currentSeoGeoNextAction.enabled ? "ok" : "warn", "流程狀態：" + queue.lifecycleStatus, "目前下一步：" + currentSeoGeoNextAction.label + "\n" + currentSeoGeoNextAction.reason);
           return;
         }
 
@@ -1471,8 +1883,14 @@
       } catch (e) {
         setButtonState("btnRunAuto", true, "上傳成效 ZIP 並自動產生報表（7d/28d）", "流程狀態讀取失敗");
         setButtonState("btnRunSeoGeoActionPlan", true, "產生 SEO/GEO 優化建議", "流程狀態讀取失敗");
+        setButtonState("btnSeoGeoReportSmart", true, "更新／開啟 SEO/GEO 行動報告", "流程狀態讀取失敗");
+        setButtonState("btnSeoGeoNextSmart", true, "執行目前下一步", "流程狀態讀取失敗");
         setButtonState("btnCopySeoGeoAiPrompt", true, "複製目前 Round", "流程狀態讀取失敗");
         setButtonState("btnAdvanceSeoGeoRound", true, "驗證通過後前進", "流程狀態讀取失敗");
+        setButtonState("btnSeoGeoDeployDryRun", true, "部署預演（FTP dry-run，不實際上傳）", "流程狀態讀取失敗");
+        setButtonState("btnSeoGeoDeploy", true, "正式上傳網站（FTP 部署）", "流程狀態讀取失敗");
+        setButtonState("btnSeoGeoLiveVerify", true, "驗證網站已正確上線（live verify）", "流程狀態讀取失敗");
+        setButtonState("btnImportAiVisibility", true, "匯入 AI 能見度測試結果（AI Visibility）", "流程狀態讀取失敗");
         renderWorkflowPanel("error", "流程狀態：讀取失敗", e.message);
       }
     }
@@ -1540,9 +1958,10 @@
         var copied = state.copied_rounds || [];
         var isObservation = snapshot.isObservation;
         var isLocalValidated = snapshot.isLocalValidated;
-        var activeRoundLabel = isObservation ? "監控" : (isLocalValidated ? "已完成" : activeRound);
-        badge.innerText = isObservation ? "observation_only" :
-          (isLocalValidated ? "local_validated" : ("Round " + activeRound + "/" + totalRounds));
+        var isStale = snapshot.isStale;
+        var activeRoundLabel = isObservation ? "監控" : (snapshot.isAwaitingImplemented ? "等待 implemented receipt" : (isLocalValidated ? "lifecycle 進行中" : activeRound));
+        badge.innerText = isStale ? "stale_plan" : (isObservation ? "observation_only" :
+          (snapshot.isAwaitingImplemented ? "awaiting_implemented_receipt" : (isLocalValidated ? (state.status || "lifecycle") : ("Round " + activeRound + "/" + totalRounds))));
 
         var meta = "Queue ID：" + (state.queue_id || "n/a") +
           "\nCycle key：" + (state.cycle_key || "n/a") +
@@ -1552,6 +1971,10 @@
           "\ncompleted_rounds：" + (completed.length ? completed.join(", ") : "none") +
           "\ncopied_rounds：" + (copied.length ? copied.join(", ") : "none") +
           "\nReceipt gate：" + (snapshot.receiptGate.passed ? "passed" : snapshot.receiptGate.reason);
+        if (isStale) {
+          meta += "\n\nProvenance：stale_plan\n原因：" + asArray(snapshot.provenance.reasons).join("；") +
+            "\n已停用 Copy／Advance；請重新產生 SEO/GEO 優化建議。";
+        }
 
         var promptFiles = state.prompt_files || [];
         var byRound = {};
@@ -1582,11 +2005,20 @@
         for (var t = 0; t < technical.length && t < 4; t++) {
           techLines.push("P" + (technical[t].priority || "?") + " / " + (technical[t].type || "technical") + "：" + (technical[t].title || "n/a"));
         }
+        var singleReviewLines = [];
+        for (var o = 0; o < optional.length && o < 4; o++) {
+          if (optional[o] && (optional[o].review_type === "single_page_p0_review" || optional[o].review_type === "single_page_alignment_review")) {
+            singleReviewLines.push("單頁 review：" + (optional[o].page || "n/a") + "（需明確批准）");
+          }
+        }
         var extra = "Technical Queue：" + technical.length + " 項" +
           (techLines.length ? "\n" + techLines.join("\n") : "\n目前沒有 technical task") +
-          "\n\nOptional Opportunities：" + optional.length + " 項（不會被下一輪 Slim AI 指令自動複製）";
+          "\n\nOptional Opportunities：" + optional.length + " 項（不會被下一輪 Slim AI 指令自動複製）" +
+          (singleReviewLines.length ? "\n" + singleReviewLines.join("\n") : "");
 
-        if (isObservation) {
+        if (isStale) {
+          panel.className = "queue-panel error";
+        } else if (isObservation) {
           panel.className = "queue-panel warn";
           meta += "\n\n目前僅監控，不會提供 Copy／Advance。";
         } else if (isLocalValidated) {
@@ -1618,6 +2050,7 @@
         setHealthItem("health28d", twentyEight.text, twentyEight.mode);
         setHealthItem("healthPool", pool.text, pool.mode);
         setHealthItem("healthPlan", plan.text, plan.mode);
+        renderSixZoneDashboard();
         refreshQueueStatus();
         updateWorkflowControls();
       } catch (e) {
@@ -1626,14 +2059,14 @@
       }
     }
 
-    function runFileDialogWithPowerShell(exeName, dialogTitle) {
+    function runFileDialogWithPowerShell(exeName, dialogTitle, dialogFilter) {
       var shell = new ActiveXObject("WScript.Shell");
       var ps =
         "$ErrorActionPreference='Stop';" +
         "Add-Type -AssemblyName System.Windows.Forms;" +
         "$dlg=New-Object System.Windows.Forms.OpenFileDialog;" +
         "$dlg.Title='" + dialogTitle.replace(/'/g, "''") + "';" +
-        "$dlg.Filter='GSC Performance ZIP (*.zip)|*.zip';" +
+        "$dlg.Filter='" + String(dialogFilter || "GSC Performance ZIP (*.zip)|*.zip").replace(/'/g, "''") + "';" +
         "$dlg.Multiselect=$false;" +
         "if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){Write-Output $dlg.FileName}";
 
@@ -1651,11 +2084,11 @@
       return cleaned;
     }
 
-    function pickInputFile(dialogTitle) {
+    function pickInputFile(dialogTitle, dialogFilter) {
       if (!commandExists("pwsh")) {
         throw new Error("找不到 pwsh（PowerShell 7）；不支援 fallback 到 Windows PowerShell 5.1。");
       }
-      return runFileDialogWithPowerShell("pwsh", dialogTitle);
+      return runFileDialogWithPowerShell("pwsh", dialogTitle, dialogFilter);
     }
 
     function buildManifestSummary(manifest) {
@@ -1688,6 +2121,11 @@
       lines.push("Verdict mode：" + (manifest.verdict_mode || "n/a"));
       var seoGeo = manifest.seo_geo || {};
       lines.push("SEO/GEO rows：Query " + (seoGeo.query || 0) + " / Page " + (seoGeo.page || 0) + " / Query×Page " + (seoGeo.query_page || 0) + " / Total " + (seoGeo.total || 0));
+      var diagnostics = manifest.diagnostic_dimensions || {};
+      var datePage = diagnostics.date_page || {};
+      var devicePage = diagnostics.device_page || {};
+      lines.push("診斷維度：Date×Page " + (datePage.available ? (datePage.row_count || 0) + " rows" : "尚未匯入") +
+        " / Device×Page " + (devicePage.available ? (devicePage.row_count || 0) + " rows" : "尚未匯入"));
       if (manifest.input_sha256) {
         lines.push("ZIP SHA256：" + manifest.input_sha256.substring(0, 12) + "...");
       }
@@ -1699,6 +2137,47 @@
       }
       lines.push("封存 ZIP：" + (manifest.archived_input || "n/a"));
       return lines.join("\n");
+    }
+
+    function addDaysToYmd(ymd, days) {
+      var match = String(ymd || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!match) { return ""; }
+      var date = new Date(Date.UTC(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10) + days));
+      function pad(value) { return value < 10 ? "0" + value : "" + value; }
+      return date.getUTCFullYear() + "-" + pad(date.getUTCMonth() + 1) + "-" + pad(date.getUTCDate());
+    }
+
+    function buildPostGscSubmissionReminder(root) {
+      var lines = [];
+      var seven = getWindowFreshness(root, "7d", 10);
+      var twentyEight = getWindowFreshness(root, "28d", 35);
+      var state = readJsonIfExists(root + "\\latest\\seo-geo-action-queue-state.json");
+      var lifecycle = state ? String(state.status || "") : "";
+      var deployedDate = state ? String(state.deployed_at || "").substring(0, 10) : "";
+      var sevenEligibleDate = addDaysToYmd(deployedDate, 7);
+      var twentyEightEligibleDate = addDaysToYmd(deployedDate, 28);
+
+      lines.push("下一步操作提醒");
+      lines.push("AI Visibility：請用同一個指定 AI／model 跑固定 6 題；每題保留原始回答、是否提到宏森、引用網址與正確性。完成 observation JSON 後，按「匯入 AI Visibility observation」。不可用 GSC 排名、CTR、曝光或排名位置推論。");
+
+      if (lifecycle === "live_verified") {
+        if (seven.decisionReady && seven.endDate && sevenEligibleDate && seven.endDate >= sevenEligibleDate) {
+          lines.push("7d lifecycle：最新 7d 為 decision_ready，截止日 " + seven.endDate + " 已涵蓋部署後 7 日（門檻 " + sevenEligibleDate + "）。下一步請建立綁定目前 queue 與 7d manifest SHA 的 evidence JSON，再按「記錄 observing_7d」。");
+        } else {
+          lines.push("7d lifecycle：目前不可記錄 observing_7d。需等待最新 7d 為 decision_ready，且截止日至少 " + (sevenEligibleDate || "部署後第 7 日") + "；目前 7d 截止日=" + (seven.endDate || "n/a") + "。");
+        }
+      } else if (lifecycle === "observing_7d") {
+        if (twentyEight.decisionReady && twentyEight.endDate && twentyEightEligibleDate && twentyEight.endDate >= twentyEightEligibleDate) {
+          lines.push("28d lifecycle：最新 28d 為 decision_ready，截止日 " + twentyEight.endDate + " 已涵蓋部署後 28 日（門檻 " + twentyEightEligibleDate + "）。先完成 keep／refine／expand／replace 決策與摘要，再以 28d evidence JSON 按「記錄 reviewed_28d」。");
+        } else {
+          lines.push("28d lifecycle：目前仍在觀察。需等待最新 28d 為 decision_ready，且截止日至少 " + (twentyEightEligibleDate || "部署後第 28 日") + "；目前 28d 截止日=" + (twentyEight.endDate || "n/a") + "。");
+        }
+      } else if (lifecycle === "reviewed_28d") {
+        lines.push("28d lifecycle：review 已完成。確認 decision 與摘要已寫入有效 receipt 後，才可按「記錄 completed」。");
+      } else {
+        lines.push("Lifecycle：目前狀態=" + (lifecycle || "尚無 executable queue") + "。7d／28d 的 lifecycle 必須依序前進，且 evidence 必須綁定目前 queue 與 manifest SHA。");
+      }
+      return lines.join("\n\n");
     }
 
     function buildActionPlanSummary(plan) {
@@ -1751,7 +2230,7 @@
       var logPath = logDir + "\\weekly-sop-last-run.log";
       var manifestPath = logDir + "\\weekly-sop-last-run.json";
       var safeLog = logPath.replace(/"/g, '""');
-      var cmd = 'cmd /c cd /d "' + root + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "run-weekly-window.ps1" -Window "auto" -InputFile "' + safePath + '" > "' + safeLog + '" 2>&1';
+      var cmd = 'cmd /c cd /d "' + root + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "run-weekly-window.ps1" -Window "auto" -InputFile "' + safePath + '" -ImportSource "manual_zip" > "' + safeLog + '" 2>&1';
 
       resetDetailsCollapsed();
       setStatusDetails("");
@@ -1769,7 +2248,7 @@
           var manifest = parseJson(manifestRaw);
           if (manifest && manifest.status === "success") {
             var summaryText = buildManifestSummary(manifest);
-            setStatusSummary("Weekly SOP 已完成。\n\n" + summaryText, "success");
+            setStatusSummary("Weekly SOP 已完成。\n\n" + summaryText + "\n\n" + buildPostGscSubmissionReminder(root), "success");
 
             var runSummaryPath = resolveManifestPath(root, manifest.run_summary || "");
             var runSummaryText = runSummaryPath ? readTextIfExists(runSummaryPath) : "";
@@ -1827,7 +2306,7 @@
       }
     }
 
-    function runSeoGeoActionPlan() {
+    function runSeoGeoActionPlan(openAfter) {
       var root = getRootFolder();
       if (!commandExists("pwsh")) {
         setStatusSummary("找不到 pwsh（PowerShell 7），無法產生 SEO/GEO 優化建議。\n不會 fallback 到 Windows PowerShell 5.1。", "error");
@@ -1913,6 +2392,7 @@
             planSummary + "\n\n已輸出：\nWeekly SOP\\latest\\seo-geo-action-plan.md\nWeekly SOP\\latest\\seo-geo-action-plan.html\nWeekly SOP\\latest\\seo-geo-action-plan.round-N.slim.ai.md（依實際 Round）\nWeekly SOP\\latest\\seo-geo-action-queue.md\nWeekly SOP\\latest\\seo-geo-action-queue-state.json",
             latestImport.isDuplicate ? "warn" : "success"
           );
+          if (openAfter === true) { openLatestSeoGeoActionPlan(); }
         } else {
           setStatusSummary(
             "SEO/GEO 優化建議產生失敗，錯誤代碼：" + code + "\n請先確認 latest 7d 報表已存在；若要 monthly 判定，請同時完成 latest 28d 報表。",
@@ -1958,12 +2438,36 @@
       }
     }
 
+    function runOrOpenSeoGeoActionPlan() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var queue = getQueueSnapshot(root);
+        var seven = getWindowFreshness(root, "7d", 10);
+        var pool = getTargetRegistry(root);
+        var canGenerate = commandExists("pwsh") && isFreshStatus(seven) && pool.mode === "ok";
+        var decision = getSmartReportDecision(root, queue, canGenerate, fso.FileExists(root + "\\latest\\seo-geo-action-plan.html"));
+        if (decision.action === "generate") { runSeoGeoActionPlan(true); }
+        else if (decision.action === "open") { openLatestSeoGeoActionPlan(); }
+        else { setStatusSummary("目前無法產生或開啟 SEO/GEO 行動報告。\n\n" + decision.title, "error"); }
+      } catch (e) {
+        setStatusSummary("更新／開啟 SEO/GEO 行動報告失敗：" + e.message, "error");
+      }
+    }
+
     function copyLatestSeoGeoAiPrompt() {
       try {
         var root = getRootFolder();
         var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
         var fso = new ActiveXObject("Scripting.FileSystemObject");
         refreshQueueStatus();
+
+        var snapshot = getQueueSnapshot(root);
+        if (snapshot.exists && snapshot.isStale) {
+          setStatusSummary("Queue 已過期（stale_plan），禁止複製 Round。\n\n原因：" + asArray(snapshot.provenance.reasons).join("；") + "\n\n請先點「產生 SEO/GEO 優化建議」重新建立 queue。", "error");
+          updateWorkflowControls();
+          return;
+        }
 
         if (!fso.FileExists(statePath)) {
           setStatusSummary("Queue 尚未建立或本次產生失敗。\n請先點「產生 SEO/GEO 優化建議」。\n若剛產生過仍失敗，請查看：\n" + root + "\\latest\\seo-geo-action-plan-last-run.log", "error");
@@ -1983,8 +2487,8 @@
           updateWorkflowControls();
           return;
         }
-        if (state.status === "local_validated" || state.status === "completed") {
-          setStatusSummary("本次 queue 已完成本機驗證，沒有可複製的 Round。", "success");
+        if (state.status !== "active") {
+          setStatusSummary("本次 queue 已進入 " + state.status + " 狀態，沒有可複製的 Round。後續必須以 lifecycle receipt 依序前進。", "success");
           refreshQueueStatus();
           updateWorkflowControls();
           return;
@@ -1997,7 +2501,6 @@
 
         var activeRound = Number(state.active_round || state.next_round || 1);
         var completed = state.completed_rounds || [];
-        var copied = state.copied_rounds || [];
         var totalRounds = Number(state.total_rounds || state.prompt_files.length);
         if (activeRound > totalRounds) {
           setStatusSummary("queue active_round 超出 total_rounds，但尚未標記 local_validated。\n請檢查 queue state 與 validation receipt。", "error");
@@ -2029,16 +2532,6 @@
         }
         if (window.clipboardData && window.clipboardData.setData) {
           window.clipboardData.setData("Text", text);
-          if (!arrayContains(copied, activeRound)) {
-            copied.push(activeRound);
-          }
-          state.copied_rounds = copied;
-          state.active_round = activeRound;
-          state.next_round = activeRound;
-          state.status = "active";
-          state.last_copied_round = activeRound;
-          state.last_copied_at = formatIsoUtc(new Date());
-          writeJsonAtomic(statePath, state);
           var nextStep = "AI 完成後，先寫入匹配且通過的 validation receipt，再按前進";
           setStatusSummary("目前複製：Round " + activeRound + "/" + totalRounds + "\nSlim AI 執行指令：\n" + resolvedTarget + "\n\n目標頁數：" + targetCount + "\n下一步：" + nextStep, "success");
           refreshQueueStatus();
@@ -2055,222 +2548,157 @@
       }
     }
 
-    function findActionById(actions, actionId) {
-      actions = asArray(actions);
-      for (var i = 0; i < actions.length; i++) {
-        if (actions[i] && String(actions[i].action_id || "") === String(actionId)) {
-          return actions[i];
-        }
-      }
-      return null;
+    function invokeSeoGeoWorkflowWriter(root, transition, extraArgs, label) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var writer = fso.GetParentFolderName(root) + "\\scripts\\write-seo-geo-workflow-transition.ps1";
+      if (!fso.FileExists(writer)) { throw new Error("找不到統一 workflow writer：\n" + writer); }
+      var logPath = root + "\\latest\\seo-geo-workflow-last-run.log";
+      var cmd = 'cmd /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + writer.replace(/"/g, '""') +
+        '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -Transition "' + transition + '" ' + (extraArgs || '') +
+        ' > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+      setButtonsBusy(true);
+      setStatusSummary("正在透過 PowerShell transaction 記錄 " + label + "...", "running");
+      var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+      var logText = readTextIfExists(logPath);
+      setStatusDetails("Command:\n" + cmd + "\n\nLog:\n" + logText);
+      setStatusSummary(code === 0 ? (label + " 已由 PowerShell transaction 寫入。\n\n" + logText) : (label + " 寫入失敗；transaction 已自動 rollback 或保留 recovery journal。\n\n" + logText), code === 0 ? "success" : "error");
+      return code === 0;
     }
 
-    function persistValidatedRoundArtifacts(root, state, queue, receiptGate, round) {
-      var contract = receiptGate.contract;
-      var receipt = receiptGate.receipt;
-      var now = new Date();
-      var validatedAt = formatIsoUtc(now);
-      var localDate = formatLocalDate(now);
-      var preparedActions = [];
-
-      for (var i = 0; i < contract.actionIds.length; i++) {
-        var actionId = contract.actionIds[i];
-        var action = findActionById(contract.actions, actionId);
-        if (!action) {
-          throw new Error("Queue 找不到 action：" + actionId);
-        }
-        var fingerprint = getActionFingerprintValue(contract.actionFingerprintSet, actionId);
-        var actionFingerprint = String(action.fingerprint || action.action_fingerprint || "").toLowerCase();
-        var clusterId = String(action.clusterId || action.cluster_id || "");
-        var page = String(action.page || "");
-        if (!fingerprint || fingerprint !== actionFingerprint || !clusterId || !page) {
-          throw new Error("Action history 欄位不完整或 fingerprint 不一致：" + actionId);
-        }
-        preparedActions.push({
-          action_id: actionId,
-          fingerprint: fingerprint,
-          cluster_id: clusterId,
-          page: page,
-          result: receipt.result,
-          validated_at: validatedAt,
-          queue_id: state.queue_id,
-          cycle_key: state.cycle_key,
-          round: Number(round)
-        });
+    function getQueueActionArgs(snapshot) {
+      var ids = getQueueActionIds(snapshot);
+      var args = "";
+      for (var i = 0; i < ids.length; i++) {
+        var id = String(ids[i] || "").replace(/[\"%]/g, "");
+        if (id) { args += ' -ActionId "' + id + '"'; }
       }
+      return args;
+    }
 
-      var registryPath = "";
-      var registry = null;
-      if (receipt.result === "implemented") {
-        var registryBinding = normalizeRegistryBinding(state.registry);
-        if (!registryBinding.valid) {
-          throw new Error("Queue registry binding 無效，不能更新 target registry");
+    function runSeoGeoDeployment(dryRun) {
+      try {
+        var root = getRootFolder();
+        var snapshot = getQueueSnapshot(root);
+        var consistent = snapshot.exists && !snapshot.isStale && snapshot.projection && snapshot.projection.consistency && snapshot.projection.consistency.valid === true;
+        if (!consistent || String(snapshot.lifecycleStatus || "") !== "local_validated") {
+          setStatusSummary("部署操作被 workflow consistency gate 阻擋：需要 plan／approved queue／lifecycle state 一致，且 lifecycle=local_validated。", "error");
+          return;
         }
         var fso = new ActiveXObject("Scripting.FileSystemObject");
-        registryPath = resolveManifestPath(root, registryBinding.path);
-        var fixedRegistryPath = root + "\\config\\target-registry.json";
-        if (fso.GetAbsolutePathName(registryPath).toLowerCase() !== fso.GetAbsolutePathName(fixedRegistryPath).toLowerCase()) {
-          throw new Error("Registry path 不是 config/target-registry.json");
-        }
-        registry = readJsonIfExists(registryPath);
-        if (!registry || Number(registry.schemaVersion) !== registryBinding.version || !registry.targets) {
-          throw new Error("target-registry.json schema/version 無效");
-        }
-        var targets = asArray(registry.targets);
-        for (i = 0; i < preparedActions.length; i++) {
-          var matchedTarget = null;
-          for (var targetIndex = 0; targetIndex < targets.length; targetIndex++) {
-            if (targets[targetIndex] && String(targets[targetIndex].clusterId || "") === preparedActions[i].cluster_id) {
-              matchedTarget = targets[targetIndex];
-              break;
-            }
+        var repoRoot = fso.GetParentFolderName(root);
+        var deployScript = repoRoot + "\\scripts\\deploy-ftp.ps1";
+        if (!fso.FileExists(deployScript)) { throw new Error("找不到 deploy script：\n" + deployScript); }
+        if (!dryRun) {
+          var dryRunGate = getDeploymentManifestGate(root, snapshot, true);
+          if (!dryRunGate.passed) {
+            setStatusSummary("正式 FTP 部署已阻擋：必須先有綁定目前 queue 的有效 dry-run。\n\n" + dryRunGate.reason, "error");
+            return;
           }
-          if (!matchedTarget) {
-            throw new Error("target-registry.json 找不到 clusterId：" + preparedActions[i].cluster_id);
-          }
-          matchedTarget.lastChangedAt = localDate;
         }
-        registry.updatedAt = localDate;
+        var manifestPath = root + "\\latest\\seo-geo-deployment-manifest" + (dryRun ? ".dry-run" : "") + ".json";
+        var label = dryRun ? "FTP dry-run" : "FTP 部署";
+        if (!confirm((dryRun ? "將執行不連線、不上傳的 dry-run，" : "將使用設定的 FTP 環境變數上傳，") + "並建立 queue-bound deployment manifest。\n\nQueue: " + snapshot.queueId + "\n確認繼續嗎？")) { return; }
+        var cmd = 'cmd /d /c cd /d "' + repoRoot.replace(/"/g, '""') + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + deployScript.replace(/"/g, '""') +
+          '" -Mode quick -LocalRoot "' + (repoRoot + "\\out").replace(/"/g, '""') + '" -ManifestPath "' + manifestPath.replace(/"/g, '""') +
+          '" -QueueId "' + String(snapshot.state.queue_id || "").replace(/"/g, '""') + '" -CycleKey "' + String(snapshot.state.cycle_key || "").replace(/"/g, '""') + '"' +
+          getQueueActionArgs(snapshot) + (dryRun ? " -DryRun" : "") + ' > "' + (root + "\\latest\\seo-geo-deploy-last-run.log").replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("正在執行 " + label + "；不會自動前進 lifecycle...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(root + "\\latest\\seo-geo-deploy-last-run.log");
+        setStatusDetails("Command:\n" + cmd + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? (label + " 完成，manifest：\n" + manifestPath + "\n\n請檢閱 manifest，再用 queue-bound evidence 記錄 deployed。") : (label + " 失敗；未前進 lifecycle。\n\n" + logText), code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("部署操作失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        refreshQueueStatus();
+        updateWorkflowControls();
       }
+    }
 
-      var historyDir = root + "\\history\\curtain-online";
-      var historyPath = historyDir + "\\seo-geo-action-history.json";
-      var history = readJsonIfExists(historyPath);
-      if (!history) {
-        history = { schema_version: 1, updated_at: validatedAt, actions: [] };
-      }
-      if (Number(history.schema_version) !== 1 ||
-          Object.prototype.toString.call(history.actions) !== "[object Array]") {
-        throw new Error("seo-geo-action-history.json schema 無效");
-      }
-
-      var existingByKey = {};
-      for (i = 0; i < history.actions.length; i++) {
-        var existing = history.actions[i] || {};
-        var existingKey = "$" + String(existing.queue_id || "") + "\u001f" + String(existing.cycle_key || "") +
-          "\u001f" + Number(existing.round) + "\u001f" + String(existing.action_id || "");
-        existingByKey[existingKey] = existing;
-      }
-      for (i = 0; i < preparedActions.length; i++) {
-        var item = preparedActions[i];
-        var key = "$" + item.queue_id + "\u001f" + item.cycle_key + "\u001f" + item.round + "\u001f" + item.action_id;
-        var duplicate = existingByKey[key];
-        if (duplicate) {
-          if (String(duplicate.fingerprint || "").toLowerCase() !== item.fingerprint ||
-              String(duplicate.cluster_id || "") !== item.cluster_id || String(duplicate.page || "") !== item.page ||
-              String(duplicate.result || "") !== item.result) {
-            throw new Error("Action history 去重鍵已有衝突內容：" + item.action_id);
-          }
-          continue;
+    function runSeoGeoLiveVerification() {
+      try {
+        var root = getRootFolder();
+        var snapshot = getQueueSnapshot(root);
+        var consistent = snapshot.exists && !snapshot.isStale && snapshot.projection && snapshot.projection.consistency && snapshot.projection.consistency.valid === true;
+        if (!consistent || String(snapshot.lifecycleStatus || "") !== "deployed") {
+          setStatusSummary("live verify 被 workflow consistency gate 阻擋：需要 plan／approved queue／lifecycle state 一致，且 lifecycle=deployed。", "error");
+          return;
         }
-        history.actions.push(item);
-        existingByKey[key] = item;
+        if (!confirm("將驗證 queue target 的 HTTP、title、meta、H1、FAQ、schema、內鏈、CTA、robots、sitemap 與舊產品網址 redirects，並寫入正式 manifest。\n\n不會自動前進 lifecycle。確認繼續嗎？")) { return; }
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var repoRoot = fso.GetParentFolderName(root);
+        var writer = repoRoot + "\\scripts\\write-seo-geo-live-verification.ps1";
+        if (!fso.FileExists(writer)) { throw new Error("找不到 live verification writer：\n" + writer); }
+        var logPath = root + "\\latest\\seo-geo-live-verify-last-run.log";
+        var cmd = 'cmd /d /c cd /d "' + repoRoot.replace(/"/g, '""') + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + writer.replace(/"/g, '""') +
+          '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -Scope queue_targets > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("正在執行 queue target live verification；不會自動前進 lifecycle...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? ("live verify 完成，manifest：\n" + root + "\\latest\\seo-geo-live-verification.json\n\n請檢閱 passed contract，再用 queue-bound evidence 記錄 live_verified。") : ("live verify 失敗或僅部分通過；未前進 lifecycle。\n\n" + logText), code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("live verify 操作失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        refreshQueueStatus();
+        updateWorkflowControls();
       }
-      history.updated_at = validatedAt;
+    }
 
-      ensureFolderPath(historyDir);
-      writeJsonAtomic(historyPath, history);
-      if (receipt.result === "implemented") {
-        writeJsonAtomic(registryPath, registry);
+    function importAiVisibilityObservation() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var repoRoot = fso.GetParentFolderName(root);
+        var writer = repoRoot + "\\scripts\\write-ai-visibility-snapshot.ps1";
+        var questionSet = root + "\\config\\ai-visibility-question-set.json";
+        if (!fso.FileExists(writer) || !fso.FileExists(questionSet)) { throw new Error("AI Visibility writer 或固定問題集不存在。"); }
+        var inputPath = pickInputFile("選取 AI Visibility observation JSON（固定 6 題）", "AI Visibility JSON (*.json)|*.json");
+        if (!inputPath) { setStatusSummary("已取消選取 AI Visibility JSON。", ""); return; }
+        inputPath = String(inputPath).replace(/^\s+|\s+$/g, "");
+        if (!inputPath || !fso.FileExists(inputPath)) { setStatusSummary("找不到 AI Visibility observation JSON：\n" + inputPath, "error"); return; }
+        var logPath = root + "\\latest\\ai-visibility-last-run.log";
+        var cmd = 'cmd /d /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + writer.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -InputPath "' + inputPath.replace(/"/g, '""') + '" -QuestionSetPath "' + questionSet.replace(/"/g, '""') + '" > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("正在驗證並寫入 direct AI Visibility observation；不會使用 GSC 推論...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? "AI Visibility snapshot、monthly history 與 receipt 已寫入；第六區已更新 mention/citation/accuracy。" : "AI Visibility observation 被拒絕；latest summary 未變更。\n\n" + logText, code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("AI Visibility 匯入失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        renderSixZoneDashboard();
+        updateWorkflowControls();
       }
     }
 
     function advanceSeoGeoRound() {
       try {
         var root = getRootFolder();
-        var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
-        var fso = new ActiveXObject("Scripting.FileSystemObject");
-        refreshQueueStatus();
-
-        if (!fso.FileExists(statePath)) {
-          setStatusSummary("Queue 尚未建立。\n請先點「產生 SEO/GEO 優化建議」。", "error");
-          updateWorkflowControls();
+        var snapshot = getQueueSnapshot(root);
+        if (!snapshot.exists || snapshot.isStale || snapshot.isObservation) {
+          setStatusSummary("Round 前進條件不成立：需要 current executable queue。", "error");
           return;
         }
-
-        var state = parseJson(readTextIfExists(statePath));
-        if (!state) {
-          setStatusSummary("queue state 無法讀取。\n請重新點「產生 SEO/GEO 優化建議」。", "error");
-          refreshQueueStatus();
-          updateWorkflowControls();
-          return;
-        }
-
-        if (state.status === "observation_only") {
-          setStatusSummary("目前是 observation_only 監控清單，禁止前進 Round。", "error");
-          refreshQueueStatus();
-          updateWorkflowControls();
-          return;
-        }
-
+        var state = snapshot.state;
         var activeRound = Number(state.active_round || state.next_round || 1);
-        var totalRounds = Number(state.total_rounds || (state.prompt_files ? state.prompt_files.length : 0) || 0);
-        var completed = state.completed_rounds || [];
-
-        if (state.status === "local_validated" || state.status === "completed") {
-          setStatusSummary("本次 SEO/GEO queue 已完成本機驗證。", "success");
-          refreshQueueStatus();
-          updateWorkflowControls();
+        var totalRounds = Number(state.total_rounds || 0);
+        if (state.status !== "active" || activeRound < 1 || activeRound > totalRounds) {
+          setStatusSummary("本次 queue 不是可前進的 active Round；目前狀態：" + state.status, "error");
           return;
         }
-        if (totalRounds < 1 || activeRound > totalRounds) {
-          setStatusSummary("queue Round 範圍無效，不能前進。請檢查 active_round 與 total_rounds。", "error");
-          refreshQueueStatus();
-          updateWorkflowControls();
-          return;
-        }
-
-        if (arrayContains(completed, activeRound)) {
-          setStatusSummary("Round " + activeRound + "/" + totalRounds + " 已有完成紀錄，但仍被設為 active。請檢查 queue state。", "error");
-          refreshQueueStatus();
-          updateWorkflowControls();
-          return;
-        }
-
-        var queue = readJsonIfExists(root + "\\latest\\seo-geo-action-queue.json");
-        var receiptGate = getReceiptGate(root, state, queue, activeRound);
-        if (!receiptGate.passed) {
-          setStatusSummary("Round " + activeRound + "/" + totalRounds + " 尚不能前進。\n\n" + receiptGate.reason + "\nReceipt：" + (receiptGate.path || "n/a"), "error");
-          refreshQueueStatus();
-          updateWorkflowControls();
-          return;
-        }
-
-        if (!confirm("Round " + activeRound + "/" + totalRounds + " 的 validation receipt 已通過。\n\n確認要記錄本輪驗證完成並前進嗎？")) {
-          setStatusSummary("已取消前進 Round " + activeRound + "/" + totalRounds + "，queue 狀態未變更。", "");
-          updateWorkflowControls();
-          return;
-        }
-
-        // History and registry are durable prerequisites. Any failure throws
-        // before queue state is mutated or advanced.
-        persistValidatedRoundArtifacts(root, state, queue, receiptGate, activeRound);
-
-        completed.push(activeRound);
-        var finishedRound = activeRound;
-        activeRound++;
-        state.completed_rounds = completed;
-        state.active_round = activeRound;
-        state.next_round = activeRound;
-        state.last_validated_round = finishedRound;
-        state.last_validation_receipt = state.receipt_path;
-        state.last_validated_at = formatIsoUtc(new Date());
-
-        if (activeRound > totalRounds) {
-          state.status = "local_validated";
-          state.local_validated_at = state.last_validated_at;
-          writeJsonAtomic(statePath, state);
-          setStatusSummary("Round " + finishedRound + "/" + totalRounds + " receipt 已驗證。\n\n本次 SEO/GEO queue 狀態已更新為 local_validated；尚不代表已部署或完成 live verification。", "success");
-        } else {
-          state.status = "active";
-          writeJsonAtomic(statePath, state);
-          setStatusSummary("Round " + finishedRound + "/" + totalRounds + " receipt 已驗證。\n\n下一步：複製 Round " + activeRound + "/" + totalRounds + " Slim AI 指令。", "success");
-        }
-
-        refreshQueueStatus();
-        updateWorkflowControls();
+        if (!confirm("Round " + activeRound + "/" + totalRounds + " 的 validation receipt 將由 PowerShell writer 重驗並交易式前進。確認繼續嗎？")) { return; }
+        invokeSeoGeoWorkflowWriter(root, "round_validated", "", "Round " + activeRound + " validated");
       } catch (e) {
-        setStatusSummary("驗證 receipt 並前進失敗：" + e.message, "error");
+        setStatusSummary("Round transaction 失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
         refreshQueueStatus();
         updateWorkflowControls();
       }
@@ -2282,7 +2710,9 @@
         var target = root + "\\latest\\seo-geo-action-plan.optional.slim.ai.md";
         var fso = new ActiveXObject("Scripting.FileSystemObject");
         var queue = readJsonIfExists(root + "\\latest\\seo-geo-action-queue.json");
-        var optionalCount = queue && queue.optional_opportunities ? asArray(queue.optional_opportunities).length : 0;
+        var optionalItems = queue && queue.optional_opportunities ? asArray(queue.optional_opportunities) : [];
+        var optionalCount = optionalItems.length;
+        var hasSinglePageReview = optionalItems.some(function (item) { return item && (item.review_type === "single_page_p0_review" || item.review_type === "single_page_alignment_review"); });
         if (optionalCount === 0) {
           setStatusSummary("Optional Opportunities 為 0，目前沒有小幅優化參考項目可複製。", "success");
           updateWorkflowControls();
@@ -2299,7 +2729,7 @@
         }
         if (window.clipboardData && window.clipboardData.setData) {
           window.clipboardData.setData("Text", text);
-          setStatusSummary("已複製小幅可優化參考指令：\n" + target + "\n\n貼給 AI 後，只會判斷是否值得加做；不會直接修改 source。", "success");
+          setStatusSummary("已複製" + (hasSinglePageReview ? "單頁 P0 review" : "小幅可優化參考") + "指令：\n" + target + "\n\n貼給 AI 後，只會審查；需使用者明確批准才可修改 source。", "success");
         } else {
           setStatusSummary("目前 HTA 環境不支援剪貼簿，請直接開啟小幅可優化參考指令：\n" + target, "error");
         }
@@ -2308,13 +2738,165 @@
       }
     }
 
+    function approveSinglePageReview() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var snapshot = getQueueSnapshot(root);
+        var items = snapshot.queue && snapshot.queue.optional_opportunities ? asArray(snapshot.queue.optional_opportunities) : [];
+        var reviews = items.filter(function (item) { return item && (item.review_type === "single_page_p0_review" || item.review_type === "single_page_alignment_review") && item.requires_user_approval === true; });
+        if (!snapshot.exists || snapshot.isStale || !snapshot.isObservation || reviews.length !== 1) {
+          setStatusSummary("單頁核准條件不成立：需要 current observation_only queue 且恰好 1 個 approval-only single-page review。", "error");
+          updateWorkflowControls();
+          return;
+        }
+        var page = String(reviews[0].page || "");
+        if (!confirm("確認核准這個單頁 review 並建立正式 executable Round？\n\n" + page + "\n\n核准後仍須完成所有 validation receipt 才能前進。")) { return; }
+        var approvedBy = prompt("核准者（必填）：", "site owner");
+        if (approvedBy === null) { return; }
+        var reason = prompt("核准理由（必填）：", "核准此唯一 P0 頁進入單頁實作 Round。");
+        if (reason === null) { return; }
+        approvedBy = String(approvedBy).replace(/^\s+|\s+$/g, "");
+        reason = String(reason).replace(/^\s+|\s+$/g, "");
+        if (!approvedBy || !reason || /[\"%]/.test(approvedBy) || /[\"%]/.test(reason)) {
+          setStatusSummary("核准者與理由不可空白，也不可包含雙引號或 %。", "error");
+          return;
+        }
+        var args = '-Page "' + page.replace(/"/g, '""') + '" -ApprovedBy "' + approvedBy + '" -Reason "' + reason + '"';
+        invokeSeoGeoWorkflowWriter(root, "strategy_approved", args, "單頁 strategy approval / Round 1");
+      } catch (e) {
+        setStatusSummary("單頁 review 核准失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        refreshQueueStatus();
+        updateWorkflowControls();
+      }
+    }
+
+    function invokeLifecycleNext() {
+      try {
+        var root = getRootFolder();
+        var inspection = getLifecycleNextInspection(root);
+        if (!inspection || !inspection.ready) {
+          setStatusSummary("目前 lifecycle 不可前進：\n" + ((inspection && inspection.reason) || "必要 evidence 尚未完成"), "error");
+          return;
+        }
+        var decision = "";
+        var summary = "";
+        if (inspection.needs_input) {
+          decision = prompt("請輸入 28 天策略決策：\nkeep＝維持、refine＝微調、expand＝擴大、replace＝更換", "keep");
+          if (decision === null) { return; }
+          decision = String(decision).replace(/^\s+|\s+$/g, "").toLowerCase();
+          if (["keep", "refine", "expand", "replace"].indexOf(decision) < 0) {
+            setStatusSummary("28 天策略決策無效；只接受 keep、refine、expand 或 replace。", "error");
+            return;
+          }
+          summary = prompt("請輸入 28 天檢討摘要（必填，系統不會自行猜測）：", "");
+          if (summary === null) { return; }
+          summary = String(summary).replace(/^\s+|\s+$/g, "");
+          if (!summary || /[\"%\r\n]/.test(summary)) {
+            setStatusSummary("28 天摘要不可空白，也不可包含雙引號、%、換行。", "error");
+            return;
+          }
+        }
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var script = fso.GetParentFolderName(root) + "\\scripts\\invoke-seo-geo-lifecycle-next.ps1";
+        if (!fso.FileExists(script)) { throw new Error("找不到 lifecycle 智慧控制器：\n" + script); }
+        var cmd = 'pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + script.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -Mode Advance';
+        if (decision) { cmd += ' -Decision "' + decision + '" -Summary "' + summary + '"'; }
+        setButtonsBusy(true);
+        setStatusSummary("正在驗證可信 evidence 並前進一個 lifecycle 階段...", "running");
+        var exec = new ActiveXObject("WScript.Shell").Exec(cmd);
+        var output = exec.StdOut.ReadAll();
+        var error = exec.StdErr.ReadAll();
+        setStatusDetails("Command:\n" + cmd + "\n\nOutput:\n" + output + "\n\nError:\n" + error);
+        setStatusSummary(exec.ExitCode === 0 ? ("已完成一個階段：" + inspection.label + "。\n\n系統已重新判斷下一步。") : ("Lifecycle 未前進；transaction 已 rollback 或保留 recovery journal。\n\n" + (error || output)), exec.ExitCode === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("Lifecycle 智慧操作失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        refreshQueueStatus();
+        updateWorkflowControls();
+      }
+    }
+
+    function executeCurrentSeoGeoNextStep() {
+      if (!currentSeoGeoNextAction || !currentSeoGeoNextAction.enabled) {
+        setStatusSummary("目前沒有可執行的下一步。\n\n" + ((currentSeoGeoNextAction && currentSeoGeoNextAction.reason) || "請查看流程提示。"), "warn");
+        return;
+      }
+      switch (currentSeoGeoNextAction.type) {
+        case "copy_round": copyLatestSeoGeoAiPrompt(); break;
+        case "advance_round": advanceSeoGeoRound(); break;
+        case "approve_single_page": approveSinglePageReview(); break;
+        case "dry_run": runSeoGeoDeployment(true); break;
+        case "deploy": runSeoGeoDeployment(false); break;
+        case "live_verify": runSeoGeoLiveVerification(); break;
+        case "lifecycle": invokeLifecycleNext(); break;
+        default: setStatusSummary("目前下一步類型無法辨識，請重新整理 UI。", "error");
+      }
+    }
+
+    function toggleAdvancedSeoGeoActions() {
+      var panel = document.getElementById("advancedSeoGeoActions");
+      var link = document.getElementById("toggleAdvancedSeoGeoActions");
+      if (!panel || !link) { return false; }
+      var show = panel.style.display !== "block";
+      panel.style.display = show ? "block" : "none";
+      link.innerText = show ? "收合進階／故障排除操作" : "顯示進階／故障排除操作";
+      return false;
+    }
+
+    function recordLifecycleStage(stage) {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var stageHint = "";
+        if (stage === "observing_7d") {
+          stageHint = "\n\n操作提醒：先成功匯入最新 7d／28d。只有 7d manifest 為 decision_ready，且 end_date 已涵蓋部署後完整 7 日，才可使用綁定目前 queue 與 7d manifest SHA 的 evidence JSON。";
+        } else if (stage === "reviewed_28d") {
+          stageHint = "\n\n操作提醒：先成功匯入最新 7d／28d。只有 28d manifest 為 decision_ready，且 end_date 已涵蓋部署後完整 28 日；evidence 必須含 keep／refine／expand／replace 決策與摘要。";
+        }
+        var evidencePath = prompt("請輸入 " + stage + " evidence JSON 的完整檔案路徑。\n每一階段都必須含 queue_id、cycle_key、queue_sha256、完整 action_ids；implemented/local_validated/deployed 另需 validation_receipt_sha256。writer 會驗證必要欄位與 GSC manifest SHA。" + stageHint, "");
+        if (evidencePath === null) { return; }
+        evidencePath = String(evidencePath).replace(/^\s+|\s+$/g, "");
+        if (!evidencePath || !fso.FileExists(evidencePath)) {
+          setStatusSummary("找不到 lifecycle evidence JSON：\n" + evidencePath, "error");
+          return;
+        }
+        var safeEvidence = evidencePath.replace(/"/g, '""');
+        invokeSeoGeoWorkflowWriter(root, stage, '-EvidencePath "' + safeEvidence + '"', "lifecycle " + stage);
+      } catch (e) {
+        setStatusSummary("Lifecycle stage 操作失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        refreshQueueStatus();
+        updateWorkflowControls();
+      }
+    }
+
     function init() {
       document.getElementById("btnRunAuto").onclick = uploadAndRunAuto;
-      document.getElementById("btnRunSeoGeoActionPlan").onclick = runSeoGeoActionPlan;
+      document.getElementById("btnSeoGeoReportSmart").onclick = runOrOpenSeoGeoActionPlan;
+      document.getElementById("btnSeoGeoNextSmart").onclick = executeCurrentSeoGeoNextStep;
+      document.getElementById("btnRunSeoGeoActionPlan").onclick = function () { runSeoGeoActionPlan(false); };
       document.getElementById("btnOpenSeoGeoActionPlan").onclick = openLatestSeoGeoActionPlan;
       document.getElementById("btnCopySeoGeoAiPrompt").onclick = copyLatestSeoGeoAiPrompt;
       document.getElementById("btnAdvanceSeoGeoRound").onclick = advanceSeoGeoRound;
       document.getElementById("btnCopyOptionalSeoGeoPrompt").onclick = copyOptionalSeoGeoPrompt;
+      document.getElementById("btnApproveSinglePageReview").onclick = approveSinglePageReview;
+      document.getElementById("btnSeoGeoDeployDryRun").onclick = function () { runSeoGeoDeployment(true); };
+      document.getElementById("btnSeoGeoDeploy").onclick = function () { runSeoGeoDeployment(false); };
+      document.getElementById("btnSeoGeoLiveVerify").onclick = runSeoGeoLiveVerification;
+      document.getElementById("btnImportAiVisibility").onclick = importAiVisibilityObservation;
+      document.getElementById("btnLifecycleImplemented").onclick = function () { recordLifecycleStage("implemented"); };
+      document.getElementById("btnLifecycleLocalValidated").onclick = function () { recordLifecycleStage("local_validated"); };
+      document.getElementById("btnLifecycleDeployed").onclick = function () { recordLifecycleStage("deployed"); };
+      document.getElementById("btnLifecycleLive").onclick = function () { recordLifecycleStage("live_verified"); };
+      document.getElementById("btnLifecycle7d").onclick = function () { recordLifecycleStage("observing_7d"); };
+      document.getElementById("btnLifecycle28d").onclick = function () { recordLifecycleStage("reviewed_28d"); };
+      document.getElementById("btnLifecycleCompleted").onclick = function () { recordLifecycleStage("completed"); };
+      document.getElementById("toggleAdvancedSeoGeoActions").onclick = toggleAdvancedSeoGeoActions;
       document.getElementById("btnToggleDetails").onclick = toggleDetails;
       refreshHealth();
     }
@@ -2346,13 +2928,40 @@
 
     <div class="section-title">SEO/GEO 固定優化</div>
     <div class="seo-geo-actions">
-      <button id="btnRunSeoGeoActionPlan" class="btn-seo-geo">產生 SEO/GEO 優化建議</button>
-      <button id="btnOpenSeoGeoActionPlan" class="btn-seo-geo">開啟最新 SEO/GEO 行動報告</button>
-      <button id="btnCopySeoGeoAiPrompt" class="btn-seo-geo">複製目前 Round</button>
-      <button id="btnAdvanceSeoGeoRound" class="btn-seo-geo">驗證通過後前進</button>
-      <button id="btnCopyOptionalSeoGeoPrompt" class="btn-seo-geo">複製小幅優化參考指令</button>
+      <button id="btnSeoGeoReportSmart" class="btn-seo-geo">更新／開啟 SEO/GEO 行動報告</button>
+      <button id="btnSeoGeoNextSmart" class="btn-seo-geo">執行目前下一步</button>
+      <button id="btnImportAiVisibility" class="btn-seo-geo">匯入 AI 能見度測試結果（AI Visibility）</button>
     </div>
-    <p class="seo-geo-note">會讀取 latest 7d / 28d 與 target registry，依實際數量顯示 Round X/N。decision_ready=false 時只產生 observation_only 監控清單，不提供 Copy／Advance；執行型 Round 必須收到 queue、cycle、round、action IDs 完全匹配且所有必要檢查 passed 的 validation receipt，才能前進。最後一輪只標記 local_validated，不代表已部署或完成 live verification；Optional Opportunities 為 0 時按鈕會停用。</p>
+    <a id="toggleAdvancedSeoGeoActions" class="advanced-actions-link" href="#">顯示進階／故障排除操作</a>
+    <div id="advancedSeoGeoActions" class="advanced-seo-geo-actions">
+      <button id="btnRunSeoGeoActionPlan" class="btn-seo-geo">強制產生 SEO/GEO 優化建議</button>
+      <button id="btnOpenSeoGeoActionPlan" class="btn-seo-geo">只開啟最新 SEO/GEO 行動報告</button>
+      <button id="btnCopySeoGeoAiPrompt" class="btn-seo-geo">複製本輪 AI 工作指令</button>
+      <button id="btnAdvanceSeoGeoRound" class="btn-seo-geo">驗證通過後前進 Round</button>
+      <button id="btnCopyOptionalSeoGeoPrompt" class="btn-seo-geo">複製小幅優化參考指令</button>
+      <button id="btnApproveSinglePageReview" class="btn-seo-geo">核准單一頁面優化並建立工作項目</button>
+      <button id="btnSeoGeoDeployDryRun" class="btn-seo-geo">部署預演（FTP dry-run，不實際上傳）</button>
+      <button id="btnSeoGeoDeploy" class="btn-seo-geo">正式上傳網站（FTP 部署）</button>
+      <button id="btnSeoGeoLiveVerify" class="btn-seo-geo">驗證網站已正確上線（live verify）</button>
+      <button id="btnLifecycleImplemented" class="btn-seo-geo">手動 evidence：implemented</button>
+      <button id="btnLifecycleLocalValidated" class="btn-seo-geo">手動 evidence：local_validated</button>
+      <button id="btnLifecycleDeployed" class="btn-seo-geo">手動 evidence：deployed</button>
+      <button id="btnLifecycleLive" class="btn-seo-geo">手動 evidence：live_verified</button>
+      <button id="btnLifecycle7d" class="btn-seo-geo">手動 evidence：observing_7d</button>
+      <button id="btnLifecycle28d" class="btn-seo-geo">手動 evidence：reviewed_28d</button>
+      <button id="btnLifecycleCompleted" class="btn-seo-geo">手動 evidence：completed</button>
+    </div>
+    <p class="seo-geo-note">主畫面只需操作三鍵。「執行目前下一步」每次只做一件事，會依 Round、validation receipt、dry-run、正式 deployment manifest、live verify、7d／28d 日期與 lifecycle 自動改變文字；條件不足時停用並顯示原因。正式 FTP 仍會要求人工確認，28 天策略仍須由你選擇與填寫摘要。進階操作只供故障排除，不應用來跳過智慧按鈕的安全檢查。</p>
+
+    <div class="section-title">六區 Weekly SOP 總覽</div>
+    <div class="six-zone-grid" id="sixZoneDashboard">
+      <div class="six-zone" id="zoneDataTrust">讀取中...</div>
+      <div class="six-zone" id="zoneOwnerPortfolio">讀取中...</div>
+      <div class="six-zone" id="zoneDecision">讀取中...</div>
+      <div class="six-zone" id="zoneStrategy">讀取中...</div>
+      <div class="six-zone" id="zoneImplementation">讀取中...</div>
+      <div class="six-zone" id="zonePerformance">讀取中...</div>
+    </div>
 
     <div class="queue-panel" id="queueStatusPanel">
       <div class="queue-head">

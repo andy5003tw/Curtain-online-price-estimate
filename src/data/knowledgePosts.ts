@@ -306,8 +306,8 @@ export const knowledgePosts: KnowledgePost[] = [
       }
     ],
     contentHtml: `
-        <p><strong>判斷窗簾價格多少合理，最快的方式是先看行情，再用同尺寸做窗簾價格試算。</strong>本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉、無縫紗簾與訂製窗簾價格區間，並直接標出合理價格、窗簾安裝費用、試算差異與丈量時最容易影響報價的條件。</p>
-        <p>若你是從<strong>窗簾價格</strong>、<strong>窗簾價格試算</strong>或<strong>窗簾安裝費用</strong>搜尋進來，建議先看下方價格比較段落，再開啟<strong><a href="/calculator/">窗簾價格試算與百葉窗價格試算工具</a></strong>輸入尺寸。若你正在比價<strong>三重窗簾</strong>，可先看<strong><a href="/location/sanchong/">三重窗簾價格試算入口</a></strong>；若在台北、中正區、板橋或鶯歌，則可看<strong><a href="/location/taipei/">台北窗簾價格試算</a></strong>、<strong><a href="/location/zhongzheng/">中正區窗簾價格試算</a></strong>、<strong><a href="/location/banqiao/">板橋窗簾價格試算</a></strong>與<strong><a href="/location/yingge/">鶯歌窗簾價格試算</a></strong>服務頁；若要評估木質、百葉或透光方案，可直接看<strong><a href="/products/aluminum-blinds/">百葉窗價格試算重點</a></strong>、<strong><a href="/products/wooden-blinds/">實木百葉窗價格試算重點</a></strong>與<strong><a href="/products/seamless-sheer-curtains/">無縫紗簾推薦</a></strong>。</p>
+        <p><strong>判斷窗簾價格多少合理，最快的方式是先看行情，再用同尺寸做窗簾價格試算。</strong>本文是價格行情與預算比較指南，不取代首頁的窗簾推薦／訂製服務入口，也不取代單一產品頁的材質與安裝條件。本文整理 2026 捲簾、鋁百葉、風琴簾、實木百葉、無縫紗簾與訂製窗簾價格區間，並直接標出合理價格、窗簾安裝費用、試算差異與丈量時最容易影響報價的條件。</p>
+        <p>若你是從<strong>窗簾價格</strong>、<strong>窗簾價格試算</strong>或<strong>窗簾安裝費用</strong>搜尋進來，建議先看下方價格比較段落，再開啟<strong><a href="/calculator/">線上估價工具</a></strong>輸入尺寸；若需要窗簾推薦、訂製流程或到府丈量，請回到<strong><a href="/">首頁服務入口</a></strong>。若已鎖定品項，請直接查看<strong><a href="/products/roller-blinds/">捲簾產品與安裝條件</a></strong>、<strong><a href="/products/aluminum-blinds/">鋁百葉防潮與安裝條件</a></strong>、<strong><a href="/products/wooden-blinds/">實木百葉材質與安裝條件</a></strong>；若在台北、中正區、板橋或鶯歌，再切到對應服務頁安排丈量。</p>
 
         <h2>AI 短答案：窗簾價格多少合理？</h2>
         <p>窗簾價格要看同尺寸、同品項、同施工條件才合理，還要把基本安裝費與配件一起納入。先用本篇抓到捲簾、百葉窗、無縫紗簾與訂製窗簾的價格區間，再用<strong><a href="/calculator/">窗簾價格試算 / 窗簾線上估價工具</a></strong>輸入同一組尺寸比較價差，最後從<strong><a href="/location/taipei/">台北</a></strong>、<strong><a href="/location/zhongzheng/">中正區</a></strong>、<strong><a href="/location/banqiao/">板橋</a></strong>或<strong><a href="/location/yingge/">鶯歌</a></strong>服務頁安排到府丈量，報價會最快收斂。</p>

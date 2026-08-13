@@ -1,9 +1,9 @@
 ﻿import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Calculator, ChevronRight, CheckCircle2, Star } from 'lucide-react';
+import { Calculator, ChevronRight, CheckCircle2 } from 'lucide-react';
 import FloatingCta from '@/components/FloatingCta';
 import { products } from '@/data/products';
-import { getGeoWaveGroups, type LocationPage } from '@/data/locationPages';
+import { getGeoWaveGroups, locationPages, type LocationPage } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
@@ -44,9 +44,9 @@ const features = [
 
 const trustNumbers = [
   { num: '30+', label: '年窗簾經驗' },
-  { num: '1,284+', label: '客戶評價回饋' },
-  { num: '5,000+', label: '累積安裝案例' },
-  { num: '13+', label: '主要產品品項' },
+  { num: String(products.length), label: '可估價產品品項' },
+  { num: String(locationPages.length), label: '地區服務資訊頁' },
+  { num: '1', label: '線上估價工具' },
 ];
 
 const homepageFaq = [
@@ -95,6 +95,9 @@ const homepageFaq = [
     a: '常規案件約 5-7 個工作天，特殊客製案約 7-14 個工作天。',
   },
 ];
+
+// Keep the visible FAQ and FAQPage schema on the same focused 3–5 question set.
+const homepageSeoFaq = homepageFaq.slice(0, 5);
 
 function mapAreaCards(areas: LocationPage[], linkLabel: string) {
   return areas.map(item => ({
@@ -162,7 +165,7 @@ export default function HomePage() {
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: homepageFaq.map(item => ({
+    mainEntity: homepageSeoFaq.map(item => ({
       '@type': 'Question',
       name: item.q,
       acceptedAnswer: { '@type': 'Answer', text: item.a },
@@ -194,7 +197,7 @@ export default function HomePage() {
             宏森窗簾推薦・先比價格，再安排雙北免費丈量
           </p>
           <h1>窗簾推薦：先比價格，再安排雙北免費到府丈量</h1>
-          <p>找窗簾時，先用尺寸比較布簾、遮光窗簾、紗簾、鋁百葉、捲簾與實木百葉的價格區間；再安排台北、新北到府丈量，依窗型、採光、布料與安裝需求確認適合的方案。</p>
+          <p data-ai-answer="true">首頁是窗簾推薦、訂製與到府丈量的服務入口：先用尺寸比較布簾、遮光窗簾、紗簾、鋁百葉、捲簾與實木百葉的價格區間；再安排台北、新北到府丈量，依窗型、採光、布料與安裝需求確認適合的方案。若已鎖定單一產品，請直接查看對應產品頁的材質與安裝條件。</p>
           <div className="hero-btns">
             <Link href={buildCalculatorUrl()} className="btn-primary">
               <Calculator size={18} />
@@ -412,7 +415,7 @@ export default function HomePage() {
             <h2>首頁 FAQ</h2>
           </div>
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {homepageFaq.map((item, index) => (
+            {homepageSeoFaq.map((item, index) => (
               <details key={item.q} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                 <summary style={{ padding: '1rem 1.25rem', fontWeight: 700, cursor: 'pointer', listStyle: 'none' }}>{item.q}</summary>
                 <div style={{ padding: '0 1.25rem 1rem', color: 'var(--stone-600)', lineHeight: 1.7 }}>
@@ -426,9 +429,6 @@ export default function HomePage() {
 
       <section style={{ background: 'linear-gradient(135deg, var(--stone-900) 0%, #2d2520 100%)', color: 'white', padding: '4.5rem 0', textAlign: 'center' }}>
         <div className="section-container">
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.3rem', marginBottom: '1rem', color: '#FCD34D' }}>
-            {[1, 2, 3, 4, 5].map(i => <Star key={i} size={22} fill="#FCD34D" />)}
-          </div>
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--stone-200)' }}>快速估價</div>
           <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.4rem)', fontWeight: 700, marginBottom: '1rem' }}>立即預約到府丈量</h2>
           <p style={{ color: 'var(--stone-300)', marginBottom: '2rem', maxWidth: '520px', margin: '0 auto 2rem' }}>

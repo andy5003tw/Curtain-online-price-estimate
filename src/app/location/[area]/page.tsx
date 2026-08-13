@@ -3,9 +3,16 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getLocationPageById, locationPages } from '@/data/locationPages';
 import { products } from '@/data/products';
-import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
+import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, MapPin, CheckCircle2 } from 'lucide-react';
+
+function buildLocationCopy(areaName: string) {
+  return {
+    title: `${areaName}窗簾價格試算｜丈量、估價與安裝條件`,
+    description: `宏森開發有限公司的${areaName}窗簾服務資訊入口。可先用同一尺寸比較產品預算，再由丈量確認窗型、材料、配件、施工條件與正式報價；本頁不代表當地另設分店。`,
+  };
+}
 
 export async function generateStaticParams() {
   return locationPages.map(page => ({ area: page.id }));
@@ -16,8 +23,9 @@ export async function generateMetadata({ params }: { params: Promise<{ area: str
   const pageData = getLocationPageById(area);
   if (!pageData) return { title: '找不到頁面' };
 
-  const title = `${pageData.title} | 宏森開發窗簾`;
-  const description = pageData.shortDescription;
+  const locationCopy = buildLocationCopy(pageData.areaName);
+  const title = `${locationCopy.title} | 宏森開發窗簾`;
+  const description = locationCopy.description;
   const pagePath = `/location/${pageData.id}/`;
 
   return {
@@ -29,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ area: str
       description,
       path: pagePath,
       image: pageData.heroImage,
-      imageAlt: pageData.title,
+      imageAlt: `${pageData.areaName}窗簾丈量與估價服務`,
     }),
   };
 }
@@ -38,6 +46,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
   const { area } = await params;
   const pageData = getLocationPageById(area);
   if (!pageData) notFound();
+  const locationCopy = buildLocationCopy(pageData.areaName);
   const relatedAreas = pageData.relatedAreaIds
     .map(areaId => getLocationPageById(areaId))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -45,6 +54,30 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
   const displayProducts = pageData.featuredProductIds
     .map(productId => products.find(product => product.id === productId))
     .filter((product): product is (typeof products)[number] => Boolean(product));
+  const featuredProductNames = displayProducts.map(product => product.name).join('、');
+  const pageFaqs = [
+    {
+      q: `${pageData.areaName}窗簾服務可以先線上估價嗎？`,
+      a: `可以。先在估價工具輸入尺寸並選擇${pageData.areaName}，用同一尺寸比較品項；正式金額仍需依窗型、配件與施工條件在丈量後確認。`,
+    },
+    {
+      q: `${pageData.areaName}窗簾正式報價會確認哪些項目？`,
+      a: '現場會確認實際寬高、安裝位置、窗簾盒或軌道條件、材質與控制配件，再提供正式報價；線上結果只用於前期預算比較。',
+    },
+    {
+      q: `${pageData.areaName}頁面代表當地有獨立分店嗎？`,
+      a: `不是。本頁是宏森開發有限公司提供${pageData.areaName}服務的資訊入口，所有地區頁都引用同一家公司、聯絡方式與服務流程，不宣稱當地另設分店。`,
+    },
+    {
+      q: `${pageData.areaName}可以先比較哪些窗簾品項？`,
+      a: `本頁目前連結${featuredProductNames || '主要窗簾品項'}；建議固定同一尺寸比較 2 到 3 種方案，再依採光、隱私、清潔與安裝條件收斂。`,
+    },
+  ];
+  const auditedServiceFacts = [
+    `本頁是宏森開發有限公司的${pageData.areaName}服務資訊入口，不是獨立分店或門市。`,
+    `可先用同一尺寸比較${featuredProductNames || '主要窗簾品項'}，再安排丈量確認窗型與安裝條件。`,
+    '線上估價提供預算區間；正式價格、材料規格、施工時程與售後條件以現場確認及書面報價為準。',
+  ];
 
   const ownerBoostLinksByArea: Record<string, Array<{ href: string; label: string }>> = {
     banqiao: [
@@ -159,19 +192,24 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
   };
   const ownerBoostLinks = ownerBoostLinksByArea[pageData.id] ?? [];
 
-  const localBusinessSchema = {
+  const serviceSchema = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    '@id': `${absoluteUrl(`/location/${pageData.id}/`)}#local-business`,
-    name: `宏森開發窗簾 - ${pageData.areaName}服務據點`,
+    '@type': 'Service',
+    '@id': `${absoluteUrl(`/location/${pageData.id}/`)}#service`,
+    name: `${pageData.areaName}窗簾丈量、估價與安裝服務`,
     image: absoluteUrl(pageData.heroImage),
     url: absoluteUrl(`/location/${pageData.id}/`),
-    telephone: '+886-2-8972-7322',
+    provider: {
+      '@type': 'LocalBusiness',
+      '@id': `${absoluteUrl('/')}#localBusiness`,
+      name: COMPANY_NAME,
+      url: absoluteUrl('/'),
+    },
     areaServed: {
       '@type': 'AdministrativeArea',
       name: pageData.areaName
     },
-    description: pageData.shortDescription,
+    description: locationCopy.description,
     dateModified: pageData.lastModified,
   };
 
@@ -188,7 +226,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: pageData.faqs.map(faq => ({
+    mainEntity: pageFaqs.map(faq => ({
       '@type': 'Question',
       name: faq.q,
       acceptedAnswer: {
@@ -200,7 +238,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
@@ -219,8 +257,8 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
           <div className="tag" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto 1.5rem auto' }}>
             <MapPin size={16} /> 專屬在地服務
           </div>
-          <h1>{pageData.title}</h1>
-          <p style={{ maxWidth: '800px', margin: '0 auto', color: 'rgba(255,255,255,0.9)' }}>{pageData.shortDescription}</p>
+          <h1>{locationCopy.title}</h1>
+          <p data-ai-answer="true" style={{ maxWidth: '800px', margin: '0 auto', color: 'rgba(255,255,255,0.9)' }}>{locationCopy.description}</p>
         </div>
       </div>
 
@@ -228,12 +266,12 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
         <div className="section-container" style={{ maxWidth: '900px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--stone-900)' }}>為什麼{pageData.areaName}鄉親都推薦我們？</h2>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--stone-900)' }}>{pageData.areaName}窗簾服務與報價界線</h2>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {pageData.advantages.map((adv, i) => (
+                {auditedServiceFacts.map((fact, i) => (
                   <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '1.05rem', color: 'var(--stone-700)', lineHeight: 1.6 }}>
                     <CheckCircle2 size={24} style={{ color: 'var(--amber-600)', flexShrink: 0, marginTop: '0.1rem' }} />
-                    {adv}
+                    {fact}
                   </li>
                 ))}
               </ul>
@@ -251,9 +289,9 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
           </div>
 
           <div style={{ marginTop: '2rem', background: 'var(--amber-50)', borderRadius: '1rem', border: '1px solid var(--amber-100)', padding: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#92400E', marginBottom: '1rem' }}>{pageData.areaName}服務重點</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#92400E', marginBottom: '1rem' }}>{pageData.areaName}本頁可完成的事</h3>
             <ul style={{ listStyle: 'none', display: 'grid', gap: '0.75rem' }}>
-              {pageData.serviceHighlights.map((highlight, i) => (
+              {auditedServiceFacts.map((highlight, i) => (
                 <li key={i} style={{ color: 'var(--stone-700)', lineHeight: 1.7, display: 'flex', gap: '0.5rem' }}>
                   <span style={{ color: '#B45309' }}>•</span>
                   <span>{highlight}</span>
@@ -322,7 +360,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
             <h2>{pageData.areaName}常見問題</h2>
           </div>
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {pageData.faqs.map((faq, index) => (
+            {pageFaqs.map((faq, index) => (
               <details key={index} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
                 <summary style={{ padding: '1rem 1.25rem', fontWeight: 700, cursor: 'pointer', listStyle: 'none' }}>{faq.q}</summary>
                 <div style={{ padding: '0 1.25rem 1rem', color: 'var(--stone-600)', lineHeight: 1.7 }}>{faq.a}</div>

@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingLineBtn from '@/components/FloatingLineBtn';
 import { absoluteUrl, CATALOG_URL, COMPANY_NAME, SITE_URL } from '@/lib/seo';
+import { businessEvidence } from '@/data/businessEvidence';
 import { withBasePath } from '@/lib/base-path';
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     default: '宏森開發有限公司 | 專業窗簾訂製・三重・新北市',
     template: '%s | 宏森開發有限公司',
   },
-  description: '宏森開發自1996年提供專業窗簾訂做與施工服務，服務三重・新北市・台北地區。工廠直營，捲簾、蛇形簾、羅馬簾、百葉窗，立即線上估價！',
+  description: '宏森開發提供窗簾訂做、線上估價、丈量與施工服務，服務三重、新北市與台北主要地區；正式報價依窗型、材料、配件及施工條件確認。',
   keywords: ['窗簾', '窗簾訂製', '窗簾推薦', '捲簾', '蛇形窗簾', '羅馬簾', '百葉窗', '風琴簾', '調光簾', '三重窗簾', '新北市窗簾', '線上估價'],
   openGraph: {
     type: 'website',
@@ -20,24 +21,22 @@ export const metadata: Metadata = {
     url: absoluteUrl('/'),
     siteName: COMPANY_NAME,
     title: '宏森開發有限公司 | 專業窗簾訂製・三重・新北市',
-    description: '自1996年起專業窗簾訂製與施工，工廠直營最實惠。立即線上估價！',
+    description: '窗簾訂製、線上估價、丈量與施工服務；正式報價依現場條件確認。',
     images: [{ url: '/og-image.webp', width: 1200, height: 630, alt: '宏森窗簾' }],
   },
-  robots: { index: true, follow: true },
-  alternates: { canonical: absoluteUrl('/') },
 };
 
 const localBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': 'LocalBusiness',
-  '@id': `${absoluteUrl('/')}#localBusiness`,
+  '@id': businessEvidence.companyEntity.id,
   name: COMPANY_NAME,
   alternateName: '宏森窗簾',
   image: absoluteUrl('/banner_img/banner_01.webp'),
   logo: absoluteUrl('/logo.webp'),
-  description: '自1996年起提供大台北地區專業窗簾訂製、丈量與施工服務。工廠直營，13種以上款式，免費到府丈量。',
+  description: '提供大台北主要服務區的窗簾訂製、線上估價、丈量與施工服務；材料規格與正式報價依個別案件確認。',
   url: absoluteUrl('/'),
-  telephone: '+886-2-8972-7322',
+  telephone: businessEvidence.companyEntity.telephone,
   email: 'andy5003@hong-sen.com',
   address: {
     '@type': 'PostalAddress',
@@ -72,7 +71,7 @@ const localBusinessSchema = {
   ],
   knowsAbout: [
     '窗簾訂製',
-    '免費到府丈量',
+    '到府丈量流程',
     '蛇形簾',
     '調光簾',
     '百葉窗',

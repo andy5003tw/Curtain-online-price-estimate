@@ -2,7 +2,10 @@
   [ValidateSet('auto', '7d', '28d')]
   [string]$Window = 'auto',
   [string]$InputFile,
-  [string]$RuntimeRoot
+  [string]$RuntimeRoot,
+  [ValidateSet('auto', 'api', 'manual_zip')]
+  [string]$ImportSource = 'auto',
+  [switch]$RepairIncompleteCurrentEndDate
 )
 
 $ErrorActionPreference = 'Stop'
@@ -85,6 +88,18 @@ function Get-OptionalQueryPageCsv {
     'query-page.csv', 'query_page.csv', 'query-pages.csv', 'queries-pages.csv',
     '查詢x網頁.csv', '查詢×網頁.csv', '查詢-網頁.csv'
   )
+}
+
+function Get-OptionalDiagnosticCsv {
+  param([string]$ExtractDir, [ValidateSet('date', 'date_page', 'device_page', 'country_page', 'device_query')][string]$Kind)
+  $names = switch ($Kind) {
+    'date' { @('date.csv', '日期.csv') }
+    'date_page' { @('date-page.csv', 'date_page.csv', '日期-網頁.csv', '日期×網頁.csv') }
+    'device_page' { @('device-page.csv', 'device_page.csv', '裝置-網頁.csv', '裝置×網頁.csv') }
+    'country_page' { @('country-page.csv', 'country_page.csv', '國家-網頁.csv', '國家×網頁.csv') }
+    'device_query' { @('device-query.csv', 'device_query.csv', '裝置-查詢.csv', '裝置×查詢.csv') }
+  }
+  return Find-CsvByName -ExtractDir $ExtractDir -ExpectedNames $names
 }
 
 function Convert-GscMetric {
@@ -613,6 +628,88 @@ function Set-AtomicFileFromSource {
   }
 }
 
+function Save-DiagnosticHistory {
+  param(
+    [Parameter(Mandatory = $true)][string]$Source,
+    [Parameter(Mandatory = $true)][ValidateSet('date', 'date_page', 'device_page', 'country_page', 'device_query')][string]$Kind,
+    [Parameter(Mandatory = $true)][string]$WindowHistoryDir,
+    [Parameter(Mandatory = $true)][string]$StartDate,
+    [Parameter(Mandatory = $true)][string]$EndDate,
+    [Parameter(Mandatory = $true)][string]$WeeklyRoot
+  )
+
+  $snapshotDir = Join-Path $WindowHistoryDir ("diagnostics\snapshots\{0}_{1}" -f $StartDate, $EndDate)
+  $snapshotPath = Join-Path $snapshotDir "$Kind.csv"
+  Set-AtomicFileFromSource -Source $Source -Destination $snapshotPath
+
+  $sourceRows = @(Import-Csv -LiteralPath $Source -Encoding UTF8)
+  $datedRows = @($sourceRows | Where-Object { [string]$_.date -match '^\d{4}-\d{2}-\d{2}$' })
+  $dailyPath = Join-Path $WindowHistoryDir "diagnostics\daily\$Kind.csv"
+  $accumulationStatus = 'available'
+  $accumulationReason = $null
+
+  if ($datedRows.Count -gt 0) {
+    $keyColumns = switch ($Kind) {
+      'date' { @('date') }
+      'date_page' { @('date', 'page') }
+      'device_page' { @('date', 'device', 'page') }
+      'country_page' { @('date', 'country', 'page') }
+      'device_query' { @('date', 'device', 'query') }
+    }
+    $merged = @{}
+    if (Test-Path -LiteralPath $dailyPath -PathType Leaf) {
+      foreach ($row in @(Import-Csv -LiteralPath $dailyPath -Encoding UTF8)) {
+        $key = ($keyColumns | ForEach-Object { [string]$row.$_ }) -join "`u{001f}"
+        if ($key) { $merged[$key] = $row }
+      }
+    }
+    foreach ($row in $datedRows) {
+      $key = ($keyColumns | ForEach-Object { [string]$row.$_ }) -join "`u{001f}"
+      if ($key) { $merged[$key] = $row }
+    }
+    Ensure-Dir -Path (Split-Path -Parent $dailyPath)
+    $dailyTemp = "$dailyPath.tmp.$PID.$([guid]::NewGuid().ToString('N'))"
+    try {
+      @($merged.Values | Sort-Object @($keyColumns | ForEach-Object { @{ Expression = [string]$_; Descending = $false } })) |
+        Export-Csv -LiteralPath $dailyTemp -NoTypeInformation -Encoding UTF8
+      Move-Item -LiteralPath $dailyTemp -Destination $dailyPath -Force
+    } finally {
+      if (Test-Path -LiteralPath $dailyTemp -PathType Leaf) { Remove-Item -LiteralPath $dailyTemp -Force }
+    }
+  } else {
+    $accumulationStatus = 'unavailable'
+    $accumulationReason = 'snapshot lacks a Date column; preserved as a dated window snapshot only'
+  }
+
+  $dailyRows = if (Test-Path -LiteralPath $dailyPath -PathType Leaf) { @(Import-Csv -LiteralPath $dailyPath -Encoding UTF8) } else { @() }
+  $dailyDates = @($dailyRows | ForEach-Object { [string]$_.date } | Where-Object { $_ -match '^\d{4}-\d{2}-\d{2}$' } | Sort-Object -Unique)
+  return [ordered]@{
+    snapshot = [ordered]@{
+      path = Convert-ToRelativePath -Path $snapshotPath -BaseRoot $WeeklyRoot
+      row_count = $sourceRows.Count
+      sha256 = Get-FileSha256 -Path $snapshotPath
+      start_date = $StartDate
+      end_date = $EndDate
+    }
+    daily_history = [ordered]@{
+      status = $accumulationStatus
+      reason = $accumulationReason
+      path = if (Test-Path -LiteralPath $dailyPath -PathType Leaf) { Convert-ToRelativePath -Path $dailyPath -BaseRoot $WeeklyRoot } else { $null }
+      row_count = $dailyRows.Count
+      sha256 = if (Test-Path -LiteralPath $dailyPath -PathType Leaf) { Get-FileSha256 -Path $dailyPath } else { $null }
+      start_date = if ($dailyDates.Count -gt 0) { $dailyDates[0] } else { $null }
+      end_date = if ($dailyDates.Count -gt 0) { $dailyDates[-1] } else { $null }
+      dedupe_key = switch ($Kind) {
+        'date' { 'date' }
+        'date_page' { 'date|page' }
+        'device_page' { 'date|device|page' }
+        'country_page' { 'date|country|page' }
+        'device_query' { 'date|device|query' }
+      }
+    }
+  }
+}
+
 function Set-AtomicBaselinePair {
   param(
     [string]$QuerySource, [string]$QueryDestination,
@@ -751,6 +848,11 @@ try {
   $pageCsv = Find-CsvByName -ExtractDir $tmpDir -ExpectedNames @('網頁.csv', 'page.csv', 'pages.csv')
   $filterCsv = Find-CsvByName -ExtractDir $tmpDir -ExpectedNames @('篩選器.csv', 'filters.csv')
   $queryPageCsv = Get-OptionalQueryPageCsv -ExtractDir $tmpDir
+  $datePageCsv = Get-OptionalDiagnosticCsv -ExtractDir $tmpDir -Kind 'date_page'
+  $devicePageCsv = Get-OptionalDiagnosticCsv -ExtractDir $tmpDir -Kind 'device_page'
+  $dateCsv = Get-OptionalDiagnosticCsv -ExtractDir $tmpDir -Kind 'date'
+  $countryPageCsv = Get-OptionalDiagnosticCsv -ExtractDir $tmpDir -Kind 'country_page'
+  $deviceQueryCsv = Get-OptionalDiagnosticCsv -ExtractDir $tmpDir -Kind 'device_query'
 
   if (-not $queryCsv) { throw "Missing 查詢.csv in ZIP: $($incoming.FullName)" }
   if (-not $pageCsv) { throw "Missing 網頁.csv in ZIP: $($incoming.FullName)" }
@@ -775,6 +877,7 @@ try {
   }
 
   $effectiveWindow = if ($Window -eq 'auto') { [string]$actualWindow.Slug } else { $Window }
+  $resolvedImportSource = if ($ImportSource -ne 'auto') { $ImportSource } elseif ($incoming.Name -like 'gsc-api_*') { 'api' } else { 'manual_zip' }
   if ($Window -ne 'auto' -and $actualWindow.Slug -ne $Window) {
     throw "日期區間不符：目前檔案是 $($actualWindow.Label)，但你執行的是 $Window 模式。請到 GSC 匯出正確區間的 Search Performance ZIP。"
   }
@@ -797,6 +900,11 @@ try {
   $queryAfter = Join-Path $normalizedStageDir 'query.normalized.csv'
   $pageAfter = Join-Path $normalizedStageDir 'page.normalized.csv'
   $queryPageAfter = if ($queryPageCsv) { Join-Path $normalizedStageDir 'query-page.normalized.csv' } else { $null }
+  $datePageDiagnostic = if ($datePageCsv) { Join-Path $windowHistoryDir 'current_date_page_diagnostic.csv' } else { $null }
+  $devicePageDiagnostic = if ($devicePageCsv) { Join-Path $windowHistoryDir 'current_device_page_diagnostic.csv' } else { $null }
+  $dateDiagnostic = if ($dateCsv) { Join-Path $windowHistoryDir 'current_date_diagnostic.csv' } else { $null }
+  $countryPageDiagnostic = if ($countryPageCsv) { Join-Path $windowHistoryDir 'current_country_page_diagnostic.csv' } else { $null }
+  $deviceQueryDiagnostic = if ($deviceQueryCsv) { Join-Path $windowHistoryDir 'current_device_query_diagnostic.csv' } else { $null }
   $queryHistoryAfter = Join-Path $windowHistoryDir ("after_query_{0}_{1}.normalized.csv" -f $effectiveWindow, $stamp)
   $pageHistoryAfter = Join-Path $windowHistoryDir ("after_page_{0}_{1}.normalized.csv" -f $effectiveWindow, $stamp)
   Normalize-Csv -CsvPath $queryCsv.FullName -OutputPath $queryAfter -Kind 'query'
@@ -806,7 +914,31 @@ try {
   $seoGeoQueryCount = @((Import-Csv -LiteralPath $queryAfter -Encoding UTF8)).Count
   $seoGeoPageCount = @((Import-Csv -LiteralPath $pageAfter -Encoding UTF8)).Count
   $seoGeoQueryPageCount = if ($queryPageAfter) { @((Import-Csv -LiteralPath $queryPageAfter -Encoding UTF8)).Count } else { 0 }
+  $datePageDiagnosticCount = if ($datePageCsv) { @((Import-Csv -LiteralPath $datePageCsv.FullName -Encoding UTF8)).Count } else { 0 }
+  $devicePageDiagnosticCount = if ($devicePageCsv) { @((Import-Csv -LiteralPath $devicePageCsv.FullName -Encoding UTF8)).Count } else { 0 }
+  $dateDiagnosticCount = if ($dateCsv) { @((Import-Csv -LiteralPath $dateCsv.FullName -Encoding UTF8)).Count } else { 0 }
+  $countryPageDiagnosticCount = if ($countryPageCsv) { @((Import-Csv -LiteralPath $countryPageCsv.FullName -Encoding UTF8)).Count } else { 0 }
+  $deviceQueryDiagnosticCount = if ($deviceQueryCsv) { @((Import-Csv -LiteralPath $deviceQueryCsv.FullName -Encoding UTF8)).Count } else { 0 }
   $seoGeoTotal = $seoGeoQueryCount + $seoGeoPageCount + $seoGeoQueryPageCount
+
+  if ($dateCsv -and $actualWindow.StartDate -and $actualWindow.EndDate) {
+    $expectedDates = @()
+    $dateCursor = [datetime]::ParseExact($actualWindow.StartDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+    $dateEnd = [datetime]::ParseExact($actualWindow.EndDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+    while ($dateCursor -le $dateEnd) { $expectedDates += $dateCursor.ToString('yyyy-MM-dd'); $dateCursor = $dateCursor.AddDays(1) }
+    $actualDates = @(Import-Csv -LiteralPath $dateCsv.FullName -Encoding UTF8 | ForEach-Object { [string]$_.date } | Where-Object { $_ -match '^\d{4}-\d{2}-\d{2}$' } | Sort-Object -Unique)
+    $missingDates = @($expectedDates | Where-Object { $_ -notin $actualDates })
+    if ($missingDates.Count -gt 0) { throw "Date diagnostic is incomplete for the declared window: missing $($missingDates -join ', ')." }
+  }
+  $diagnosticFiles = [ordered]@{
+    date = $dateCsv
+    date_page = $datePageCsv
+    device_page = $devicePageCsv
+    country_page = $countryPageCsv
+    device_query = $deviceQueryCsv
+  }
+  $missingDiagnosticKinds = @($diagnosticFiles.Keys | Where-Object { -not $diagnosticFiles[$_] })
+  $diagnosticsComplete = ($missingDiagnosticKinds.Count -eq 0 -and $dateDiagnosticCount -eq [int]$actualWindow.Days)
 
   $queryBaseline = Join-Path $windowHistoryDir 'current_query_baseline.normalized.csv'
   $pageBaseline = Join-Path $windowHistoryDir 'current_page_baseline.normalized.csv'
@@ -834,7 +966,20 @@ try {
   $previousManifest = if (Test-Path -LiteralPath $previousManifestPath -PathType Leaf) { Get-Content -LiteralPath $previousManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json } else { $null }
   if ($rangeComplete -and $previousManifest) {
     if ($previousManifest.end_date -and ([string]$previousManifest.end_date -ge [string]$actualWindow.EndDate)) {
-      throw "Imported end_date $($actualWindow.EndDate) is not newer than the current $effectiveWindow baseline end_date $($previousManifest.end_date)."
+      $repairAllowed = $false
+      if ($RepairIncompleteCurrentEndDate -and [string]$previousManifest.end_date -gt [string]$actualWindow.EndDate -and $previousManifest.diagnostic_dimensions.date.available) {
+        $previousDateRelative = ([string]$previousManifest.diagnostic_dimensions.date.path).Replace('/', '\')
+        if (-not [IO.Path]::IsPathRooted($previousDateRelative)) {
+          $previousDatePath = [IO.Path]::GetFullPath((Join-Path $weeklyRoot $previousDateRelative))
+          if (Test-Path -LiteralPath $previousDatePath -PathType Leaf) {
+            $previousDates = @(Import-Csv -LiteralPath $previousDatePath -Encoding UTF8 | ForEach-Object { [string]$_.date } | Where-Object { $_ -match '^\d{4}-\d{2}-\d{2}$' } | Sort-Object -Unique)
+            $previousDiagnosticEnd = if ($previousDates.Count -gt 0) { [string]$previousDates[-1] } else { $null }
+            $repairAllowed = [bool]($previousDiagnosticEnd -eq [string]$actualWindow.EndDate -and $previousDiagnosticEnd -lt [string]$previousManifest.end_date)
+          }
+        }
+      }
+      if (-not $repairAllowed) { throw "Imported end_date $($actualWindow.EndDate) is not newer than the current $effectiveWindow baseline end_date $($previousManifest.end_date)." }
+      Write-Warning "Repairing incomplete current $effectiveWindow end_date $($previousManifest.end_date) to API-confirmed $($actualWindow.EndDate)."
     }
   }
   $snapshotFamilyId = if ($rangeComplete) { "$siteId|$($siteConfig.gscProperty)|$($actualWindow.EndDate)|$timezoneId" } else { $null }
@@ -849,7 +994,10 @@ try {
       }
     }
   }
-  $dataConfidence = if ($rangeLagValid -and $queryPageAfter -and $baselineExists -and $qualityWarnings.Count -eq 0) { 'decision_ready' } else { 'monitor_only' }
+  $dataConfidence = if ($rangeLagValid -and $queryPageAfter -and $baselineExists -and $qualityWarnings.Count -eq 0 -and $diagnosticsComplete) { 'decision_ready' } else { 'monitor_only' }
+  if (-not $diagnosticsComplete) {
+    $qualityWarnings += "Five diagnostic dimensions are required for a formal strategy cycle; missing=$($missingDiagnosticKinds -join ',')."
+  }
 
   $querySameAsBaseline = ($baselineExists -and $queryBaselineHashBefore -eq $queryAfterHash)
   $pageSameAsBaseline = ($baselineExists -and $pageBaselineHashBefore -eq $pageAfterHash)
@@ -903,6 +1051,18 @@ try {
   Copy-Item -LiteralPath $queryAfter -Destination $queryHistoryAfter -Force
   Copy-Item -LiteralPath $pageAfter -Destination $pageHistoryAfter -Force
   Set-AtomicBaselinePair -QuerySource $queryAfter -QueryDestination $queryBaseline -PageSource $pageAfter -PageDestination $pageBaseline -QueryPageSource $queryPageAfter -QueryPageDestination $queryPageBaseline
+  if ($datePageCsv) { Set-AtomicFileFromSource -Source $datePageCsv.FullName -Destination $datePageDiagnostic }
+  if ($devicePageCsv) { Set-AtomicFileFromSource -Source $devicePageCsv.FullName -Destination $devicePageDiagnostic }
+  if ($dateCsv) { Set-AtomicFileFromSource -Source $dateCsv.FullName -Destination $dateDiagnostic }
+  if ($countryPageCsv) { Set-AtomicFileFromSource -Source $countryPageCsv.FullName -Destination $countryPageDiagnostic }
+  if ($deviceQueryCsv) { Set-AtomicFileFromSource -Source $deviceQueryCsv.FullName -Destination $deviceQueryDiagnostic }
+  $diagnosticHistory = [ordered]@{}
+  foreach ($kind in $diagnosticFiles.Keys) {
+    $file = $diagnosticFiles[$kind]
+    if ($file) {
+      $diagnosticHistory[$kind] = Save-DiagnosticHistory -Source $file.FullName -Kind $kind -WindowHistoryDir $windowHistoryDir -StartDate ([string]$actualWindow.StartDate) -EndDate ([string]$actualWindow.EndDate) -WeeklyRoot $weeklyRoot
+    }
+  }
   $baselineCommitted = $true
   $queryBaselineHashAfter = Get-FileSha256 -Path $queryBaseline
   $pageBaselineHashAfter = Get-FileSha256 -Path $pageBaseline
@@ -963,6 +1123,7 @@ try {
     "- Query baseline hash after: $queryBaselineHashAfter"
     "- Page baseline hash after: $pageBaselineHashAfter"
     "- Input mode: $inputMode"
+    "- Import source: $resolvedImportSource"
     "- Input file: $($incoming.Name)"
     "- Site ID: $siteId"
     "- Property: $($siteConfig.gscProperty)"
@@ -972,6 +1133,12 @@ try {
     "- Date range: $($actualWindow.StartDate) to $($actualWindow.EndDate) / complete=$rangeComplete / lag_valid=$rangeLagValid"
     "- Date source: $($actualWindow.DateSource)"
     "- Query × Page CSV: $(if ($queryPageCsv) { $queryPageCsv.Name } else { 'missing' })"
+    "- Date × Page diagnostic: $(if ($datePageCsv) { "$($datePageCsv.Name) / $datePageDiagnosticCount rows" } else { 'missing' })"
+    "- Device × Page diagnostic: $(if ($devicePageCsv) { "$($devicePageCsv.Name) / $devicePageDiagnosticCount rows" } else { 'missing' })"
+    "- Date diagnostic: $(if ($dateCsv) { "$($dateCsv.Name) / $dateDiagnosticCount rows" } else { 'missing' })"
+    "- Country × Page diagnostic: $(if ($countryPageCsv) { "$($countryPageCsv.Name) / $countryPageDiagnosticCount rows" } else { 'missing' })"
+    "- Device × Query diagnostic: $(if ($deviceQueryCsv) { "$($deviceQueryCsv.Name) / $deviceQueryDiagnosticCount rows" } else { 'missing' })"
+    "- Diagnostics complete: $diagnosticsComplete"
     "- Quality warnings: $(if ($qualityWarnings.Count) { $qualityWarnings -join ' | ' } else { 'none' })"
     "- Query CSV: $($queryCsv.Name)"
     "- Page CSV: $($pageCsv.Name)"
@@ -1017,6 +1184,7 @@ try {
     property_validation = 'page_host'
     query_page_available = [bool]$queryPageAfter
     input_mode = $inputMode
+    import_source = $resolvedImportSource
     input_file = $incoming.Name
     input_sha256 = $inputHash
     filter = @{
@@ -1030,6 +1198,56 @@ try {
       page = $seoGeoPageCount
       query_page = $seoGeoQueryPageCount
     }
+    diagnostic_dimensions = @{
+      date_page = @{
+        available = [bool]$datePageCsv
+        row_count = $datePageDiagnosticCount
+        path = if ($diagnosticHistory.date_page) { $diagnosticHistory.date_page.snapshot.path } else { $null }
+        current_path = if ($datePageDiagnostic) { Convert-ToRelativePath -Path $datePageDiagnostic -BaseRoot $weeklyRoot } else { $null }
+        sha256 = if ($diagnosticHistory.date_page) { $diagnosticHistory.date_page.snapshot.sha256 } else { $null }
+      }
+      device_page = @{
+        available = [bool]$devicePageCsv
+        row_count = $devicePageDiagnosticCount
+        path = if ($diagnosticHistory.device_page) { $diagnosticHistory.device_page.snapshot.path } else { $null }
+        current_path = if ($devicePageDiagnostic) { Convert-ToRelativePath -Path $devicePageDiagnostic -BaseRoot $weeklyRoot } else { $null }
+        sha256 = if ($diagnosticHistory.device_page) { $diagnosticHistory.device_page.snapshot.sha256 } else { $null }
+      }
+      date = @{
+        available = [bool]$dateCsv
+        row_count = $dateDiagnosticCount
+        path = if ($diagnosticHistory.date) { $diagnosticHistory.date.snapshot.path } else { $null }
+        current_path = if ($dateDiagnostic) { Convert-ToRelativePath -Path $dateDiagnostic -BaseRoot $weeklyRoot } else { $null }
+        sha256 = if ($diagnosticHistory.date) { $diagnosticHistory.date.snapshot.sha256 } else { $null }
+      }
+      country_page = @{
+        available = [bool]$countryPageCsv
+        row_count = $countryPageDiagnosticCount
+        path = if ($diagnosticHistory.country_page) { $diagnosticHistory.country_page.snapshot.path } else { $null }
+        current_path = if ($countryPageDiagnostic) { Convert-ToRelativePath -Path $countryPageDiagnostic -BaseRoot $weeklyRoot } else { $null }
+        sha256 = if ($diagnosticHistory.country_page) { $diagnosticHistory.country_page.snapshot.sha256 } else { $null }
+      }
+      device_query = @{
+        available = [bool]$deviceQueryCsv
+        row_count = $deviceQueryDiagnosticCount
+        path = if ($diagnosticHistory.device_query) { $diagnosticHistory.device_query.snapshot.path } else { $null }
+        current_path = if ($deviceQueryDiagnostic) { Convert-ToRelativePath -Path $deviceQueryDiagnostic -BaseRoot $weeklyRoot } else { $null }
+        sha256 = if ($diagnosticHistory.device_query) { $diagnosticHistory.device_query.snapshot.sha256 } else { $null }
+      }
+    }
+    diagnostics_complete = $diagnosticsComplete
+    missing_diagnostic_dimensions = $missingDiagnosticKinds
+    diagnostic_history = $diagnosticHistory
+    comparison_period = if ($previousManifest -and $previousManifest.start_date -and $previousManifest.end_date) {
+      $previousStart = [datetime]::ParseExact([string]$previousManifest.start_date, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+      $previousEnd = [datetime]::ParseExact([string]$previousManifest.end_date, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+      $currentStart = [datetime]::ParseExact([string]$actualWindow.StartDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+      $currentEnd = [datetime]::ParseExact([string]$actualWindow.EndDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+      $overlapStart = if ($previousStart -gt $currentStart) { $previousStart } else { $currentStart }
+      $overlapEnd = if ($previousEnd -lt $currentEnd) { $previousEnd } else { $currentEnd }
+      $overlapDays = [Math]::Max(0, [int](($overlapEnd - $overlapStart).TotalDays + 1))
+      [ordered]@{ start_date = [string]$previousManifest.start_date; end_date = [string]$previousManifest.end_date; comparison_type = if ($overlapDays -gt 0) { 'rolling_overlapping' } else { 'non_overlapping' }; overlap_days = $overlapDays }
+    } else { $null }
     row_counts = @{
       normalized_query = $seoGeoQueryCount
       normalized_page = $seoGeoPageCount

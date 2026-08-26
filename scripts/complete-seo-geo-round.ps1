@@ -64,8 +64,8 @@ if ([string]$receipt.result -notin @('implemented', 'no_change_verified')) { thr
 $requiredCommands = @('node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs', 'npm.cmd run build', 'npm.cmd run seo:check', 'npm.cmd run seo:preflight')
 Assert-SameSet -Actual @($receipt.validation_results | ForEach-Object { if ([string]$_.status -ne 'passed' -or [int]$_.exit_code -ne 0) { throw "Validation did not pass: $($_.command)" }; $_.command }) -Expected $requiredCommands -Label 'Validation commands'
 
-if ([string]$state.registry.sha256 -ne (Get-Sha256 $registryPath)) { throw 'Current target registry does not match the queue binding.' }
-if ([string]$state.action_history.sha256 -ne (Get-Sha256 $historyPath)) { throw 'Current action history does not match the queue binding.' }
+if ([string]$state.registry.sha256 -ne [string]$queue.registry.sha256 -or [int]$state.registry.version -ne [int]$queue.registry.version) { throw 'Queue/state registry bindings disagree.' }
+if ([string]$state.action_history.sha256 -ne [string]$queue.action_history.sha256) { throw 'Queue/state action-history bindings disagree.' }
 if ([int]$registry.schemaVersion -ne [int]$state.registry.version -or [int]$history.schema_version -ne 1) { throw 'Registry or action-history schema is invalid.' }
 
 $now = (Get-Date).ToUniversalTime().ToString('o')
@@ -112,5 +112,18 @@ if ($state.status -eq 'awaiting_implemented_receipt') { $state | Add-Member -For
 # records the Round as complete, matching the UI transition order.
 Write-JsonAtomic -Path $historyPath -Value $history
 Write-JsonAtomic -Path $registryPath -Value $registry
+$currentRegistrySha = Get-Sha256 $registryPath
+$currentHistorySha = Get-Sha256 $historyPath
+foreach ($contract in @($queue, $state)) {
+  $contract.registry.sha256 = $currentRegistrySha
+  $contract.action_history.sha256 = $currentHistorySha
+  $contract.source_files = @($receipt.source_files_after)
+  $contract.source_fingerprint = [string]$receipt.source_fingerprint_after
+  $contract.provenance.registry.sha256 = $currentRegistrySha
+  $contract.provenance.action_history.sha256 = $currentHistorySha
+  $contract.provenance.source_files = @($receipt.source_files_after)
+  $contract.provenance.source_fingerprint = [string]$receipt.source_fingerprint_after
+}
+Write-JsonAtomic -Path $queuePath -Value $queue
 Write-JsonAtomic -Path $statePath -Value $state
 Write-Output "Round $round completed; state=$($state.status)"

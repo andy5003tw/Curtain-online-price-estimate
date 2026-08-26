@@ -44,8 +44,8 @@ function Get-NormalizedStringSet {
 
 function Assert-SameStringSet {
   param([object[]]$Actual, [object[]]$Expected, [string]$Label)
-  $actualSet = Get-NormalizedStringSet -Values $Actual
-  $expectedSet = Get-NormalizedStringSet -Values $Expected
+  $actualSet = @(Get-NormalizedStringSet -Values $Actual)
+  $expectedSet = @(Get-NormalizedStringSet -Values $Expected)
   if ($actualSet.Count -ne $expectedSet.Count -or (@($actualSet | Where-Object { $_ -notin $expectedSet }).Count -gt 0)) {
     throw "$Label does not match the current queue action_ids."
   }
@@ -233,7 +233,16 @@ if ($Stage -eq 'completed') {
 $now = (Get-Date).ToUniversalTime().ToString('o')
 $targetPages = @($queue.rounds | ForEach-Object { @($_.targets) } | Select-Object -Unique)
 $history = if (Test-Path -LiteralPath $lifecyclePath) { Get-Content -LiteralPath $lifecyclePath -Raw -Encoding UTF8 | ConvertFrom-Json } else { [pscustomobject]@{ schema_version = 2; queue_id = $state.queue_id; cycle_key = $state.cycle_key; target_pages = $targetPages; snapshot = $state.snapshot; registry = $state.registry; action_history = $state.action_history; stages = @() } }
-if ([string]$history.queue_id -ne [string]$state.queue_id -or [string]$history.cycle_key -ne [string]$state.cycle_key) { throw 'Lifecycle receipt belongs to a different queue.' }
+if ([string]$history.queue_id -ne [string]$state.queue_id -or [string]$history.cycle_key -ne [string]$state.cycle_key) {
+  $archiveDir = Join-Path $weeklyRoot 'history\curtain-online\lifecycle-receipts'
+  [System.IO.Directory]::CreateDirectory($archiveDir) | Out-Null
+  $archiveName = (([string]$history.queue_id + '__' + [string]$history.cycle_key) -replace '[^A-Za-z0-9._-]', '_') + '.json'
+  $archivePath = Join-Path $archiveDir $archiveName
+  if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) {
+    [System.IO.File]::WriteAllText($archivePath, (($history | ConvertTo-Json -Depth 20) + [Environment]::NewLine), [System.Text.UTF8Encoding]::new($false))
+  }
+  $history = [pscustomobject]@{ schema_version = 2; queue_id = $state.queue_id; cycle_key = $state.cycle_key; target_pages = $targetPages; snapshot = $state.snapshot; registry = $state.registry; action_history = $state.action_history; stages = @() }
+}
 $history.stages = @($history.stages) + @([pscustomobject]@{ stage = $Stage; recorded_at = $now; queue_id = $state.queue_id; cycle_key = $state.cycle_key; binding = $queueBinding; evidence = $evidence })
 if ($history.PSObject.Properties.Name -contains 'updated_at') { $history.updated_at = $now } else { $history | Add-Member -NotePropertyName updated_at -NotePropertyValue $now }
 $json = $history | ConvertTo-Json -Depth 20

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Phone, Mail, MapPin, Clock, ChevronRight } from 'lucide-react';
 import { CATALOG_URL } from '@/lib/seo';
+import { businessEvidence } from '@/data/businessEvidence';
 
 export default function Footer() {
   return (
@@ -51,9 +52,9 @@ export default function Footer() {
               <li>
                 <Clock size={16} className="footer-icon" />
                 <div>
-                  <div>周一 ~ 周六</div>
-                  <div>09:00 ~ 12:00</div>
-                  <div>13:30 ~ 18:00</div>
+                  <div>{businessEvidence.businessHours.weekdayLabel}</div>
+                  <div>{businessEvidence.businessHours.morning}</div>
+                  <div>{businessEvidence.businessHours.afternoon}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--stone-500)', marginTop: '0.25rem' }}>※ 請於上班時間來電預約</div>
                 </div>
               </li>

@@ -13,6 +13,9 @@ $queuePath = Join-Path $weeklyRoot 'latest\seo-geo-action-queue-state.json'
 $projectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-effective-workflow.ps1'
 $cycleTest = Join-Path $repoRoot 'scripts\test-seo-geo-cycle.ps1'
 $aiVisibilityTest = Join-Path $repoRoot 'scripts\test-ai-visibility.ps1'
+$aiVisibilityImporter = Join-Path $repoRoot 'scripts\import-latest-ai-visibility.ps1'
+$aiVisibilityRunner = Join-Path $repoRoot 'scripts\run-ai-visibility-observation.ps1'
+$aiVisibilityAutomationTest = Join-Path $repoRoot 'scripts\test-ai-visibility-automation.ps1'
 $lifecycleNext = Join-Path $repoRoot 'scripts\invoke-seo-geo-lifecycle-next.ps1'
 
 function Assert-True {
@@ -26,6 +29,9 @@ Assert-True (Test-Path -LiteralPath $queuePath -PathType Leaf) "Queue state not 
 Assert-True (Test-Path -LiteralPath $projectionWriter -PathType Leaf) "Effective workflow projection writer not found: $projectionWriter"
 Assert-True (Test-Path -LiteralPath $cycleTest -PathType Leaf) "SEO/GEO state behavior fixture is missing: $cycleTest"
 Assert-True (Test-Path -LiteralPath $aiVisibilityTest -PathType Leaf) "AI Visibility state behavior fixture is missing: $aiVisibilityTest"
+Assert-True (Test-Path -LiteralPath $aiVisibilityImporter -PathType Leaf) "AI Visibility one-click importer is missing: $aiVisibilityImporter"
+Assert-True (Test-Path -LiteralPath $aiVisibilityRunner -PathType Leaf) "AI Visibility API runner is missing: $aiVisibilityRunner"
+Assert-True (Test-Path -LiteralPath $aiVisibilityAutomationTest -PathType Leaf) "AI Visibility automation fixture is missing: $aiVisibilityAutomationTest"
 Assert-True (Test-Path -LiteralPath $lifecycleNext -PathType Leaf) "Smart lifecycle controller is missing: $lifecycleNext"
 
 $hta = Get-Content -LiteralPath $htaPath -Raw -Encoding UTF8
@@ -35,12 +41,20 @@ foreach ($id in @('zoneDataTrust', 'zoneOwnerPortfolio', 'zoneDecision', 'zoneSt
 foreach ($id in @('btnSeoGeoReportSmart', 'btnSeoGeoNextSmart', 'btnImportAiVisibility')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing primary SEO/GEO smart button: $id"
 }
+foreach ($id in @('btnFetchGscLatest', 'btnRunAuto')) {
+  Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing GSC report action button: $id"
+}
+$reportActions = [regex]::Match($hta, '(?s)<div class="report-actions">\s*<button id="btnFetchGscLatest".*?</div>').Value
+Assert-True (([regex]::Matches($reportActions, '<button\b')).Count -eq 2) 'GSC report panel must contain API fetch plus one manual ZIP fallback button.'
+foreach ($marker in @('function fetchLatestGscReports', 'fetch-gsc-latest.ps1', '-Window "both"', 'gsc-latest-fetch.json', 'No new finalized GSC period is available', 'credentials\\gsc-oauth-client.json', '抓取最新 7d／28d 報表', '手動匯入 GSC ZIP（備援）')) {
+  Assert-True ($hta.Contains($marker)) "Missing GSC API fetch UI marker: $marker"
+}
 $primaryActions = [regex]::Match($hta, '(?s)<div class="seo-geo-actions">\s*<button id="btnSeoGeoReportSmart".*?</div>').Value
 Assert-True (([regex]::Matches($primaryActions, '<button\b')).Count -eq 3) 'Primary SEO/GEO panel must contain exactly three buttons.'
 foreach ($marker in @('function executeCurrentSeoGeoNextStep', 'function invokeLifecycleNext', 'function getLifecycleNextInspection', 'invoke-seo-geo-lifecycle-next.ps1', '更新／開啟 SEO/GEO 行動報告', '執行目前下一步', '正式上傳網站（需確認）')) {
   Assert-True ($hta.Contains($marker)) "Missing smart SEO/GEO UI marker: $marker"
 }
-foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionText', 'getEffectiveWorkflowProjection', 'strategy snapshot=', 'effective workflow=', 'single_page_alignment_review', 'observation_only', 'awaiting_implemented_receipt', 'btnLifecycleImplemented', 'btnLifecycleLocalValidated', 'btnSeoGeoDeployDryRun', 'btnSeoGeoDeploy', 'btnSeoGeoLiveVerify', 'btnImportAiVisibility', 'runSeoGeoDeployment', 'runSeoGeoLiveVerification', 'importAiVisibilityObservation', 'direct_ai_engine_observation', 'mention rate=', 'citation rate=', 'accuracy=', 'gsc_inference_prohibited', 'workflow consistency gate', 'queue_sha256', 'validation_receipt_sha256', 'write-seo-geo-workflow-transition.ps1', 'PowerShell transaction', 'function buildPostGscSubmissionReminder', '下一步操作提醒', '固定 6 題', 'observing_7d', 'decision_ready 7d manifest')) {
+foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionText', 'getEffectiveWorkflowProjection', 'strategy snapshot=', 'effective workflow=', 'single_page_alignment_review', 'observation_only', 'awaiting_implemented_receipt', 'btnLifecycleImplemented', 'btnLifecycleLocalValidated', 'btnSeoGeoDeployDryRun', 'btnSeoGeoDeploy', 'btnSeoGeoLiveVerify', 'btnImportAiVisibility', 'btnImportAiVisibilityInbox', 'btnImportAiVisibilityManual', 'runSeoGeoDeployment', 'runSeoGeoLiveVerification', 'runAiVisibilityAutomation', 'run-ai-visibility-observation.ps1', 'importLatestAiVisibilityObservation', 'import-latest-ai-visibility.ps1', 'importAiVisibilityObservation', 'direct_ai_engine_observation', '品牌題：提及率=', '非品牌題：提及率=', '引用來源（按題計）', '自有網域：online.hong-sen.com=', 'accuracy（完全正確）=', 'accuracy review=', 'gsc_inference_prohibited', 'workflow consistency gate', 'queue_sha256', 'validation_receipt_sha256', 'write-seo-geo-workflow-transition.ps1', 'PowerShell transaction', 'function buildPostGscSubmissionReminder', '下一步操作提醒', '固定 6 題', 'observing_7d', 'decision_ready 7d manifest')) {
   Assert-True ($hta.Contains($marker)) "Missing UI safety/render marker: $marker"
 }
 Assert-True (-not $hta.Contains('persistValidatedRoundArtifacts')) 'HTA must not retain duplicate JavaScript Round persistence.'
@@ -89,6 +103,9 @@ if (-not $SkipBehaviorFixtures) {
   $aiOutput = @(& pwsh -NoLogo -NoProfile -File $aiVisibilityTest 2>&1)
   Assert-True ($LASTEXITCODE -eq 0) ('AI Visibility state behavior fixture failed: ' + ($aiOutput -join "`n"))
   Assert-True (($aiOutput -join "`n") -match 'AI Visibility tests passed') 'AI Visibility fixture did not report successful completion.'
+  $aiAutomationOutput = @(& pwsh -NoLogo -NoProfile -File $aiVisibilityAutomationTest 2>&1)
+  Assert-True ($LASTEXITCODE -eq 0) ('AI Visibility automation fixture failed: ' + ($aiAutomationOutput -join "`n"))
+  Assert-True (($aiAutomationOutput -join "`n") -match 'AI Visibility automation tests passed') 'AI Visibility automation fixture did not report successful completion.'
 }
 
 Write-Host ('Weekly SOP six-zone UI static + state behavior test passed.' + $(if ($SkipBehaviorFixtures) { ' (behavior fixture skipped)' } else { '' }))

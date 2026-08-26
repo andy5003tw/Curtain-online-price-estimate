@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CheckCircle2, Phone, MapPin, ShieldCheck, Factory, Clock, Calculator, ChevronRight } from 'lucide-react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
+import { businessEvidence } from '@/data/businessEvidence';
 
 const ABOUT_TITLE = '工廠直營窗簾｜台北窗簾免費丈量、報價流程與品牌服務';
 const ABOUT_DESCRIPTION = '想找工廠直營窗簾或台北窗簾免費丈量？宏森提供台北、新北到府丈量、窗簾價格試算、工廠直營報價與安裝服務流程。';
@@ -282,7 +283,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h4 style={{ fontWeight: 700, margin: '0 0 0.25rem 0', color: 'var(--stone-900)' }}>營業時間</h4>
-                    <p style={{ color: 'var(--stone-600)', margin: 0, lineHeight: 1.5 }}>週一至週六 09:00 - 18:00<br/><span style={{ fontSize: '0.85rem' }}>(建議來訪或到府丈量前先電話預約)</span></p>
+                    <p style={{ color: 'var(--stone-600)', margin: 0, lineHeight: 1.5 }}>{businessEvidence.businessHours.display}<br/><span style={{ fontSize: '0.85rem' }}>(建議來訪或到府丈量前先電話預約)</span></p>
                   </div>
                 </div>
               </div>

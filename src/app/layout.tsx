@@ -51,10 +51,7 @@ const localBusinessSchema = {
     latitude: 25.0652,
     longitude: 121.4862,
   },
-  openingHoursSpecification: [
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], opens: '09:00', closes: '12:00' },
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], opens: '13:30', closes: '18:00' },
-  ],
+  openingHoursSpecification: businessEvidence.businessHours.openingHoursSpecification,
   areaServed: [
     { '@type': 'City', name: '台北市' },
     { '@type': 'City', name: '新北市' },

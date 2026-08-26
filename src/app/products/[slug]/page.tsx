@@ -72,7 +72,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P007: {
     features: ['天然木材質感溫潤', '提升空間高級感', '自然紋理獨一無二', '多種木種與色系'],
     useCases: ['客廳', '書房', '餐廳'],
-    fullDesc: '實木百葉窗價格試算先看窗戶尺寸、木種、葉片寬度、表面塗裝、窗型與基本安裝費；可用同尺寸估價比較木百葉窗簾價格，再由到府丈量確認正式報價。實木百葉適合客廳、書房與重視木質感的景觀窗；若需求是防潮好清潔，請改看鋁百葉價格試算。',
+    fullDesc: '實木百葉窗價格試算應先固定同一組窗戶尺寸，再比較木種、葉片寬度、表面塗裝、窗型與基本安裝費；可用線上估價確認木百葉窗簾價格，再由到府丈量確認正式報價。實木百葉適合客廳、書房與重視木質感的乾燥空間；浴室、廚房等高濕環境則應改看鋁百葉價格試算。',
   },
   P008: {
     features: ['古樸東方韻味', '透氣性極佳', '輕盈自然材質', '環保天然'],
@@ -236,6 +236,28 @@ const defaultSeoExtras = {
   relatedBlogIds: ['blog-001'],
 };
 
+type PriceTableRow = { label: string; range: string };
+
+function buildReferencePriceOffer(priceTable: PriceTableRow[], url: string) {
+  const ranges = priceTable.flatMap(({ range }) =>
+    [...range.matchAll(/NT\$\s*([\d,]+)\s*[–-]\s*([\d,]+)/g)].map(([, low, high]) => ({
+      low: Number(low.replaceAll(',', '')),
+      high: Number(high.replaceAll(',', '')),
+    }))
+  );
+
+  if (!ranges.length) return undefined;
+
+  return {
+    '@type': 'AggregateOffer',
+    url,
+    priceCurrency: 'TWD',
+    lowPrice: Math.min(...ranges.map(({ low }) => low)),
+    highPrice: Math.max(...ranges.map(({ high }) => high)),
+    offerCount: ranges.length,
+  };
+}
+
 // Per-product FAQ + extended schema data
 const productV3Data: Record<string, {
   faqs: { q: string; a: string }[];
@@ -246,7 +268,7 @@ const productV3Data: Record<string, {
 }> = {
   P001: {
     faqs: [
-      { q: '窗簾訂製價格和做窗簾價格要先看哪三件事？', a: '建議先看窗戶尺寸、遮光需求與布料風格。這三件事先確定後，再用線上估價比較客廳布簾、臥室遮光布簾、雙層窗簾與基本安裝費，判斷窗簾訂製價格會最快。' },
+      { q: '做窗簾價格怎麼先抓預算？', a: '先輸入窗戶寬高，再確認遮光需求與布料風格；用同一尺寸比較客廳布簾、臥室遮光布簾、雙層窗簾、軌道與基本安裝費，最後由到府丈量確認正式報價。' },
       { q: '做窗簾價格和正式報價通常差在哪裡？', a: '線上試算會先抓布料、軌道、車工與基本安裝費，正式報價則會再看窗型、安裝高度、窗簾盒、是否拆舊與五金條件。先用同尺寸試算，再丈量確認最準。' },
       { q: '布簾可以做到完全遮光嗎？', a: '可以。選擇三層夾心的「三明治遮光布」或在布料背面加貼遮光塗層，即可達到接近 100% 的遮光效果，非常適合需要完全避光的臥室或視聽室。' },
       { q: '布簾和蛇形簾有什麼差異？', a: '一般布簾使用傳統打褶或2.5倍寬鬆比例製作，波浪較隨意自然。蛇形簾則使用專屬鉤夾讓每個波浪間距完全一致，展現高端精品感，但價格也較高。' },
@@ -356,7 +378,7 @@ const productV3Data: Record<string, {
   },
   P007: {
     faqs: [
-      { q: '實木百葉窗價格試算怎麼判斷合理？', a: '實木百葉價格主要看窗戶尺寸、木種、葉片寬度、表面塗裝、安裝高度與五金配件。建議先用線上估價輸入寬高做實木百葉窗價格試算，再由丈量確認正式報價。' },
+      { q: '實木百葉窗價格試算怎麼判斷合理？', a: '先固定同一組窗戶寬高，再比較木種、葉片寬度、表面塗裝、安裝高度與五金配件；線上估價可先抓木百葉窗簾價格，正式報價仍由丈量確認。這個試算適合客廳與書房等乾燥空間。' },
       { q: '實木百葉窗價格試算要先看哪 3 個變數？', a: '先看木種、葉片寬度與窗型施工條件。三個變數一致時，台北實木百葉窗價格與三重實木百葉窗價格才有可比性。建議先用線上估價工具輸入尺寸，再安排丈量確認。' },
       { q: '台北實木百葉窗價格、三重實木百葉窗價格差在哪裡？', a: '主要差在木種等級、塗裝與現場施工條件（例如高窗、轉角窗、特殊五金）。先做實木百葉窗價格試算，再比同規格報價，判斷會更準確。' },
       { q: '實木百葉窗價格試算會包含安裝費嗎？', a: '線上估價會先納入基本安裝費，正式報價仍會依安裝高度、窗框條件、五金配件與是否需要特殊施工微調。' },
@@ -613,12 +635,12 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
   const productHeroTitleMap: Record<string, string> = {
-    P001: '窗簾訂製價格試算｜布簾、安裝費與到府丈量',
+    P001: '做窗簾價格試算｜訂製布簾、遮光與安裝費',
     P002: '紗簾價格試算｜透光不透人紗簾、安裝費與到府看樣',
     P003: '蛇形窗簾｜客廳落地窗 S 型布簾、軌道與線上估價',
     P005: '捲簾價格試算｜遮光捲簾、捲簾安裝價格與線上估價',
     P006: '百葉窗價格試算｜鋁百葉防潮、安裝費與線上估價',
-    P007: '實木百葉窗價格試算｜木種、安裝費與到府丈量',
+    P007: '實木百葉窗價格試算｜木百葉、客廳書房與安裝費',
     P008: '竹簾訂製｜竹簾、和室窗簾、日式窗簾與價格試算',
     P009: '風琴簾價格試算｜蜂巢簾隔熱、安裝費與線上估價',
     P010: '調光簾價格試算｜斑馬簾價格、客廳控光與安裝費',
@@ -627,7 +649,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   };
   const productInternalLinksMap: Record<string, Array<{ href: string; label: string }>> = {
     P001: [
-      { href: '/calculator/?product=P001', label: '做窗簾價格試算：直接帶入一般布簾品項' },
+      { href: '/calculator/?product=P001', label: '做窗簾價格試算：輸入尺寸比較布簾、遮光與基本安裝費' },
       { href: '/curtain/blackout/', label: '遮光窗簾推薦：比較補眠、西曬與隔熱方案' },
       { href: '/products/roller-blinds/', label: '捲簾價格試算：比較遮光捲簾與布簾差異' },
       { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：比較隔熱與臥室控溫方案' },
@@ -730,7 +752,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     ],
     P007: [
       { href: '/calculator/?product=P007', label: '實木百葉窗價格試算：直接帶入木百葉品項與基本安裝費' },
-      { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：防潮好清潔時改看鋁百葉與安裝費' },
+      { href: '/products/aluminum-blinds/', label: '高濕空間改看鋁百葉：浴室、廚房的防潮價格試算' },
       { href: '/calculator/?product=P007&area=taipei', label: '台北實木百葉窗價格試算：先抓安裝預算' },
       { href: '/location/sanchong/', label: '三重窗簾價格試算入口：對照實木百葉窗價格' },
       { href: '/location/taipei/', label: '台北窗簾價格試算入口：對照客廳木百葉窗價格' },
@@ -764,6 +786,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     ...productSchema,
     material: v3.material,
     color: v3.colorOptions,
+    // These aggregate offers are derived from the visible reference-price table.
+    // They describe configurable made-to-measure products, not a fabricated fixed price.
+    offers: buildReferencePriceOffer(extras.priceTable, canonicalProductUrl),
   };
 
   const faqSchema = pageFaqs.length > 0 ? {

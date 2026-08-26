@@ -46,9 +46,11 @@
 
 ### 3. 匯入 AI 能見度測試結果（AI Visibility）
 
-1. 用同一個 AI／model 跑固定 6 題。
-2. 每題保存原始回答、是否提到「宏森」、引用網址與正確性。
-3. 按此按鈕，直接選取完整 observation JSON。
+1. 先設定 `OPENAI_API_KEY` 環境變數並重新開啟 UI；可用 `OPENAI_AI_VISIBILITY_MODEL` 指定固定 model，未指定時使用 UI 支援的預設 model。
+2. 按 **AI 自動測試＋匯入 Visibility**。系統會在同一 model 中逐題建立獨立 Responses API request，執行固定 6 題並保留原始回答、是否提到「宏森」與引用網址。
+3. 完整 observation JSON 會寫入 `Weekly SOP/inbox/ai-visibility/`，並立即驗證、寫入 snapshot、monthly history、receipt 與第六區指標。
+4. 自動回答的 `accuracy` 先標為 `unverified`，不可把 AI 自評當成人工正確性驗收。
+5. 已有 observation JSON 時，可在進階操作按 **只匯入收件匣最新 JSON** 或 **手動選擇 AI Visibility JSON**。
 
 AI Visibility 與 GSC 分開；系統不會操作外部 AI，也不會用 GSC 的排名、曝光、CTR 或 position 推論 AI 能見度。
 

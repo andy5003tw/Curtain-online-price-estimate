@@ -4,7 +4,7 @@ param(
   [Parameter(Mandatory = $true)][ValidateSet('data_validated', 'strategy_approved', 'round_validated', 'implemented', 'local_validated', 'deployed', 'live_verified', 'observing_7d', 'reviewed_28d', 'completed')][string]$Transition,
   [string]$EvidenceJson,
   [string]$EvidencePath,
-  [string]$Page,
+  [string[]]$Page,
   [string]$ApprovedBy,
   [string]$Reason,
   [string]$RepoRoot,
@@ -43,7 +43,7 @@ function Get-WorkflowPaths {
   $paths = @($statePath)
   switch ($TransitionName) {
     'strategy_approved' { $paths += @($queuePath, $approvalPath, $roundPromptPath, $slimPromptPath, $aiPromptPath) }
-    'round_validated' { $paths += @($registryPath, $historyPath) }
+    'round_validated' { $paths += @($queuePath, $registryPath, $historyPath) }
     { $_ -in @('implemented','local_validated','deployed','live_verified','observing_7d','reviewed_28d','completed') } { $paths += $lifecyclePath }
   }
   return @($paths | Select-Object -Unique)
@@ -167,7 +167,8 @@ try {
   if (-not $state -or -not $queue -or [int]$state.schema_version -ne 2 -or [int]$queue.schema_version -ne 2) { throw 'Queue/state schema_version must be 2.' }
   if ([string]$state.queue_id -ne [string]$queue.queue_id -or [string]$state.cycle_key -ne [string]$queue.cycle_key) { throw 'Queue/state identity mismatch.' }
 
-  $evidenceMaterial = if (-not [string]::IsNullOrWhiteSpace($EvidenceJson)) { $EvidenceJson } elseif (-not [string]::IsNullOrWhiteSpace($EvidencePath)) { Get-Content -LiteralPath $EvidencePath -Raw -Encoding UTF8 } else { "$Page`n$ApprovedBy`n$Reason" }
+  $pageMaterial = @($Page | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join "`n"
+  $evidenceMaterial = if (-not [string]::IsNullOrWhiteSpace($EvidenceJson)) { $EvidenceJson } elseif (-not [string]::IsNullOrWhiteSpace($EvidencePath)) { Get-Content -LiteralPath $EvidencePath -Raw -Encoding UTF8 } else { "$pageMaterial`n$ApprovedBy`n$Reason" }
   $fingerprint = Get-Sha256Text -Value ("$Transition`n$($state.queue_id)`n$($state.cycle_key)`n$evidenceMaterial")
   $resolvedOperationId = if ([string]::IsNullOrWhiteSpace($OperationId)) { "$Transition-$($fingerprint.Substring(0, 24))" } else { $OperationId.Trim() }
   $operationIndex = Read-Json -Path $operationIndexPath
@@ -189,11 +190,10 @@ try {
         $approval = Read-Json -Path $approvalPath
         $alreadyApproved = $approval -and [string]$approval.status -eq 'approved' -and [string]$approval.queue_id -eq [string]$queue.queue_id -and [string]$approval.cycle_key -eq [string]$queue.cycle_key
         if (-not $alreadyApproved) {
-          if ([string]::IsNullOrWhiteSpace($Page) -or [string]::IsNullOrWhiteSpace($ApprovedBy) -or [string]::IsNullOrWhiteSpace($Reason)) { throw 'strategy_approved requires Page, ApprovedBy, and Reason.' }
+          if (@($Page | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count -eq 0 -or [string]::IsNullOrWhiteSpace($ApprovedBy) -or [string]::IsNullOrWhiteSpace($Reason)) { throw 'strategy_approved requires Page, ApprovedBy, and Reason.' }
           $approvalWriter = Join-Path $PSScriptRoot 'approve-seo-geo-single-page-review.ps1'
-          $args = @('-RuntimeRoot', $weeklyRoot, '-Page', $Page, '-ApprovedBy', $ApprovedBy, '-Reason', $Reason)
-          if (-not [string]::IsNullOrWhiteSpace($RepoRoot)) { $args += @('-RepoRoot', $RepoRoot) }
-          & $approvalWriter @args
+          if ([string]::IsNullOrWhiteSpace($RepoRoot)) { & $approvalWriter -RuntimeRoot $weeklyRoot -Page $Page -ApprovedBy $ApprovedBy -Reason $Reason }
+          else { & $approvalWriter -RuntimeRoot $weeklyRoot -Page $Page -ApprovedBy $ApprovedBy -Reason $Reason -RepoRoot $RepoRoot }
           if (-not $?) { throw 'strategy_approved writer failed.' }
         }
         Set-StrategyApprovedGate

@@ -217,6 +217,20 @@ function checkSchemaContracts() {
       if (!schemaHasType(page.schemaNodes, 'BreadcrumbList')) fail(`Product BreadcrumbList missing on ${page.route}`);
       if (!schemaHasType(page.schemaNodes, 'FAQPage')) fail(`Product FAQPage missing on ${page.route}`);
       if (!page.html.includes('data-ai-answer="true"')) fail(`Product AI answer missing on ${page.route}`);
+      const product = page.schemaNodes.find(node => node['@type'] === 'Product');
+      const offer = product?.offers;
+      if (!offer || offer['@type'] !== 'AggregateOffer') {
+        fail(`Product AggregateOffer missing on ${page.route}`);
+      } else {
+        const lowPrice = Number(offer.lowPrice);
+        const highPrice = Number(offer.highPrice);
+        const offerCount = Number(offer.offerCount);
+        if (offer.priceCurrency !== 'TWD') fail(`Product AggregateOffer currency must be TWD on ${page.route}`);
+        if (!Number.isFinite(lowPrice) || lowPrice < 0) fail(`Product AggregateOffer lowPrice is invalid on ${page.route}`);
+        if (!Number.isFinite(highPrice) || highPrice < lowPrice) fail(`Product AggregateOffer highPrice is invalid on ${page.route}`);
+        if (!Number.isInteger(offerCount) || offerCount < 1) fail(`Product AggregateOffer offerCount is invalid on ${page.route}`);
+        if (offer.url !== `${SITE_URL}${page.route}`) fail(`Product AggregateOffer URL must match canonical on ${page.route}`);
+      }
       const faq = page.schemaNodes.find(node => node['@type'] === 'FAQPage');
       const count = Array.isArray(faq?.mainEntity) ? faq.mainEntity.length : 0;
       if (count < 3 || count > 5) fail(`Product FAQ count must be 3-5 on ${page.route}; found ${count}`);

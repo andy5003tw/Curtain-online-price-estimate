@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $writer = Join-Path $PSScriptRoot 'write-ai-visibility-snapshot.ps1'
+$autoImporter = Join-Path $PSScriptRoot 'import-latest-ai-visibility.ps1'
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ('curtain-ai-visibility-' + [guid]::NewGuid().ToString('N'))
 $runtimeRoot = Join-Path $testRoot 'runtime'
 
@@ -16,8 +17,12 @@ function Write-Json([string]$Path, [object]$Value) {
 }
 function Read-Json([string]$Path) { Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json }
 function Assert-True([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
-function Invoke-Writer([string]$InputPath, [string]$QuestionSetPath) {
-  $output = @(& pwsh -NoLogo -NoProfile -File $writer -RuntimeRoot $runtimeRoot -InputPath $InputPath -QuestionSetPath $QuestionSetPath 2>&1)
+function Invoke-Writer([string]$InputPath, [string]$QuestionSetPath, [string]$ReviewPath = '') {
+  $output = if ([string]::IsNullOrWhiteSpace($ReviewPath)) {
+    @(& pwsh -NoLogo -NoProfile -File $writer -RuntimeRoot $runtimeRoot -InputPath $InputPath -QuestionSetPath $QuestionSetPath 2>&1)
+  } else {
+    @(& pwsh -NoLogo -NoProfile -File $writer -RuntimeRoot $runtimeRoot -InputPath $InputPath -QuestionSetPath $QuestionSetPath -ReviewPath $ReviewPath 2>&1)
+  }
   return [pscustomobject]@{ ExitCode = [int]$LASTEXITCODE; Output = @($output | ForEach-Object { [string]$_ }) }
 }
 
@@ -53,6 +58,8 @@ try {
   $receipt = Read-Json $receiptPath
   Assert-True ($summary.measurement_source -eq 'direct_ai_engine_observation' -and [bool]$summary.gsc_inference_prohibited) 'AI visibility summary does not prohibit GSC inference.'
   Assert-True ($summary.metrics.sample_size -eq 4 -and $summary.metrics.mention_rate -eq 75 -and $summary.metrics.citation_rate -eq 50 -and $summary.metrics.accuracy_rate -eq 66.67) 'AI visibility rates were not calculated from direct observations.'
+  Assert-True ($summary.metrics.metrics_schema_version -eq 3 -and $summary.metrics.brand.mention_rate -eq 100 -and $summary.metrics.non_brand.mention_rate -eq 50) 'AI visibility does not split brand and non-brand mention rates.'
+  Assert-True ($summary.metrics.citations.owned.citation_rate -eq 50 -and $summary.metrics.citations.external.citation_rate -eq 0 -and $summary.metrics.citations.by_owned_domain.'online.hong-sen.com'.cited_question_rate -eq 50 -and $summary.metrics.citations.by_owned_domain.'www.hong-sen.com'.cited_question_rate -eq 0) 'AI visibility does not classify owned and external citation rates by domain.'
   Assert-True ($summary.metrics.accuracy_evaluated_count -eq 3 -and $summary.metrics.accuracy_unverified_count -eq 1) 'Accuracy denominator did not exclude unverified answers.'
   Assert-True ($receipt.question_set.sha256 -and $receipt.source_input.sha256 -and $receipt.snapshot.sha256) 'AI visibility receipt lacks question-set/input/snapshot SHA provenance.'
   $snapshot = Read-Json (Join-Path $runtimeRoot ([string]$summary.latest_snapshot.path -replace '/', '\\'))
@@ -77,6 +84,32 @@ try {
   $invalidResult = Invoke-Writer $invalidPath $questionSetPath
   Assert-True ($invalidResult.ExitCode -ne 0) 'Writer accepted GSC-inferred AI metrics.'
   Assert-True ((Get-FileHash -LiteralPath $summaryPath -Algorithm SHA256).Hash -eq $summaryHash) 'Rejected inferred metrics changed the latest summary.'
+
+  $inboxPath = Join-Path $runtimeRoot 'inbox\ai-visibility'
+  [void](New-Item -ItemType Directory -Path $inboxPath -Force)
+  $autoInputPath = Join-Path $inboxPath 'latest-observation.json'
+  Copy-Item -LiteralPath $input2Path -Destination $autoInputPath
+  $autoOutput = @(& pwsh -NoLogo -NoProfile -File $autoImporter -RuntimeRoot $runtimeRoot -InboxPath $inboxPath -QuestionSetPath $questionSetPath 2>&1)
+  Assert-True ($LASTEXITCODE -eq 0) ('AI Visibility one-click importer rejected the latest inbox observation: ' + ($autoOutput -join ' '))
+  Assert-True (($autoOutput -join "`n") -match 'AI Visibility auto-selected:' -and ($autoOutput -join "`n") -match '"status":"complete"') 'AI Visibility one-click importer did not report the selected file and completed snapshot.'
+
+  $reviewPath = Join-Path $runtimeRoot 'reviews\fixture-review.json'
+  $review = [ordered]@{
+    schema_version = 1; review_type = 'ai_visibility_human_accuracy_review'; reviewed_at = '2026-08-21T10:00:00Z'; reviewer = 'fixture reviewer'
+    source_observation = [ordered]@{ sha256 = (Get-FileHash -LiteralPath $input2Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+    reviews = @(
+      [ordered]@{ question_id = 'brand_desktop'; accuracy = 'correct'; accuracy_note = 'fully verified' }
+      [ordered]@{ question_id = 'brand_mobile'; accuracy = 'partial'; accuracy_note = 'needs a condition' }
+      [ordered]@{ question_id = 'nonbrand_desktop'; accuracy = 'partial'; accuracy_note = 'not fully evidenced' }
+      [ordered]@{ question_id = 'nonbrand_mobile'; accuracy = 'incorrect'; accuracy_note = 'fixture error' }
+    )
+  }
+  Write-Json $reviewPath $review
+  $reviewed = Invoke-Writer $input2Path $questionSetPath $reviewPath
+  Assert-True ($reviewed.ExitCode -eq 0) ('AI visibility writer rejected a valid reviewed observation: ' + ($reviewed.Output -join ' '))
+  $reviewedSummary = Read-Json $summaryPath
+  Assert-True ($reviewedSummary.metrics.accuracy_evaluated_count -eq 4 -and $reviewedSummary.metrics.accuracy_correct_count -eq 1 -and $reviewedSummary.metrics.accuracy_partial_count -eq 2 -and $reviewedSummary.metrics.accuracy_incorrect_count -eq 1 -and $reviewedSummary.metrics.accuracy_rate -eq 25 -and $reviewedSummary.metrics.accuracy_unverified_count -eq 0) 'AI visibility review did not produce the expected accuracy distribution.'
+  Assert-True ($reviewedSummary.accuracy_review.sha256 -eq (Get-FileHash -LiteralPath $reviewPath -Algorithm SHA256).Hash.ToLowerInvariant()) 'AI visibility review provenance is missing or incorrect.'
   Write-Host 'AI Visibility tests passed.'
 } finally {
   if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }

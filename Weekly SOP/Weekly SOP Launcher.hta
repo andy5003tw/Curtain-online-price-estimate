@@ -107,6 +107,17 @@
       align-items: start;
     }
 
+    .report-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .report-actions button {
+      flex: 1;
+    }
+
     button {
       border: 2px solid transparent;
       border-radius: 999px;
@@ -143,6 +154,29 @@
       font-size: 18px;
     }
 
+    .btn-fetch-gsc {
+      color: #ffffff;
+      background: linear-gradient(145deg, #087f6b 0%, #126a88 100%);
+      border-color: #075e54;
+      box-shadow: 0 9px 18px rgba(7, 94, 84, 0.24);
+      font-size: 18px;
+    }
+
+    .btn-upload-fallback {
+      color: #23465f;
+      background: #f7fbff;
+      border-color: #9db8cc;
+      box-shadow: none;
+      font-size: 15px;
+    }
+
+    .report-actions-note {
+      margin: 9px 2px 0;
+      color: #54708a;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
     .section-title {
       margin: 18px 0 8px;
       font-size: 17px;
@@ -173,6 +207,16 @@
 
     .btn-seo-geo:hover {
       background: #d9eef2;
+    }
+
+    .btn-ai-visibility {
+      color: #ffffff;
+      background: #126f7c;
+      font-weight: 800;
+    }
+
+    .btn-ai-visibility:hover {
+      background: #0d5f6b;
     }
 
     .seo-geo-note {
@@ -1039,7 +1083,7 @@
       setSixZone("zoneImplementation", "5. 實作與部署", [
         "lifecycle=" + lifecycle + " / active round=" + (state ? state.active_round : "n/a") + " / total rounds=" + (state ? state.total_rounds : "n/a"),
         "data_validated → strategy_approved → implemented → local_validated → deployed → live_verified → observing_7d → reviewed_28d → completed",
-        projectionValid ? "每一步都需要 queue/cycle 綁定的 receipt evidence。" : "projection inconsistent；所有後續操作已停用。",
+        projectionValid ? (lifecycle === "observation_only" ? "無 executable Round；複製、前進、部署與 lifecycle 寫入均保持 disabled。" : "每一步都需要 queue/cycle 綁定的 receipt evidence。") : "projection inconsistent；所有後續操作已停用。",
         "下一步：" + (effective.next_requirement || "data unavailable")
       ].join("\n"), projectionValid ? (lifecycle === "observation_only" ? "warn" : "ok") : "error");
 
@@ -1051,9 +1095,13 @@
       var aiDirect = aiVisibility && aiVisibility.status === "complete" && aiVisibility.measurement_source === "direct_ai_engine_observation" && aiVisibility.gsc_inference_prohibited === true;
       var aiText = aiDirect ? [
         "AI direct observation=" + (aiVisibility.latest_snapshot.engine || "n/a") + " / " + (aiVisibility.latest_snapshot.model || "n/a") + " / " + (aiVisibility.latest_snapshot.observed_at || "n/a"),
-        "mention rate=" + aiMetrics.mention_rate + "% (" + aiMetrics.mention_count + "/" + aiMetrics.sample_size + ")",
-        "citation rate=" + aiMetrics.citation_rate + "% (" + aiMetrics.citation_count + "/" + aiMetrics.sample_size + ")",
-        "accuracy=" + (aiMetrics.accuracy_rate === null ? "N/A（尚無已審核答案）" : aiMetrics.accuracy_rate + "%") + " / evaluated=" + aiMetrics.accuracy_evaluated_count + " / unverified=" + aiMetrics.accuracy_unverified_count,
+        "品牌題：提及率=" + getNested(aiMetrics, ["brand", "mention_rate"], "n/a") + "% (" + getNested(aiMetrics, ["brand", "mention_count"], "n/a") + "/" + getNested(aiMetrics, ["brand", "sample_size"], "n/a") + ")；引用率=" + getNested(aiMetrics, ["brand", "citation_rate"], "n/a") + "% (" + getNested(aiMetrics, ["brand", "citation_count"], "n/a") + "/" + getNested(aiMetrics, ["brand", "sample_size"], "n/a") + ")",
+        "非品牌題：提及率=" + getNested(aiMetrics, ["non_brand", "mention_rate"], "n/a") + "% (" + getNested(aiMetrics, ["non_brand", "mention_count"], "n/a") + "/" + getNested(aiMetrics, ["non_brand", "sample_size"], "n/a") + ")；引用率=" + getNested(aiMetrics, ["non_brand", "citation_rate"], "n/a") + "% (" + getNested(aiMetrics, ["non_brand", "citation_count"], "n/a") + "/" + getNested(aiMetrics, ["non_brand", "sample_size"], "n/a") + ")",
+        "引用來源（按題計）：自有網站=" + getNested(aiMetrics, ["citations", "owned", "citation_rate"], "n/a") + "% (" + getNested(aiMetrics, ["citations", "owned", "citation_count"], "n/a") + "/" + aiMetrics.sample_size + ")；外部網站=" + getNested(aiMetrics, ["citations", "external", "citation_rate"], "n/a") + "% (" + getNested(aiMetrics, ["citations", "external", "citation_count"], "n/a") + "/" + aiMetrics.sample_size + ")",
+        "自有網域：online.hong-sen.com=" + getNested(aiMetrics, ["citations", "by_owned_domain", "online.hong-sen.com", "cited_question_rate"], "n/a") + "% (" + getNested(aiMetrics, ["citations", "by_owned_domain", "online.hong-sen.com", "cited_question_count"], "n/a") + "/" + aiMetrics.sample_size + ")；www.hong-sen.com=" + getNested(aiMetrics, ["citations", "by_owned_domain", "www.hong-sen.com", "cited_question_rate"], "n/a") + "% (" + getNested(aiMetrics, ["citations", "by_owned_domain", "www.hong-sen.com", "cited_question_count"], "n/a") + "/" + aiMetrics.sample_size + ")",
+        "總計（不作品牌／非品牌成效判讀）：提及率=" + aiMetrics.mention_rate + "% (" + aiMetrics.mention_count + "/" + aiMetrics.sample_size + ")；引用率=" + aiMetrics.citation_rate + "% (" + aiMetrics.citation_count + "/" + aiMetrics.sample_size + ")",
+        "accuracy（完全正確）=" + (aiMetrics.accuracy_rate === null ? "N/A（尚無已審核答案）" : aiMetrics.accuracy_rate + "%") + " / reviewed=" + aiMetrics.accuracy_evaluated_count + " / partial=" + getNested(aiMetrics, ["accuracy_partial_count"], 0) + " / incorrect=" + getNested(aiMetrics, ["accuracy_incorrect_count"], 0) + " / unverified=" + aiMetrics.accuracy_unverified_count,
+        "accuracy review=" + getNested(aiVisibility, ["accuracy_review", "path"], "尚無人工審核紀錄"),
         "monthly snapshots=" + getNested(aiVisibility, ["monthly_history", "snapshot_count"], 0) + " / receipt=" + getNested(aiVisibility, ["receipt", "path"], "n/a"),
         "AI 指標僅來自固定問題集的 direct AI engine observation；不由 GSC 推論。"
       ].join("\n") : "AI Visibility：data unavailable（尚無固定問題集的 direct AI engine observation receipt）。請匯入含 engine、model、日期、answer、brand mention、citation URL 與 accuracy 的完整觀測 JSON；GSC 指標不會用來推論 AI rate。";
@@ -1680,7 +1728,7 @@
         currentSeoGeoNextAction = { type: "none", enabled: false, label: "流程資料不一致，請查看提示", reason: "workflow consistency gate 未通過" };
       } else if (queue.isObservation) {
         currentSeoGeoNextAction = canApproveSinglePage ?
-          { type: "approve_single_page", enabled: true, label: "核准唯一單頁優化", reason: "目前有 1 個需人工核准的單頁 review" } :
+          { type: "approve_single_page", enabled: true, label: "核准單頁優化並建立 Round", reason: "可將已明確核准的單頁 reviews 建立為連續 Round" } :
           { type: "none", enabled: false, label: "本輪只需觀察", reason: "observation_only；等待安全的新 GSC snapshot" };
       } else if (!queue.isLocalValidated) {
         currentSeoGeoNextAction = queue.receiptGate.passed ?
@@ -1736,8 +1784,16 @@
         var optionalCount = asArray(optionalItems).length;
         var hasOptionalPrompt = optionalCount > 0 && fso.FileExists(optionalPath);
 
-        setButtonState("btnRunAuto", !hasPwsh, "上傳成效 ZIP 並自動產生報表（7d/28d）",
-          hasPwsh ? "以 PowerShell 7 執行 Weekly SOP" : "找不到 pwsh；請先安裝 PowerShell 7");
+        var fetchScript = root + "\\fetch-gsc-latest.ps1";
+        var gscClientSecret = root + "\\credentials\\gsc-oauth-client.json";
+        var canFetchGsc = hasPwsh && fso.FileExists(fetchScript) && fso.FileExists(gscClientSecret);
+        var fetchHint = !hasPwsh ? "找不到 pwsh；請先安裝 PowerShell 7" :
+          (!fso.FileExists(fetchScript) ? "找不到 fetch-gsc-latest.ps1" :
+            (!fso.FileExists(gscClientSecret) ? "缺少 Google OAuth client：credentials/gsc-oauth-client.json" :
+              "以 Search Console API final 資料更新 7d、28d 與 SEO/GEO 行動報告"));
+        setButtonState("btnFetchGscLatest", !canFetchGsc, "抓取最新 7d／28d 報表", fetchHint);
+        setButtonState("btnRunAuto", !hasPwsh, "手動匯入 GSC ZIP（備援）",
+          hasPwsh ? "API 暫時不可用時才使用手動 ZIP" : "找不到 pwsh；請先安裝 PowerShell 7");
         setButtonState("btnRunSeoGeoActionPlan", !canGenerate,
           latestImport.isDuplicate ? "產生 SEO/GEO 優化建議（沿用舊 baseline）" : "產生 SEO/GEO 優化建議",
           canGenerate ? (latestImport.isDuplicate ?
@@ -1751,10 +1807,10 @@
           optionalCount > 0 ? (singlePageReviewCount > 0 ? "複製單頁優化評估指令（" + singlePageReviewCount + "）" : "複製小幅優化參考指令（" + optionalCount + "）") : "目前沒有額外小幅優化項目",
           hasOptionalPrompt ? (singlePageReviewCount > 0 ? "複製單頁評估內容；需你明確核准後才能實作" : "複製可交給 AI 判斷的小幅優化參考") :
             (optionalCount === 0 ? "目前沒有額外小幅優化項目，無需操作" : "找不到小幅優化參考檔"));
-        var canApproveSinglePage = hasPwsh && queue.exists && !queue.isStale && queue.isObservation && singlePageReviewCount === 1;
+        var canApproveSinglePage = hasPwsh && queue.exists && !queue.isStale && queue.isObservation && singlePageReviewCount >= 1 && singlePageReviewCount <= 6;
         setButtonState("btnApproveSinglePageReview", !canApproveSinglePage,
-          canApproveSinglePage ? "核准單一頁面優化並建立工作項目" : "目前沒有可核准的單一頁面優化",
-          canApproveSinglePage ? "需確認頁面、核准者與理由；系統會再次驗證資料來源" : "需先有僅 1 個、等待你核准的單頁優化建議");
+          canApproveSinglePage ? "核准 " + singlePageReviewCount + " 項單頁優化並建立 Round" : "目前沒有可核准的單頁優化",
+          canApproveSinglePage ? "每頁建立一個連續 Round；需確認核准者與理由，系統會再次驗證資料來源" : "需有 1～6 個等待你核准的單頁優化建議");
 
         if (!queue.exists) {
           setButtonState("btnCopySeoGeoAiPrompt", true, "複製目前 Round", "請先產生 SEO/GEO queue");
@@ -1783,10 +1839,17 @@
         var canDeploy = hasPwsh && workflowConsistent && lifecycleStatus === "local_validated";
         var canLiveVerify = hasPwsh && workflowConsistent && lifecycleStatus === "deployed";
         var aiWriter = fso.GetParentFolderName(root) + "\\scripts\\write-ai-visibility-snapshot.ps1";
+        var aiRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-observation.ps1";
+        var aiAutoImporter = fso.GetParentFolderName(root) + "\\scripts\\import-latest-ai-visibility.ps1";
         var aiQuestionSet = root + "\\config\\ai-visibility-question-set.json";
-        var canImportAiVisibility = hasPwsh && fso.FileExists(aiWriter) && fso.FileExists(aiQuestionSet);
-        setButtonState("btnImportAiVisibility", !canImportAiVisibility, "匯入 AI 能見度測試結果（AI Visibility）",
-          canImportAiVisibility ? "固定中文問題集；只接受 direct AI engine observation，不會以 GSC 推論" : "需要 PowerShell 7、AI Visibility writer 與固定問題集");
+        var canImportAiVisibility = hasPwsh && fso.FileExists(aiWriter) && fso.FileExists(aiAutoImporter) && fso.FileExists(aiQuestionSet);
+        var canRunAiVisibility = canImportAiVisibility && fso.FileExists(aiRunner);
+        setButtonState("btnImportAiVisibility", !canRunAiVisibility, "AI 自動測試＋匯入 Visibility",
+          canRunAiVisibility ? "使用同一 OpenAI model 獨立跑固定 6 題，寫入收件匣後自動匯入；需要 OPENAI_API_KEY" : "需要 PowerShell 7、AI Visibility runner／importer／writer 與固定問題集");
+        setButtonState("btnImportAiVisibilityInbox", !canImportAiVisibility, "只匯入收件匣最新 JSON",
+          canImportAiVisibility ? "不呼叫 AI API；自動讀取 Weekly SOP\\inbox\\ai-visibility 中最新的完整 JSON" : "需要 PowerShell 7、AI Visibility importer／writer 與固定問題集");
+        setButtonState("btnImportAiVisibilityManual", !canImportAiVisibility, "手動選擇 AI Visibility JSON",
+          canImportAiVisibility ? "找不到收件匣檔案時使用；仍只接受 direct AI engine observation" : "需要 PowerShell 7、AI Visibility writer 與固定問題集");
         setButtonState("btnSeoGeoDeployDryRun", !canDeploy, "部署預演（FTP dry-run，不實際上傳）",
           canDeploy ? "先產生 queue-bound deployment manifest；不會連線或上傳" : "需要 workflow consistency PASS 且 lifecycle=local_validated");
         setButtonState("btnSeoGeoDeploy", !canDeploy, "正式上傳網站（FTP 部署）",
@@ -1822,7 +1885,7 @@
         }
 
         if (!isFreshStatus(seven)) {
-          renderWorkflowPanel("error", "流程狀態：等待上傳 7d 報表", "下一步：按「上傳成效 ZIP 並自動產生報表（7d/28d）」，先匯入 fresh 7d。");
+          renderWorkflowPanel("error", "流程狀態：等待最新 7d 報表", "下一步：按「抓取最新 7d／28d 報表」，取得 Search Console API final 資料。");
           return;
         }
 
@@ -1881,7 +1944,8 @@
 
         renderWorkflowPanel("ok", "流程狀態：Round " + queue.activeRound + "/" + queue.totalRounds + " 可複製", "下一步：複製 Slim AI 指令；完成後需先產生匹配且通過的 validation receipt。現在狀態：" + queue.receiptGate.reason);
       } catch (e) {
-        setButtonState("btnRunAuto", true, "上傳成效 ZIP 並自動產生報表（7d/28d）", "流程狀態讀取失敗");
+        setButtonState("btnFetchGscLatest", true, "抓取最新 7d／28d 報表", "流程狀態讀取失敗");
+        setButtonState("btnRunAuto", true, "手動匯入 GSC ZIP（備援）", "流程狀態讀取失敗");
         setButtonState("btnRunSeoGeoActionPlan", true, "產生 SEO/GEO 優化建議", "流程狀態讀取失敗");
         setButtonState("btnSeoGeoReportSmart", true, "更新／開啟 SEO/GEO 行動報告", "流程狀態讀取失敗");
         setButtonState("btnSeoGeoNextSmart", true, "執行目前下一步", "流程狀態讀取失敗");
@@ -1890,7 +1954,9 @@
         setButtonState("btnSeoGeoDeployDryRun", true, "部署預演（FTP dry-run，不實際上傳）", "流程狀態讀取失敗");
         setButtonState("btnSeoGeoDeploy", true, "正式上傳網站（FTP 部署）", "流程狀態讀取失敗");
         setButtonState("btnSeoGeoLiveVerify", true, "驗證網站已正確上線（live verify）", "流程狀態讀取失敗");
-        setButtonState("btnImportAiVisibility", true, "匯入 AI 能見度測試結果（AI Visibility）", "流程狀態讀取失敗");
+        setButtonState("btnImportAiVisibility", true, "AI 自動測試＋匯入 Visibility", "流程狀態讀取失敗");
+        setButtonState("btnImportAiVisibilityInbox", true, "只匯入收件匣最新 JSON", "流程狀態讀取失敗");
+        setButtonState("btnImportAiVisibilityManual", true, "手動選擇 AI Visibility JSON", "流程狀態讀取失敗");
         renderWorkflowPanel("error", "流程狀態：讀取失敗", e.message);
       }
     }
@@ -2210,6 +2276,78 @@
         }
       }
       return lines.join("\n");
+    }
+
+    function buildGscFetchSummary(fetchRows) {
+      var rows = asArray(fetchRows);
+      var lines = [];
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i] || {};
+        lines.push(
+          String(row.window || "?") + "：" + String(row.start_date || "?") + " ～ " + String(row.end_date || "?") +
+          "（Query " + Number(row.query_rows || 0) + "／Page " + Number(row.page_rows || 0) +
+          "／Query × Page " + Number(row.query_page_rows || 0) + "）"
+        );
+      }
+      return lines.join("\n");
+    }
+
+    function fetchLatestGscReports() {
+      var root = getRootFolder();
+      if (!commandExists("pwsh")) {
+        setStatusSummary("找不到 pwsh（PowerShell 7），無法抓取 GSC 報表。\n不會 fallback 到 Windows PowerShell 5.1。", "error");
+        updateWorkflowControls();
+        return;
+      }
+
+      var shell = new ActiveXObject("WScript.Shell");
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var fetchScript = root + "\\fetch-gsc-latest.ps1";
+      var clientSecret = root + "\\credentials\\gsc-oauth-client.json";
+      var logDir = root + "\\latest";
+      if (!fso.FileExists(fetchScript)) {
+        setStatusSummary("找不到 GSC API 抓取器：\n" + fetchScript, "error");
+        return;
+      }
+      if (!fso.FileExists(clientSecret)) {
+        setStatusSummary("缺少 Google OAuth client：\n" + clientSecret + "\n\n請先放入授權檔，再重新整理 UI。", "error");
+        return;
+      }
+      if (!fso.FolderExists(logDir)) { fso.CreateFolder(logDir); }
+
+      var logPath = logDir + "\\gsc-latest-fetch.log";
+      var resultPath = logDir + "\\gsc-latest-fetch.json";
+      var cmd = 'cmd /d /c cd /d "' + root.replace(/"/g, '""') + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "fetch-gsc-latest.ps1" -Window "both" > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+
+      resetDetailsCollapsed();
+      setStatusDetails("");
+      setButtonsBusy(true);
+      setStatusSummary("正在向 Google Search Console 抓取最新 final 資料…\n\n將更新 7d、28d 報表與 SEO/GEO 行動報告；首次使用可能會開啟 Google 授權頁。", "running");
+
+      try {
+        var code = shell.Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nLog:\n" + logText);
+        if (code !== 0) {
+          setStatusSummary("GSC 最新報表抓取失敗，未更新 baseline。\n\n" + (logText || ("錯誤代碼：" + code)), "error");
+        } else if (logText.indexOf("No new finalized GSC period is available") >= 0) {
+          setStatusSummary("目前尚無新的 GSC final 資料。\n\n既有 7d／28d baseline 與行動報告均未變更。", "warn");
+        } else {
+          var fetchRows = readJsonIfExists(resultPath);
+          var fetchSummary = buildGscFetchSummary(fetchRows);
+          setStatusSummary(
+            "最新 7d／28d 報表已更新。\n\n" + (fetchSummary || "Search Console API 抓取與匯入完成。") +
+            "\n\nSEO/GEO 行動報告也已重新產生。\n\n" + buildPostGscSubmissionReminder(root),
+            "success"
+          );
+        }
+      } catch (e) {
+        setStatusSummary("GSC 抓取流程發生錯誤：" + e.message, "error");
+        setStatusDetails("Command:\n" + cmd + "\n\nException:\n" + e.message);
+      } finally {
+        setButtonsBusy(false);
+        refreshHealth();
+      }
     }
 
     function runAutoWindowWithInput(inputPath) {
@@ -2649,6 +2787,58 @@
       }
     }
 
+    function runAiVisibilityAutomation() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var repoRoot = fso.GetParentFolderName(root);
+        var runner = repoRoot + "\\scripts\\run-ai-visibility-observation.ps1";
+        var questionSet = root + "\\config\\ai-visibility-question-set.json";
+        var inboxPath = root + "\\inbox\\ai-visibility";
+        if (!fso.FileExists(runner) || !fso.FileExists(questionSet)) { throw new Error("AI Visibility runner 或固定問題集不存在。"); }
+        var logPath = root + "\\latest\\ai-visibility-last-run.log";
+        var cmd = 'cmd /d /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + runner.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -InboxPath "' + inboxPath.replace(/"/g, '""') + '" -QuestionSetPath "' + questionSet.replace(/"/g, '""') + '" -ImportAfterRun > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("AI 正在以同一 model 獨立執行固定 6 題，完成後會寫入收件匣並自動匯入...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nInbox:\n" + inboxPath + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? "AI Visibility 6 題已自動完成並匯入；原始 observation、snapshot、monthly history、receipt 與第六區指標皆已更新。" : "AI Visibility 自動測試未完成。若訊息顯示 OPENAI_API_KEY is not set，請先設定環境變數並重新開啟 UI。\n\n" + logText, code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("AI Visibility 自動測試失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        renderSixZoneDashboard();
+        updateWorkflowControls();
+      }
+    }
+
+    function importLatestAiVisibilityObservation() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var repoRoot = fso.GetParentFolderName(root);
+        var importer = repoRoot + "\\scripts\\import-latest-ai-visibility.ps1";
+        var questionSet = root + "\\config\\ai-visibility-question-set.json";
+        var inboxPath = root + "\\inbox\\ai-visibility";
+        if (!fso.FileExists(importer) || !fso.FileExists(questionSet)) { throw new Error("AI Visibility importer 或固定問題集不存在。"); }
+        var logPath = root + "\\latest\\ai-visibility-last-run.log";
+        var cmd = 'cmd /d /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + importer.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -InboxPath "' + inboxPath.replace(/"/g, '""') + '" -QuestionSetPath "' + questionSet.replace(/"/g, '""') + '" > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("正在一鍵匯入收件匣中最新的 direct AI Visibility observation...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nInbox:\n" + inboxPath + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? "AI Visibility 最新結果已匯入；snapshot、monthly history、receipt 與第六區指標已更新。" : "一鍵匯入未完成。請把完整 6 題 observation JSON 放入：\n" + inboxPath + "\n\n也可展開進階操作改用手動選檔。\n\n" + logText, code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("AI Visibility 一鍵匯入失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        renderSixZoneDashboard();
+        updateWorkflowControls();
+      }
+    }
+
     function importAiVisibilityObservation() {
       try {
         var root = getRootFolder();
@@ -2745,16 +2935,17 @@
         var snapshot = getQueueSnapshot(root);
         var items = snapshot.queue && snapshot.queue.optional_opportunities ? asArray(snapshot.queue.optional_opportunities) : [];
         var reviews = items.filter(function (item) { return item && (item.review_type === "single_page_p0_review" || item.review_type === "single_page_alignment_review") && item.requires_user_approval === true; });
-        if (!snapshot.exists || snapshot.isStale || !snapshot.isObservation || reviews.length !== 1) {
-          setStatusSummary("單頁核准條件不成立：需要 current observation_only queue 且恰好 1 個 approval-only single-page review。", "error");
+        if (!snapshot.exists || snapshot.isStale || !snapshot.isObservation || reviews.length < 1 || reviews.length > 6) {
+          setStatusSummary("單頁核准條件不成立：需要 current observation_only queue 與 1～6 個 approval-only single-page reviews。", "error");
           updateWorkflowControls();
           return;
         }
-        var page = String(reviews[0].page || "");
-        if (!confirm("確認核准這個單頁 review 並建立正式 executable Round？\n\n" + page + "\n\n核准後仍須完成所有 validation receipt 才能前進。")) { return; }
+        var pages = [];
+        for (var i = 0; i < reviews.length; i++) { pages.push(String(reviews[i].page || "")); }
+        if (!confirm("確認核准以下 " + pages.length + " 個單頁 reviews，並各自建立連續 executable Round？\n\n" + pages.join("\n") + "\n\n每個 Round 都必須完成自己的 validation receipt 才能前進。")) { return; }
         var approvedBy = prompt("核准者（必填）：", "site owner");
         if (approvedBy === null) { return; }
-        var reason = prompt("核准理由（必填）：", "核准此唯一 P0 頁進入單頁實作 Round。");
+        var reason = prompt("核准理由（必填）：", "核准以上單頁候選依序進入各自的實作 Round。");
         if (reason === null) { return; }
         approvedBy = String(approvedBy).replace(/^\s+|\s+$/g, "");
         reason = String(reason).replace(/^\s+|\s+$/g, "");
@@ -2762,8 +2953,8 @@
           setStatusSummary("核准者與理由不可空白，也不可包含雙引號或 %。", "error");
           return;
         }
-        var args = '-Page "' + page.replace(/"/g, '""') + '" -ApprovedBy "' + approvedBy + '" -Reason "' + reason + '"';
-        invokeSeoGeoWorkflowWriter(root, "strategy_approved", args, "單頁 strategy approval / Round 1");
+        var args = ' -Page "' + pages.join("|").replace(/"/g, '""') + '" -ApprovedBy "' + approvedBy + '" -Reason "' + reason + '"';
+        invokeSeoGeoWorkflowWriter(root, "strategy_approved", args, "單頁 strategy approval / " + pages.length + " sequential Rounds");
       } catch (e) {
         setStatusSummary("單頁 review 核准失敗：" + e.message, "error");
       } finally {
@@ -2876,6 +3067,7 @@
     }
 
     function init() {
+      document.getElementById("btnFetchGscLatest").onclick = fetchLatestGscReports;
       document.getElementById("btnRunAuto").onclick = uploadAndRunAuto;
       document.getElementById("btnSeoGeoReportSmart").onclick = runOrOpenSeoGeoActionPlan;
       document.getElementById("btnSeoGeoNextSmart").onclick = executeCurrentSeoGeoNextStep;
@@ -2888,7 +3080,9 @@
       document.getElementById("btnSeoGeoDeployDryRun").onclick = function () { runSeoGeoDeployment(true); };
       document.getElementById("btnSeoGeoDeploy").onclick = function () { runSeoGeoDeployment(false); };
       document.getElementById("btnSeoGeoLiveVerify").onclick = runSeoGeoLiveVerification;
-      document.getElementById("btnImportAiVisibility").onclick = importAiVisibilityObservation;
+      document.getElementById("btnImportAiVisibility").onclick = runAiVisibilityAutomation;
+      document.getElementById("btnImportAiVisibilityInbox").onclick = importLatestAiVisibilityObservation;
+      document.getElementById("btnImportAiVisibilityManual").onclick = importAiVisibilityObservation;
       document.getElementById("btnLifecycleImplemented").onclick = function () { recordLifecycleStage("implemented"); };
       document.getElementById("btnLifecycleLocalValidated").onclick = function () { recordLifecycleStage("local_validated"); };
       document.getElementById("btnLifecycleDeployed").onclick = function () { recordLifecycleStage("deployed"); };
@@ -2906,15 +3100,15 @@
   <div class="card">
     <div class="heading">
       <h1>Weekly SOP 一鍵執行</h1>
-      <span class="tag">單一上傳 / 自動判斷 7天與 28天</span>
+      <span class="tag">GSC API / 一鍵更新 7d 與 28d</span>
     </div>
 
-    <p class="intro">請上傳 Google Search Console「成效」ZIP。系統會自動依篩選器判斷 7天觀察或 28天正式判定，並一次產生查詢與網頁報表。</p>
+    <p class="intro">直接從 Google Search Console 抓取最新 final 資料，一次更新 7 天觀察、28 天正式判定與 SEO/GEO 行動報告。</p>
 
     <ol class="steps">
-      <li>從 GSC 成效報表匯出 ZIP（內含 <code>查詢.csv</code>、<code>網頁.csv</code>、<code>篩選器.csv</code>）。</li>
-      <li>點擊「上傳成效 ZIP 並自動產生報表」。</li>
-      <li>完成後先看摘要，若要排錯可展開明細查看 run summary 與完整 log。</li>
+      <li>點擊「抓取最新 7d／28d 報表」。</li>
+      <li>系統會確認 API final Date，再匯入 Query、Page、Query × Page 與 diagnostics。</li>
+      <li>完成後先看摘要；API 暫時不可用時，才改用手動 ZIP 備援。</li>
     </ol>
 
     <div class="flow-panel" id="workflowStatusPanel">
@@ -2922,16 +3116,19 @@
       <div class="flow-next" id="workflowStatusNext">正在讀取 latest 7d / 28d、target registry、queue state 與 validation receipt。</div>
     </div>
 
-    <div class="actions">
-      <button id="btnRunAuto" class="btn-run">上傳成效 ZIP 並自動產生報表（7d/28d）</button>
+    <div class="report-actions">
+      <button id="btnFetchGscLatest" class="btn-fetch-gsc">抓取最新 7d／28d 報表</button>
+      <button id="btnRunAuto" class="btn-upload-fallback">手動匯入 GSC ZIP（備援）</button>
     </div>
+    <p class="report-actions-note">日常使用左側按鈕；系統只接受 Search Console API 已 finalized 的完整日期，不會用固定 lag 覆蓋 final Date。</p>
 
     <div class="section-title">SEO/GEO 固定優化</div>
     <div class="seo-geo-actions">
       <button id="btnSeoGeoReportSmart" class="btn-seo-geo">更新／開啟 SEO/GEO 行動報告</button>
       <button id="btnSeoGeoNextSmart" class="btn-seo-geo">執行目前下一步</button>
-      <button id="btnImportAiVisibility" class="btn-seo-geo">匯入 AI 能見度測試結果（AI Visibility）</button>
+      <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">AI 自動測試＋匯入 Visibility</button>
     </div>
+    <p class="seo-geo-note">AI Visibility：上方按鈕會使用同一 OpenAI model 獨立跑固定 6 題，保留原始回答與引用，寫入 <strong>Weekly SOP\inbox\ai-visibility</strong> 後自動匯入。需先設定 <strong>OPENAI_API_KEY</strong>；既有 JSON 與手動選檔位於進階操作。</p>
     <a id="toggleAdvancedSeoGeoActions" class="advanced-actions-link" href="#">顯示進階／故障排除操作</a>
     <div id="advancedSeoGeoActions" class="advanced-seo-geo-actions">
       <button id="btnRunSeoGeoActionPlan" class="btn-seo-geo">強制產生 SEO/GEO 優化建議</button>
@@ -2943,6 +3140,8 @@
       <button id="btnSeoGeoDeployDryRun" class="btn-seo-geo">部署預演（FTP dry-run，不實際上傳）</button>
       <button id="btnSeoGeoDeploy" class="btn-seo-geo">正式上傳網站（FTP 部署）</button>
       <button id="btnSeoGeoLiveVerify" class="btn-seo-geo">驗證網站已正確上線（live verify）</button>
+      <button id="btnImportAiVisibilityInbox" class="btn-seo-geo">只匯入收件匣最新 JSON</button>
+      <button id="btnImportAiVisibilityManual" class="btn-seo-geo">手動選擇 AI Visibility JSON</button>
       <button id="btnLifecycleImplemented" class="btn-seo-geo">手動 evidence：implemented</button>
       <button id="btnLifecycleLocalValidated" class="btn-seo-geo">手動 evidence：local_validated</button>
       <button id="btnLifecycleDeployed" class="btn-seo-geo">手動 evidence：deployed</button>

@@ -13,6 +13,10 @@ $provenanceChecker = Join-Path $repoRoot 'scripts\check-seo-geo-queue-provenance
 $projectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-effective-workflow.ps1'
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("curtain-seo-geo-cycle-{0}" -f ([guid]::NewGuid().ToString('N')))
 $runtimeRoot = Join-Path $testRoot 'runtime'
+# Keep fixture data fresh while preserving the two-day GSC final-data lag used
+# by the runtime configuration.  The fixture must exercise the freshness gate,
+# not become stale merely because calendar time has advanced.
+$fixtureFinalDate = (Get-Date).Date.AddDays(-2)
 
 function Ensure-Dir {
   param([Parameter(Mandatory = $true)][string]$Path)
@@ -138,8 +142,18 @@ function Write-WindowManifest {
   $manifestPath = Join-Path $runtimeRoot "latest\$Window\weekly-sop-last-run.json"
   $historyRelative = "history/curtain-online/$Window"
   $historyFull = Join-Path $runtimeRoot ($historyRelative.Replace('/', '\'))
-  $startDate = if ($Window -eq '7d') { '2026-08-03' } else { '2026-07-13' }
-  $endDate = '2026-08-09'
+  $windowDays = if ($Window -eq '7d') { 7 } else { 28 }
+  $startDate = $fixtureFinalDate.AddDays(1 - $windowDays).ToString('yyyy-MM-dd')
+  $endDate = $fixtureFinalDate.ToString('yyyy-MM-dd')
+  $comparisonPeriod = $null
+  if ($Window -eq '28d') {
+    $comparisonPeriod = [ordered]@{
+      start_date = $fixtureFinalDate.AddDays(-55).ToString('yyyy-MM-dd')
+      end_date = $fixtureFinalDate.AddDays(-28).ToString('yyyy-MM-dd')
+      comparison_type = 'non_overlapping'
+      overlap_days = 0
+    }
+  }
   $dates=@();$cursor=[datetime]::ParseExact($startDate,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);$end=[datetime]::ParseExact($endDate,'yyyy-MM-dd',[Globalization.CultureInfo]::InvariantCulture);while($cursor -le $end){$dates += $cursor.ToString('yyyy-MM-dd');$cursor=$cursor.AddDays(1)}
   $diagnosticDefinitions=[ordered]@{
     date=[PSCustomObject]@{slug='date';header='Date,Clicks,Impressions,CTR,Position';rows=@($dates|ForEach-Object{"$_,1,20,5%,9"})}
@@ -171,7 +185,7 @@ function Write-WindowManifest {
     query_page_available = $true
     diagnostics_complete = $true
     diagnostic_dimensions = $diagnosticBindings
-    snapshot_family_id = 'fixture|https://online.hong-sen.com/|2026-08-09|Asia/Taipei'
+    snapshot_family_id = "fixture|https://online.hong-sen.com/|$endDate|Asia/Taipei"
     baseline = [ordered]@{
       query = "$historyRelative/current_query_baseline.normalized.csv"
       page = "$historyRelative/current_page_baseline.normalized.csv"
@@ -179,7 +193,7 @@ function Write-WindowManifest {
       bootstrapped = $Bootstrapped
     }
     comparison_sources = [ordered]@{ query_before = "$historyRelative/previous_query_baseline.normalized.csv" }
-    comparison_period = if($Window -eq '28d'){[ordered]@{start_date='2026-06-15';end_date='2026-07-12';comparison_type='non_overlapping';overlap_days=0}}else{$null}
+    comparison_period = $comparisonPeriod
   }
   Write-Json -Path $manifestPath -Value $manifest
 }

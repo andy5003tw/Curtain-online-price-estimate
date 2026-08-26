@@ -1091,6 +1091,7 @@
       // AI Visibility is deliberately loaded from its own direct-observation
       // receipt.  GSC ranking/CTR/impressions must never become a proxy for it.
       var aiVisibility = readJsonIfExists(root + "\\latest\\ai-visibility-summary.json");
+      var aiLunaComparison = readJsonIfExists(root + "\\latest\\ai-visibility-luna-comparison.json");
       var aiMetrics = aiVisibility && aiVisibility.metrics ? aiVisibility.metrics : null;
       var aiDirect = aiVisibility && aiVisibility.status === "complete" && aiVisibility.measurement_source === "direct_ai_engine_observation" && aiVisibility.gsc_inference_prohibited === true;
       var aiText = aiDirect ? [
@@ -1103,6 +1104,7 @@
         "accuracy（完全正確）=" + (aiMetrics.accuracy_rate === null ? "N/A（尚無已審核答案）" : aiMetrics.accuracy_rate + "%") + " / reviewed=" + aiMetrics.accuracy_evaluated_count + " / partial=" + getNested(aiMetrics, ["accuracy_partial_count"], 0) + " / incorrect=" + getNested(aiMetrics, ["accuracy_incorrect_count"], 0) + " / unverified=" + aiMetrics.accuracy_unverified_count,
         "accuracy review=" + getNested(aiVisibility, ["accuracy_review", "path"], "尚無人工審核紀錄"),
         "monthly snapshots=" + getNested(aiVisibility, ["monthly_history", "snapshot_count"], 0) + " / receipt=" + getNested(aiVisibility, ["receipt", "path"], "n/a"),
+        aiLunaComparison && aiLunaComparison.status === "complete" ? "Luna 對照=" + getNested(aiLunaComparison, ["luna", "model"], "gpt-5.6-luna") + " / baseline=" + getNested(aiLunaComparison, ["baseline", "model"], "n/a") + " / mini latest 保持不變=" + getNested(aiLunaComparison, ["safety", "latest_summary_unchanged"], false) + " / report=latest/ai-visibility-luna-comparison.json" : "Luna 對照：尚未執行（不影響目前 mini summary）",
         "AI 指標僅來自固定問題集的 direct AI engine observation；不由 GSC 推論。"
       ].join("\n") : "AI Visibility：data unavailable（尚無固定問題集的 direct AI engine observation receipt）。請匯入含 engine、model、日期、answer、brand mention、citation URL 與 accuracy 的完整觀測 JSON；GSC 指標不會用來推論 AI rate。";
       setSixZone("zonePerformance", "6. 成效與 AI Visibility", [
@@ -1840,12 +1842,16 @@
         var canLiveVerify = hasPwsh && workflowConsistent && lifecycleStatus === "deployed";
         var aiWriter = fso.GetParentFolderName(root) + "\\scripts\\write-ai-visibility-snapshot.ps1";
         var aiRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-observation.ps1";
+        var aiLunaComparisonRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-luna-comparison.ps1";
         var aiAutoImporter = fso.GetParentFolderName(root) + "\\scripts\\import-latest-ai-visibility.ps1";
         var aiQuestionSet = root + "\\config\\ai-visibility-question-set.json";
         var canImportAiVisibility = hasPwsh && fso.FileExists(aiWriter) && fso.FileExists(aiAutoImporter) && fso.FileExists(aiQuestionSet);
         var canRunAiVisibility = canImportAiVisibility && fso.FileExists(aiRunner);
+        var canRunAiVisibilityLunaComparison = canImportAiVisibility && fso.FileExists(aiRunner) && fso.FileExists(aiLunaComparisonRunner);
         setButtonState("btnImportAiVisibility", !canRunAiVisibility, "AI 自動測試＋匯入 Visibility",
           canRunAiVisibility ? "使用同一 OpenAI model 獨立跑固定 6 題，寫入收件匣後自動匯入；需要 OPENAI_API_KEY" : "需要 PowerShell 7、AI Visibility runner／importer／writer 與固定問題集");
+        setButtonState("btnRunAiVisibilityLunaComparison", !canRunAiVisibilityLunaComparison, "Luna 對照測試（不覆蓋 mini）",
+          canRunAiVisibilityLunaComparison ? "以 gpt-5.6-luna 重跑同一固定 6 題；只寫入新的 observation 與對照報告，不會匯入或覆蓋目前 gpt-5.4-mini summary" : "需要 PowerShell 7、Luna comparison runner、AI Visibility runner 與固定問題集");
         setButtonState("btnImportAiVisibilityInbox", !canImportAiVisibility, "只匯入收件匣最新 JSON",
           canImportAiVisibility ? "不呼叫 AI API；自動讀取 Weekly SOP\\inbox\\ai-visibility 中最新的完整 JSON" : "需要 PowerShell 7、AI Visibility importer／writer 與固定問題集");
         setButtonState("btnImportAiVisibilityManual", !canImportAiVisibility, "手動選擇 AI Visibility JSON",
@@ -1955,6 +1961,7 @@
         setButtonState("btnSeoGeoDeploy", true, "正式上傳網站（FTP 部署）", "流程狀態讀取失敗");
         setButtonState("btnSeoGeoLiveVerify", true, "驗證網站已正確上線（live verify）", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibility", true, "AI 自動測試＋匯入 Visibility", "流程狀態讀取失敗");
+        setButtonState("btnRunAiVisibilityLunaComparison", true, "Luna 對照測試（不覆蓋 mini）", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityInbox", true, "只匯入收件匣最新 JSON", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityManual", true, "手動選擇 AI Visibility JSON", "流程狀態讀取失敗");
         renderWorkflowPanel("error", "流程狀態：讀取失敗", e.message);
@@ -2813,6 +2820,32 @@
       }
     }
 
+    function runAiVisibilityLunaComparison() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var repoRoot = fso.GetParentFolderName(root);
+        var runner = repoRoot + "\\scripts\\run-ai-visibility-luna-comparison.ps1";
+        var questionSet = root + "\\config\\ai-visibility-question-set.json";
+        var inboxPath = root + "\\inbox\\ai-visibility";
+        if (!fso.FileExists(runner) || !fso.FileExists(questionSet)) { throw new Error("Luna 對照 runner 或固定問題集不存在。"); }
+        var logPath = root + "\\latest\\ai-visibility-luna-comparison-last-run.log";
+        var cmd = 'cmd /d /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + runner.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -InboxPath "' + inboxPath.replace(/"/g, '""') + '" -QuestionSetPath "' + questionSet.replace(/"/g, '""') + '" -Model "gpt-5.6-luna" > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("Luna 正在以同一固定 6 題執行對照測試；目前 gpt-5.4-mini summary 不會被覆蓋...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nComparison report:\n" + root + "\\latest\\ai-visibility-luna-comparison.json\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? "Luna 對照測試完成：已新增獨立 gpt-5.6-luna observation 與 comparison report；原本 gpt-5.4-mini summary、receipt 與人工審核均保持不變。請先人工審閱 Luna 的 6 題回答，再決定是否變更預設 model。" : "Luna 對照測試未完成。若訊息顯示 OPENAI_API_KEY is not set，請先設定環境變數並重新開啟 UI。\n\n" + logText, code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("Luna 對照測試失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        renderSixZoneDashboard();
+        updateWorkflowControls();
+      }
+    }
+
     function importLatestAiVisibilityObservation() {
       try {
         var root = getRootFolder();
@@ -3081,6 +3114,7 @@
       document.getElementById("btnSeoGeoDeploy").onclick = function () { runSeoGeoDeployment(false); };
       document.getElementById("btnSeoGeoLiveVerify").onclick = runSeoGeoLiveVerification;
       document.getElementById("btnImportAiVisibility").onclick = runAiVisibilityAutomation;
+      document.getElementById("btnRunAiVisibilityLunaComparison").onclick = runAiVisibilityLunaComparison;
       document.getElementById("btnImportAiVisibilityInbox").onclick = importLatestAiVisibilityObservation;
       document.getElementById("btnImportAiVisibilityManual").onclick = importAiVisibilityObservation;
       document.getElementById("btnLifecycleImplemented").onclick = function () { recordLifecycleStage("implemented"); };
@@ -3127,8 +3161,9 @@
       <button id="btnSeoGeoReportSmart" class="btn-seo-geo">更新／開啟 SEO/GEO 行動報告</button>
       <button id="btnSeoGeoNextSmart" class="btn-seo-geo">執行目前下一步</button>
       <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">AI 自動測試＋匯入 Visibility</button>
+      <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-visibility">Luna 對照測試（不覆蓋 mini）</button>
     </div>
-    <p class="seo-geo-note">AI Visibility：上方按鈕會使用同一 OpenAI model 獨立跑固定 6 題，保留原始回答與引用，寫入 <strong>Weekly SOP\inbox\ai-visibility</strong> 後自動匯入。需先設定 <strong>OPENAI_API_KEY</strong>；既有 JSON 與手動選檔位於進階操作。</p>
+    <p class="seo-geo-note">AI Visibility：第一個按鈕會使用目前預設 OpenAI model 獨立跑固定 6 題並自動匯入；Luna 對照會以 <strong>gpt-5.6-luna</strong> 重跑同題組，僅寫入獨立 observation 與 comparison report，絕不覆蓋目前 mini summary。需先設定 <strong>OPENAI_API_KEY</strong>；既有 JSON 與手動選檔位於進階操作。</p>
     <a id="toggleAdvancedSeoGeoActions" class="advanced-actions-link" href="#">顯示進階／故障排除操作</a>
     <div id="advancedSeoGeoActions" class="advanced-seo-geo-actions">
       <button id="btnRunSeoGeoActionPlan" class="btn-seo-geo">強制產生 SEO/GEO 優化建議</button>

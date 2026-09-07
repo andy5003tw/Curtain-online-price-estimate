@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "seo:preflight": "node scripts/seo-preflight.mjs",
     "seo:check": "node scripts/seo-check.mjs",
     "deploy:ftp": "pwsh -NoLogo -ExecutionPolicy Bypass -File scripts/deploy-ftp.ps1 -Mode quick",
@@ -16,15 +16,17 @@
   "dependencies": {
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.546.0",
-    "next": "^15.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next": "^16.3.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "sharp": "^0.34.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.4",
+    "sharp": "^0.35.4",
     "typescript": "~5.8.2"
   }
 }

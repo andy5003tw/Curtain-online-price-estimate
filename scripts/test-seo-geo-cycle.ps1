@@ -67,6 +67,19 @@ function Invoke-PwshFile {
   }
 }
 
+function Convert-CommandJson {
+  param(
+    [Parameter(Mandatory = $true)][string[]]$Output,
+    [Parameter(Mandatory = $true)][string]$Label
+  )
+  $json = [string]::Join([Environment]::NewLine, $Output).Trim()
+  try {
+    return ConvertFrom-Json -InputObject $json -ErrorAction Stop
+  } catch {
+    throw "$Label did not emit valid JSON: $($_.Exception.Message)`nRaw output: $json"
+  }
+}
+
 function Invoke-Generator {
   $result = Invoke-PwshFile -File $generator -ScriptArgs @(
     '-Mode', 'auto',
@@ -362,7 +375,7 @@ try {
 
   $approvedProjectionResult = Invoke-PwshFile -File $projectionWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot)
   Assert-True ($approvedProjectionResult.ExitCode -eq 0) ('effective workflow projection failed after single-page approval: ' + ($approvedProjectionResult.Output -join ' '))
-  $approvedProjection = ($approvedProjectionResult.Output -join "`n") | ConvertFrom-Json
+  $approvedProjection = Convert-CommandJson -Output $approvedProjectionResult.Output -Label 'effective workflow projection after single-page approval'
   Assert-True ([bool]$approvedProjection.consistency.valid -and [string]$approvedProjection.strategy_snapshot.status -eq 'observation_only' -and [bool]$approvedProjection.approved_queue.approved_override -and [string]$approvedProjection.effective.status -eq 'active' -and [string]$approvedProjection.effective.source -eq 'approved_queue') 'effective workflow projection did not distinguish immutable observation snapshot from approved active Round.'
 
   $planSnapshotPath = Join-Path $runtimeRoot 'latest\seo-geo-action-plan.json'
@@ -372,7 +385,7 @@ try {
   Write-Json -Path $planSnapshotPath -Value $badPlanSnapshot
   $mismatchProjectionResult = Invoke-PwshFile -File $projectionWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot)
   Assert-True ($mismatchProjectionResult.ExitCode -eq 0) 'effective workflow projection did not return a safe result for plan/queue mismatch.'
-  $mismatchProjection = ($mismatchProjectionResult.Output -join "`n") | ConvertFrom-Json
+  $mismatchProjection = Convert-CommandJson -Output $mismatchProjectionResult.Output -Label 'effective workflow projection after identity mismatch'
   Assert-True (-not [bool]$mismatchProjection.consistency.valid -and @($mismatchProjection.consistency.reasons) -contains 'plan_queue_identity_mismatch' -and [string]$mismatchProjection.effective.status -eq 'inconsistent') 'effective workflow projection did not block plan/queue identity mismatch.'
   [System.IO.File]::WriteAllText($planSnapshotPath, $planSnapshotBeforeMismatch, $utf8NoBom)
 
@@ -601,14 +614,14 @@ try {
   $provenanceArgs = @('-RuntimeRoot', $runtimeRoot, '-RepoRoot', $runtimeRoot)
   $provenanceCurrent = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
   Assert-True ($provenanceCurrent.ExitCode -eq 0) 'queue provenance checker failed on a current queue.'
-  $provenanceCurrentJson = ($provenanceCurrent.Output -join "`n") | ConvertFrom-Json
+  $provenanceCurrentJson = Convert-CommandJson -Output $provenanceCurrent.Output -Label 'current queue provenance'
   Assert-True (-not [bool]$provenanceCurrentJson.stale) ('freshly generated queue was incorrectly marked stale: ' + (@($provenanceCurrentJson.reasons) -join ', '))
 
   $registryFixturePath = Join-Path $runtimeRoot 'config\target-registry.json'
   $registryFixtureText = Get-Content -LiteralPath $registryFixturePath -Raw -Encoding UTF8
   Write-Utf8NoBom -Path $registryFixturePath -Text ($registryFixtureText + "`n")
   $registryDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
-  $registryDriftJson = ($registryDrift.Output -join "`n") | ConvertFrom-Json
+  $registryDriftJson = Convert-CommandJson -Output $registryDrift.Output -Label 'registry-drift provenance'
   Assert-True ([bool]$registryDriftJson.stale -and @($registryDriftJson.reasons) -contains 'registry_sha_mismatch') 'registry SHA drift was not detected.'
   Write-Utf8NoBom -Path $registryFixturePath -Text $registryFixtureText
 
@@ -616,7 +629,7 @@ try {
   $manifestFixtureText = Get-Content -LiteralPath $manifestFixturePath -Raw -Encoding UTF8
   Write-Utf8NoBom -Path $manifestFixturePath -Text ($manifestFixtureText + "`n")
   $manifestDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
-  $manifestDriftJson = ($manifestDrift.Output -join "`n") | ConvertFrom-Json
+  $manifestDriftJson = Convert-CommandJson -Output $manifestDrift.Output -Label 'manifest-drift provenance'
   Assert-True ([bool]$manifestDriftJson.stale -and @($manifestDriftJson.reasons) -contains 'snapshot_7d_manifest_sha_mismatch') '7d manifest SHA drift was not detected.'
   Write-Utf8NoBom -Path $manifestFixturePath -Text $manifestFixtureText
 
@@ -624,7 +637,7 @@ try {
   $baselineFixtureText = Get-Content -LiteralPath $baselineFixturePath -Raw -Encoding UTF8
   Write-Utf8NoBom -Path $baselineFixturePath -Text ($baselineFixtureText + "`n")
   $baselineDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
-  $baselineDriftJson = ($baselineDrift.Output -join "`n") | ConvertFrom-Json
+  $baselineDriftJson = Convert-CommandJson -Output $baselineDrift.Output -Label 'baseline-drift provenance'
   Assert-True ([bool]$baselineDriftJson.stale -and @($baselineDriftJson.reasons) -contains 'snapshot_28d_query_page_sha_mismatch') '28d query-page baseline SHA drift was not detected.'
   Write-Utf8NoBom -Path $baselineFixturePath -Text $baselineFixtureText
 
@@ -632,14 +645,14 @@ try {
   $historyFixtureText = Get-Content -LiteralPath $historyFixturePath -Raw -Encoding UTF8
   Write-Utf8NoBom -Path $historyFixturePath -Text ($historyFixtureText + "`n")
   $historyDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
-  $historyDriftJson = ($historyDrift.Output -join "`n") | ConvertFrom-Json
+  $historyDriftJson = Convert-CommandJson -Output $historyDrift.Output -Label 'history-drift provenance'
   Assert-True ([bool]$historyDriftJson.stale -and @($historyDriftJson.reasons) -contains 'action_history_sha_mismatch') 'action-history SHA drift was not detected.'
   Write-Utf8NoBom -Path $historyFixturePath -Text $historyFixtureText
 
   $sourceFixturePath = Join-Path $runtimeRoot 'src\app\cases\page.tsx'
   [System.IO.File]::AppendAllText($sourceFixturePath, "`n// provenance drift fixture`n", $utf8NoBom)
   $sourceDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
-  $sourceDriftJson = ($sourceDrift.Output -join "`n") | ConvertFrom-Json
+  $sourceDriftJson = Convert-CommandJson -Output $sourceDrift.Output -Label 'source-drift provenance'
   Assert-True ([bool]$sourceDriftJson.stale -and @($sourceDriftJson.reasons) -contains 'source_fingerprint_mismatch') 'source SHA drift was not detected.'
 
   foreach ($jsonPath in @(

@@ -27,6 +27,17 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# `pwsh -File` cannot reliably bind repeated array parameters from a command
+# string. The SOP launcher therefore passes the queue action IDs as one
+# pipe-delimited value; preserve direct array callers while normalizing both.
+$normalizedActionIds = @(
+  $ActionId |
+    ForEach-Object { ([string]$_ -split '\|') } |
+    ForEach-Object { ([string]$_).Trim() } |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+    Sort-Object -Unique
+)
+
 if (-not $HostName) { $HostName = if ($env:FTP_HOST) { $env:FTP_HOST } else { 'ftp.hong-sen.com' } }
 if (-not $RemoteRoot) { $RemoteRoot = if ($env:FTP_REMOTE_DIR) { $env:FTP_REMOTE_DIR } else { 'online.hong-sen.com' } }
 if (-not $UserName) { $UserName = $env:FTP_USER }
@@ -346,7 +357,7 @@ $deploymentManifest = [ordered]@{
   deployment_context = [ordered]@{
     queue_id = $QueueId
     cycle_key = $CycleKey
-    action_ids = @($ActionId | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+    action_ids = $normalizedActionIds
   }
   summary = [ordered]@{
     selected = $items.Count

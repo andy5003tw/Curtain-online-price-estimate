@@ -91,6 +91,19 @@ function Test-SetEqual {
   return $leftSet.Count -eq $rightSet.Count -and @($leftSet | Where-Object { $_ -notin $rightSet }).Count -eq 0
 }
 
+function Test-PendingImplementationReceipt {
+  param([object]$Receipt, [object]$State)
+  if (-not $Receipt -or [string]$State.status -ne 'active') { return $false }
+  if ([string]$Receipt.source_fingerprint_before -ne [string]$State.source_fingerprint) { return $false }
+  $round = [int]$Receipt.round
+  $stateRound = @($State.rounds | Where-Object { [int]$_.round -eq $round } | Select-Object -First 1)[0]
+  if (-not $stateRound -or -not (Test-SetEqual -Left @($Receipt.action_ids) -Right @($stateRound.action_ids))) { return $false }
+  $statePaths = @($State.source_files | ForEach-Object { [string]$_.path })
+  $receiptPaths = @($Receipt.source_files_after | ForEach-Object { [string]$_.path })
+  if (-not (Test-SetEqual -Left $receiptPaths -Right $statePaths)) { return $false }
+  return $true
+}
+
 function Test-ImplementedRuntimeAcknowledgement {
   param([object]$Receipt, [object]$State, [string]$WeeklyRoot)
   if (-not $Receipt) { return $false }
@@ -115,6 +128,8 @@ function Test-ImplementedRuntimeAcknowledgement {
 }
 
 $implementedRuntimeAcknowledged = Test-ImplementedRuntimeAcknowledgement -Receipt $implementationReceipt -State $state -WeeklyRoot $runtimeFull
+$pendingRuntimeAcknowledged = Test-PendingImplementationReceipt -Receipt $implementationReceipt -State $state
+$runtimeAcknowledged = $implementedRuntimeAcknowledged -or $pendingRuntimeAcknowledged
 
 function Test-RuntimeBinding {
   param(
@@ -178,7 +193,7 @@ foreach ($window in @('7d', '28d')) {
   }
 }
 
-if (-not $implementedRuntimeAcknowledged) {
+if (-not $runtimeAcknowledged) {
   [void](Test-RuntimeBinding -Label 'action_history' -Binding $state.action_history)
 }
 
@@ -190,7 +205,7 @@ if (-not $registry -or [string]::IsNullOrWhiteSpace([string]$registry.path) -or 
   $currentRegistrySha = if ($registryPath) { Get-Sha256File -Path $registryPath } else { $null }
   if (-not $currentRegistrySha) {
     $reasons += 'registry_file_missing'
-  } elseif (-not $implementedRuntimeAcknowledged -and $currentRegistrySha -ne ([string]$registry.sha256).ToLowerInvariant()) {
+  } elseif (-not $runtimeAcknowledged -and $currentRegistrySha -ne ([string]$registry.sha256).ToLowerInvariant()) {
     $reasons += 'registry_sha_mismatch'
   }
 }
@@ -201,8 +216,8 @@ if ($sourceFiles.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string]$state.sou
 } else {
   $repoRoot = if ([string]::IsNullOrWhiteSpace($RepoRoot)) { Split-Path -Parent $runtimeFull } else { [System.IO.Path]::GetFullPath($RepoRoot) }
   $parts = @()
-  $expectedSourceFiles = if ($implementedRuntimeAcknowledged) { @($implementationReceipt.source_files_after) } else { $sourceFiles }
-  $expectedFingerprint = if ($implementedRuntimeAcknowledged) { [string]$implementationReceipt.source_fingerprint_after } else { [string]$state.source_fingerprint }
+  $expectedSourceFiles = if ($runtimeAcknowledged) { @($implementationReceipt.source_files_after) } else { $sourceFiles }
+  $expectedFingerprint = if ($runtimeAcknowledged) { [string]$implementationReceipt.source_fingerprint_after } else { [string]$state.source_fingerprint }
   foreach ($sourceFile in @($expectedSourceFiles | Sort-Object { [string]$_.path })) {
     $relativePath = [string]$sourceFile.path
     if ([string]::IsNullOrWhiteSpace($relativePath)) {

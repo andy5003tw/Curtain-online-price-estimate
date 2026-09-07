@@ -40,20 +40,20 @@ $hta = Get-Content -LiteralPath $htaPath -Raw -Encoding UTF8
 foreach ($id in @('zoneDataTrust', 'zoneOwnerPortfolio', 'zoneDecision', 'zoneStrategy', 'zoneImplementation', 'zonePerformance')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing six-zone UI panel: $id"
 }
-foreach ($id in @('btnSeoGeoReportSmart', 'btnSeoGeoNextSmart', 'btnImportAiVisibility', 'btnRunAiVisibilityLunaComparison')) {
-  Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing primary SEO/GEO smart button: $id"
+foreach ($id in @('btnSeoGeoNextSmart', 'btnOpenSeoGeoActionPlan', 'btnImportAiVisibility', 'btnRunAiVisibilityLunaComparison')) {
+  Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing SEO/GEO action button: $id"
 }
-foreach ($id in @('btnFetchGscLatest', 'btnRunAuto')) {
+foreach ($id in @('btnFetchGscLatest')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing GSC report action button: $id"
 }
 $reportActions = [regex]::Match($hta, '(?s)<div class="report-actions">\s*<button id="btnFetchGscLatest".*?</div>').Value
-Assert-True (([regex]::Matches($reportActions, '<button\b')).Count -eq 2) 'GSC report panel must contain API fetch plus one manual ZIP fallback button.'
-foreach ($marker in @('function fetchLatestGscReports', 'fetch-gsc-latest.ps1', '-Window "both"', 'gsc-latest-fetch.json', 'No new finalized GSC period is available', 'credentials\\gsc-oauth-client.json', '抓取最新 7d／28d 報表', '手動匯入 GSC ZIP（備援）')) {
+Assert-True (([regex]::Matches($reportActions, '<button\b')).Count -eq 1) 'GSC report panel must expose exactly one API update button.'
+foreach ($marker in @('function fetchLatestGscReports', 'fetch-gsc-latest.ps1', '-Window "both"', 'gsc-latest-fetch.json', 'No new finalized GSC period is available', 'credentials\\gsc-oauth-client.json', '更新最新 GSC 資料')) {
   Assert-True ($hta.Contains($marker)) "Missing GSC API fetch UI marker: $marker"
 }
-$primaryActions = [regex]::Match($hta, '(?s)<div class="seo-geo-actions">\s*<button id="btnSeoGeoReportSmart".*?</div>').Value
-Assert-True (([regex]::Matches($primaryActions, '<button\b')).Count -eq 4) 'Primary SEO/GEO panel must contain exactly four buttons.'
-foreach ($marker in @('function executeCurrentSeoGeoNextStep', 'function invokeLifecycleNext', 'function getLifecycleNextInspection', 'invoke-seo-geo-lifecycle-next.ps1', '更新／開啟 SEO/GEO 行動報告', '執行目前下一步', '正式上傳網站（需確認）')) {
+$primaryActions = [regex]::Match($hta, '(?s)<div class="seo-geo-actions">\s*<button id="btnSeoGeoNextSmart".*?</div>').Value
+Assert-True (([regex]::Matches($primaryActions, '<button\b')).Count -eq 2) 'Primary SEO/GEO panel must contain exactly the next-step and report buttons.'
+foreach ($marker in @('function executeCurrentSeoGeoNextStep', 'function invokeLifecycleNext', 'function getLifecycleNextInspection', 'invoke-seo-geo-lifecycle-next.ps1', '執行目前下一步', '查看目前 SEO/GEO 報表', '正式上傳網站（FTP 部署）')) {
   Assert-True ($hta.Contains($marker)) "Missing smart SEO/GEO UI marker: $marker"
 }
 foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionText', 'getEffectiveWorkflowProjection', 'strategy snapshot=', 'effective workflow=', 'single_page_alignment_review', 'observation_only', 'awaiting_implemented_receipt', 'btnLifecycleImplemented', 'btnLifecycleLocalValidated', 'btnSeoGeoDeployDryRun', 'btnSeoGeoDeploy', 'btnSeoGeoLiveVerify', 'btnImportAiVisibility', 'btnImportAiVisibilityInbox', 'btnImportAiVisibilityManual', 'btnRunAiVisibilityLunaComparison', 'runSeoGeoDeployment', 'runSeoGeoLiveVerification', 'runAiVisibilityAutomation', 'runAiVisibilityLunaComparison', 'run-ai-visibility-observation.ps1', 'run-ai-visibility-luna-comparison.ps1', 'importLatestAiVisibilityObservation', 'import-latest-ai-visibility.ps1', 'importAiVisibilityObservation', 'direct_ai_engine_observation', '品牌題：提及率=', '非品牌題：提及率=', '引用來源（按題計）', '自有網域：online.hong-sen.com=', 'accuracy（完全正確）=', 'accuracy review=', 'gsc_inference_prohibited', 'workflow consistency gate', 'queue_sha256', 'validation_receipt_sha256', 'write-seo-geo-workflow-transition.ps1', 'PowerShell transaction', 'function buildPostGscSubmissionReminder', '下一步操作提醒', '固定 6 題', 'observing_7d', 'decision_ready 7d manifest')) {

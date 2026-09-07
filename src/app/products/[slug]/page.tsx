@@ -47,7 +47,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P002: {
     features: ['無縫設計、視覺更純淨', '透光不透人的遮蔽效果', '輕薄飄逸，極具美感', '適合搭配遮光布簾使用'],
     useCases: ['客廳', '餐廳', '書房'],
-    fullDesc: '透光不透人紗簾價格先固定同一尺寸，比較無縫紗簾、雙層搭配、軌道、窗高與基本安裝費；可先線上估價，再安排到府看樣與丈量。無縫紗簾兼顧白天採光、隱私與空間通透感，適合客廳、書房與落地窗。',
+    fullDesc: '紗簾價格可先固定同一尺寸，試算透光不透人無縫紗簾、雙層搭配、軌道、窗高與基本安裝費；送出需求後可安排到府看樣與丈量。無縫紗簾兼顧白天採光、隱私與空間通透感，適合客廳、書房與落地窗。',
   },
   P003: {
     features: ['獨特 S 型曲線設計', '布料垂墜感極佳', '適合落地窗使用', '展現現代奢華風格'],
@@ -67,7 +67,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P006: {
     features: ['鋁合金材質堅固耐用', '精確調光', '防潮耐洗', '現代簡約外觀'],
     useCases: ['衛浴', '廚房', '辦公室'],
-    fullDesc: '百葉窗價格試算若以防潮與好清潔為優先，先鎖定鋁百葉的葉片寬度、窗型與基本安裝費，再用同一尺寸線上估價確認鋁百葉窗價格。鋁百葉可精準調光且防潮耐洗，適合浴室、廚房、商辦與需要高頻清潔的小窗；重視木質感時，再比較實木百葉專頁。',
+    fullDesc: '百葉窗價格試算若以防潮與好清潔為優先，可先用同一尺寸試算鋁百葉的葉片寬度、窗型與基本安裝費，再送出需求安排丈量確認鋁百葉窗價格。鋁百葉可精準調光且防潮耐洗，適合浴室、廚房、商辦與需要高頻清潔的小窗；重視木質感時，再比較實木百葉專頁。',
   },
   P007: {
     features: ['天然木材質感溫潤', '提升空間高級感', '自然紋理獨一無二', '多種木種與色系'],
@@ -661,7 +661,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：窗簾訂製、安裝費與報價重點' },
     ],
     P002: [
-      { href: '/calculator/?product=P002', label: '紗簾價格試算：先抓透光不透人紗簾與安裝費預算' },
+      { href: '/calculator/?product=P002', label: '紗簾價格試算：直接帶入無縫透光不透人紗簾與安裝費' },
       { href: '/calculator/?product=P002&area=taipei', label: '台北紗簾價格試算：透光不透人紗簾先抓預算' },
       { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：紗簾價格、安裝費與試算差異' },
       { href: '/curtain/living-room/', label: '客廳窗簾推薦：比較無縫紗簾、調光簾與落地窗搭配' },
@@ -691,7 +691,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：捲簾安裝費、遮光等級與報價差異' },
     ],
     P006: [
-      { href: '/calculator/?product=P006', label: '百葉窗價格試算：直接帶入鋁百葉品項' },
+      { href: '/calculator/?product=P006', label: '百葉窗價格試算：直接帶入鋁百葉防潮材質與安裝費' },
       { href: '/products/wooden-blinds/', label: '實木百葉窗價格試算：比較木質感、葉片寬度與安裝費' },
       { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：比較隔熱與百葉窗差異' },
       { href: '/products/bamboo-blinds/', label: '竹簾訂製：比較自然通風、和室窗簾與日式空間風格' },

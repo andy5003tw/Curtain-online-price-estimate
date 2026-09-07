@@ -1802,7 +1802,7 @@
             "重複檔案，報表未更新；若繼續只會沿用舊 7d/28d baseline" :
             "讀取 latest 7d/28d 與 target registry 產生 queue") :
             (!hasPwsh ? "找不到 pwsh；請先安裝 PowerShell 7" : "需先有 fresh 7d 報表與有效 target registry"));
-        setButtonState("btnOpenSeoGeoActionPlan", !hasPlanHtml, "開啟最新 SEO/GEO 行動報告",
+        setButtonState("btnOpenSeoGeoActionPlan", !hasPlanHtml, "查看目前 SEO/GEO 報表",
           hasPlanHtml ? "開啟 latest action plan HTML" : "尚未產生 action plan");
         var singlePageReviewCount = asArray(optionalItems).filter(function (item) { return item && (item.review_type === "single_page_p0_review" || item.review_type === "single_page_alignment_review"); }).length;
         setButtonState("btnCopyOptionalSeoGeoPrompt", !hasOptionalPrompt,
@@ -2712,12 +2712,12 @@
 
     function getQueueActionArgs(snapshot) {
       var ids = getQueueActionIds(snapshot);
-      var args = "";
+      var safeIds = [];
       for (var i = 0; i < ids.length; i++) {
-        var id = String(ids[i] || "").replace(/[\"%]/g, "");
-        if (id) { args += ' -ActionId "' + id + '"'; }
+        var id = String(ids[i] || "").replace(/[\"%|]/g, "");
+        if (id) { safeIds.push(id); }
       }
-      return args;
+      return safeIds.length ? ' -ActionId "' + safeIds.join("|") + '"' : "";
     }
 
     function runSeoGeoDeployment(dryRun) {
@@ -3071,6 +3071,16 @@
       return false;
     }
 
+    function toggleMonthlyAiAction() {
+      var panel = document.getElementById("monthlyAiAction");
+      var link = document.getElementById("toggleMonthlyAiAction");
+      if (!panel || !link) { return false; }
+      var show = panel.style.display !== "block";
+      panel.style.display = show ? "block" : "none";
+      link.innerText = show ? "收合每月 AI Visibility 檢查" : "顯示每月 AI Visibility 檢查（選用）";
+      return false;
+    }
+
     function recordLifecycleStage(stage) {
       try {
         var root = getRootFolder();
@@ -3100,32 +3110,17 @@
     }
 
     function init() {
-      document.getElementById("btnFetchGscLatest").onclick = fetchLatestGscReports;
-      document.getElementById("btnRunAuto").onclick = uploadAndRunAuto;
-      document.getElementById("btnSeoGeoReportSmart").onclick = runOrOpenSeoGeoActionPlan;
-      document.getElementById("btnSeoGeoNextSmart").onclick = executeCurrentSeoGeoNextStep;
-      document.getElementById("btnRunSeoGeoActionPlan").onclick = function () { runSeoGeoActionPlan(false); };
-      document.getElementById("btnOpenSeoGeoActionPlan").onclick = openLatestSeoGeoActionPlan;
-      document.getElementById("btnCopySeoGeoAiPrompt").onclick = copyLatestSeoGeoAiPrompt;
-      document.getElementById("btnAdvanceSeoGeoRound").onclick = advanceSeoGeoRound;
-      document.getElementById("btnCopyOptionalSeoGeoPrompt").onclick = copyOptionalSeoGeoPrompt;
-      document.getElementById("btnApproveSinglePageReview").onclick = approveSinglePageReview;
-      document.getElementById("btnSeoGeoDeployDryRun").onclick = function () { runSeoGeoDeployment(true); };
-      document.getElementById("btnSeoGeoDeploy").onclick = function () { runSeoGeoDeployment(false); };
-      document.getElementById("btnSeoGeoLiveVerify").onclick = runSeoGeoLiveVerification;
-      document.getElementById("btnImportAiVisibility").onclick = runAiVisibilityAutomation;
-      document.getElementById("btnRunAiVisibilityLunaComparison").onclick = runAiVisibilityLunaComparison;
-      document.getElementById("btnImportAiVisibilityInbox").onclick = importLatestAiVisibilityObservation;
-      document.getElementById("btnImportAiVisibilityManual").onclick = importAiVisibilityObservation;
-      document.getElementById("btnLifecycleImplemented").onclick = function () { recordLifecycleStage("implemented"); };
-      document.getElementById("btnLifecycleLocalValidated").onclick = function () { recordLifecycleStage("local_validated"); };
-      document.getElementById("btnLifecycleDeployed").onclick = function () { recordLifecycleStage("deployed"); };
-      document.getElementById("btnLifecycleLive").onclick = function () { recordLifecycleStage("live_verified"); };
-      document.getElementById("btnLifecycle7d").onclick = function () { recordLifecycleStage("observing_7d"); };
-      document.getElementById("btnLifecycle28d").onclick = function () { recordLifecycleStage("reviewed_28d"); };
-      document.getElementById("btnLifecycleCompleted").onclick = function () { recordLifecycleStage("completed"); };
-      document.getElementById("toggleAdvancedSeoGeoActions").onclick = toggleAdvancedSeoGeoActions;
-      document.getElementById("btnToggleDetails").onclick = toggleDetails;
+      function bindClick(id, handler) {
+        var element = document.getElementById(id);
+        if (element) { element.onclick = handler; }
+      }
+      bindClick("btnFetchGscLatest", fetchLatestGscReports);
+      bindClick("btnSeoGeoNextSmart", executeCurrentSeoGeoNextStep);
+      bindClick("btnOpenSeoGeoActionPlan", openLatestSeoGeoActionPlan);
+      bindClick("btnImportAiVisibility", runAiVisibilityAutomation);
+      bindClick("btnRunAiVisibilityLunaComparison", runAiVisibilityLunaComparison);
+      bindClick("toggleMonthlyAiAction", toggleMonthlyAiAction);
+      bindClick("btnToggleDetails", toggleDetails);
       refreshHealth();
     }
   </script>
@@ -3137,13 +3132,7 @@
       <span class="tag">GSC API / 一鍵更新 7d 與 28d</span>
     </div>
 
-    <p class="intro">直接從 Google Search Console 抓取最新 final 資料，一次更新 7 天觀察、28 天正式判定與 SEO/GEO 行動報告。</p>
-
-    <ol class="steps">
-      <li>點擊「抓取最新 7d／28d 報表」。</li>
-      <li>系統會確認 API final Date，再匯入 Query、Page、Query × Page 與 diagnostics。</li>
-      <li>完成後先看摘要；API 暫時不可用時，才改用手動 ZIP 備援。</li>
-    </ol>
+    <p class="intro">日常只要看流程提示，按下目前可用的按鈕。系統會自動以 Search Console 的 final 資料更新報表、建立行動報告，並在每一步做安全檢查。</p>
 
     <div class="flow-panel" id="workflowStatusPanel">
       <div class="flow-title" id="workflowStatusTitle">流程狀態：檢查中</div>
@@ -3151,41 +3140,22 @@
     </div>
 
     <div class="report-actions">
-      <button id="btnFetchGscLatest" class="btn-fetch-gsc">抓取最新 7d／28d 報表</button>
-      <button id="btnRunAuto" class="btn-upload-fallback">手動匯入 GSC ZIP（備援）</button>
+      <button id="btnFetchGscLatest" class="btn-fetch-gsc">更新最新 GSC 資料</button>
     </div>
-    <p class="report-actions-note">日常使用左側按鈕；系統只接受 Search Console API 已 finalized 的完整日期，不會用固定 lag 覆蓋 final Date。</p>
+    <p class="report-actions-note">系統只接受 Google Search Console 已 finalized 的完整日期；更新完成後會自動重建 SEO/GEO 行動報告。</p>
 
-    <div class="section-title">SEO/GEO 固定優化</div>
+    <div class="section-title">目前 SEO/GEO 步驟</div>
     <div class="seo-geo-actions">
-      <button id="btnSeoGeoReportSmart" class="btn-seo-geo">更新／開啟 SEO/GEO 行動報告</button>
       <button id="btnSeoGeoNextSmart" class="btn-seo-geo">執行目前下一步</button>
-      <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">AI 自動測試＋匯入 Visibility</button>
-      <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-visibility">Luna 對照測試（不覆蓋 mini）</button>
+      <button id="btnOpenSeoGeoActionPlan" class="btn-upload-fallback">查看目前 SEO/GEO 報表</button>
     </div>
-    <p class="seo-geo-note">AI Visibility：第一個按鈕會使用目前預設 OpenAI model 獨立跑固定 6 題並自動匯入；Luna 對照會以 <strong>gpt-5.6-luna</strong> 重跑同題組，僅寫入獨立 observation 與 comparison report，絕不覆蓋目前 mini summary。需先設定 <strong>OPENAI_API_KEY</strong>；既有 JSON 與手動選檔位於進階操作。</p>
-    <a id="toggleAdvancedSeoGeoActions" class="advanced-actions-link" href="#">顯示進階／故障排除操作</a>
-    <div id="advancedSeoGeoActions" class="advanced-seo-geo-actions">
-      <button id="btnRunSeoGeoActionPlan" class="btn-seo-geo">強制產生 SEO/GEO 優化建議</button>
-      <button id="btnOpenSeoGeoActionPlan" class="btn-seo-geo">只開啟最新 SEO/GEO 行動報告</button>
-      <button id="btnCopySeoGeoAiPrompt" class="btn-seo-geo">複製本輪 AI 工作指令</button>
-      <button id="btnAdvanceSeoGeoRound" class="btn-seo-geo">驗證通過後前進 Round</button>
-      <button id="btnCopyOptionalSeoGeoPrompt" class="btn-seo-geo">複製小幅優化參考指令</button>
-      <button id="btnApproveSinglePageReview" class="btn-seo-geo">核准單一頁面優化並建立工作項目</button>
-      <button id="btnSeoGeoDeployDryRun" class="btn-seo-geo">部署預演（FTP dry-run，不實際上傳）</button>
-      <button id="btnSeoGeoDeploy" class="btn-seo-geo">正式上傳網站（FTP 部署）</button>
-      <button id="btnSeoGeoLiveVerify" class="btn-seo-geo">驗證網站已正確上線（live verify）</button>
-      <button id="btnImportAiVisibilityInbox" class="btn-seo-geo">只匯入收件匣最新 JSON</button>
-      <button id="btnImportAiVisibilityManual" class="btn-seo-geo">手動選擇 AI Visibility JSON</button>
-      <button id="btnLifecycleImplemented" class="btn-seo-geo">手動 evidence：implemented</button>
-      <button id="btnLifecycleLocalValidated" class="btn-seo-geo">手動 evidence：local_validated</button>
-      <button id="btnLifecycleDeployed" class="btn-seo-geo">手動 evidence：deployed</button>
-      <button id="btnLifecycleLive" class="btn-seo-geo">手動 evidence：live_verified</button>
-      <button id="btnLifecycle7d" class="btn-seo-geo">手動 evidence：observing_7d</button>
-      <button id="btnLifecycle28d" class="btn-seo-geo">手動 evidence：reviewed_28d</button>
-      <button id="btnLifecycleCompleted" class="btn-seo-geo">手動 evidence：completed</button>
+    <p class="seo-geo-note">這個按鈕會依目前狀態自動切換為：複製 AI 指令、驗證並前進、部署預演、正式上傳、上線驗證，或記錄必要 lifecycle receipt。正式上傳與 28 天策略決策仍會要求你確認。</p>
+    <a id="toggleMonthlyAiAction" class="advanced-actions-link" href="#">顯示每月 AI Visibility 檢查（選用）</a>
+    <div id="monthlyAiAction" class="advanced-seo-geo-actions">
+      <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">執行 AI Visibility 檢查</button>
+      <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-visibility">Luna 對照測試（額外模型費用）</button>
+      <p class="seo-geo-note">一般檢查會用預設模型完成並匯入固定 6 題。Luna 對照會以 <strong>gpt-5.6-luna</strong> 另跑同一組題目，產生獨立比較報告，不會覆蓋目前正式結果；因會多呼叫一個模型，將增加該模型的 API 用量／費用。兩者皆需要設定 <strong>OPENAI_API_KEY</strong>。</p>
     </div>
-    <p class="seo-geo-note">主畫面只需操作三鍵。「執行目前下一步」每次只做一件事，會依 Round、validation receipt、dry-run、正式 deployment manifest、live verify、7d／28d 日期與 lifecycle 自動改變文字；條件不足時停用並顯示原因。正式 FTP 仍會要求人工確認，28 天策略仍須由你選擇與填寫摘要。進階操作只供故障排除，不應用來跳過智慧按鈕的安全檢查。</p>
 
     <div class="section-title">六區 Weekly SOP 總覽</div>
     <div class="six-zone-grid" id="sixZoneDashboard">

@@ -133,4 +133,4 @@ if ($reasons.Count) { $effectiveStatus = 'inconsistent' }
     valid = ($reasons.Count -eq 0)
     reasons = @($reasons)
   }
-} | ConvertTo-Json -Depth 12 -Compress
+} | ConvertTo-Json -Depth 12 -Compress -EscapeHandling EscapeNonAscii

@@ -101,10 +101,15 @@
   - 強化試算結果引導至 LINE 預約到府丈量的轉換按鈕設計。
 
 ### 任務 4：程式碼版本控制維護（Git Commit）
-- **現況**：目前工作目錄下所有程式碼與樣式已編譯並部署上線，工作目錄包含：
-  - 修改檔案：`src/app/page.tsx`、`src/app/globals.css`、`src/app/location/page.tsx`、`src/components/Footer.tsx` 等。
-  - 新增紀錄文件：`All_plan/Phase8.md`、`plan.md`、`HANDOVER.md`。
-- **建議動作**：經使用者同意後，可建立清楚的 Git commit（例如：`feat: upgrade homepage hero/seo-hub/faq/footer and location hub card layout`）並推播至遠端分支。
+- **現況**：本日已完成 commit 與 GitHub 推送；目前本機與 `origin/codex/seo-geo-v3-optimization` 指向同一個 commit。
+- **後續原則**：有新的 source、SOP 或交接文件變更時，先確認部署與驗證結果，再依使用者授權建立下一筆 commit 並推送。
+
+### 今日 GitHub 同步紀錄（2026-09-10）
+- GitHub 儲存庫：`https://github.com/andy5003tw/Curtain-online-price-estimate.git`。
+- 推送分支：`codex/seo-geo-v3-optimization`。
+- 已推送 commit：`e215bf5 feat: deploy frontend redesign and geo schema updates`。
+- commit 範圍：首頁與服務總覽前端改版、雙北服務區 SEO/GEO Schema 校正、SEO 檢核、Weekly SOP、圖片資產及本交接文件；共 21 個檔案、3,147 行新增、432 行刪除。
+- `plan.md` 依 `.gitignore` 的既有規則維持本機治理文件，未強制加入 Git；內容已同步記錄本次部署與驗收結果。
 
 ---
 

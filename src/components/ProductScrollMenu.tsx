@@ -16,19 +16,22 @@ interface ProductScrollMenuProps {
   currentProductId?: string;
   basePath?: string;
   buildHref?: (product: Product) => string;
+  onProductSelect?: (product: Product) => void;
 }
 
-export default function ProductScrollMenu({ products, currentProductId, basePath = '/products', buildHref }: ProductScrollMenuProps) {
+export default function ProductScrollMenu({ products, currentProductId, basePath = '/products', buildHref, onProductSelect }: ProductScrollMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Attempt to center the active item on hydration / mount
+    // Keep the active item visible inside this horizontal menu only. Using
+    // scrollIntoView can also move the document vertically after a product
+    // query-param change, which is disruptive on the calculator page.
     if (containerRef.current) {
       const activeElement = containerRef.current.querySelector('.active') as HTMLElement;
       if (activeElement) {
-        // Options for scrollIntoView:
-        // inline: 'center' will center the element horizontally.
-        activeElement.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+        const container = containerRef.current;
+        const left = activeElement.offsetLeft - (container.clientWidth - activeElement.offsetWidth) / 2;
+        container.scrollLeft = Math.max(0, left);
       }
     }
   }, [currentProductId]);
@@ -53,6 +56,11 @@ export default function ProductScrollMenu({ products, currentProductId, basePath
                 className={`scroll-menu-item ${isActive ? 'active' : ''}`}
                 prefetch={false} 
                 scroll={false}
+                onClick={(event) => {
+                  if (!onProductSelect || isActive) return;
+                  event.preventDefault();
+                  onProductSelect(p);
+                }}
                 style={{
                   borderColor: isActive ? '#f59e0b' : '#e7e5e4',
                   backgroundColor: isActive ? '#fffbeb' : 'white',

@@ -4,6 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: '404 - 頁面不存在',
   description: '找不到您要查看的頁面，請返回首頁。',
+  robots: { index: false, follow: false },
 };
 
 export default function NotFound() {

@@ -4,11 +4,13 @@ Use this reference when you need to understand where SEO/GEO/schema truth lives 
 
 ## Live Control Files
 
-- `plan.md`: compact live control board for current SEO/GEO/schema state, unfinished items, next execution order, deploy boundaries, and validation evidence.
-- `Phase2.md` through `Phase7.md`: completed implementation history and validation detail. Read these only when older evidence is needed.
-- `Weekly SOP/12-keyword-pool-v*.md`: keyword-owner maps and 6-page ranking batch order.
-- `Weekly SOP/history/7d/current_*_baseline.normalized.csv`: current 7-day GSC query/page baseline.
-- `Weekly SOP/history/28d/current_*_baseline.normalized.csv`: current 28-day GSC query/page baseline.
+- `plan.md`: compact live control board for current SEO/GEO/schema state, next execution order, deploy boundaries, validation rules, and token-saving read rules. Read this first for routine SEO/GEO work.
+- `Weekly SOP/latest/seo-geo-action-plan.ai.md`: preferred execution input for routine 6-page SEO/GEO implementation. Use this instead of re-reading raw GSC data when it exists.
+- `All_plan/Phase2.md` through `All_plan/Phase7.md`: completed implementation history and validation detail. Read these only when older evidence is explicitly needed.
+- `All_plan/plan-history-2026.md`: completed plan history extracted from the old root `plan.md`. Traceback only; not daily context.
+- `Weekly SOP/12-keyword-pool-v*.md`: keyword-owner maps and 6-page ranking batch order. Read only when owner mapping is unclear or Strategy / Re-selection Mode is active.
+- `Weekly SOP/history/7d/current_*_baseline.normalized.csv`: current 7-day GSC query/page baseline. Strategy / Re-selection Mode only.
+- `Weekly SOP/history/28d/current_*_baseline.normalized.csv`: current 28-day GSC query/page baseline. Strategy / Re-selection Mode only.
 
 ## Source Ownership
 
@@ -27,11 +29,13 @@ Use this reference when you need to understand where SEO/GEO/schema truth lives 
 
 - `out/`: generated static export. Build output only; never edit it directly.
 - Static-site deploy uploads the contents inside `out/` to the site root.
-- Do not upload project-control files as static-site content: `plan.md`, `Phase*.md`, `Weekly SOP`, `.agents`, local scripts, or raw baselines.
+- Do not upload project-control files as static-site content: `plan.md`, `All_plan`, `Phase*.md`, `Weekly SOP`, `.agents`, local scripts, or raw baselines.
+- Do not read `out/` as implementation source truth. Trace behavior back to `src/` and data files.
 
 ## Boundaries
 
 - This skill is for on-site SEO/GEO/schema, ranking batches, and static-export validation.
 - If a task touches admin pricing, PHP API files, credentials, or server-side business rules, inspect `README.md`, `.gitignore`, `private/`, `api/`, and `admin/` separately before applying any deploy assumptions from this SEO skill.
+- Routine SEO/GEO implementation should not recursively scan `Weekly SOP/reports/`, `Weekly SOP/history/`, or `All_plan/`. Use those only for strategy analysis or traceback.
 - Chinese business terms in this project: `關鍵字詞池` = keyword pool, `主攻詞` = target keyword, `綁定主頁` = owner page, `詞頁對齊` = aligning one keyword intent to one page, `排名前10` = Top-10 ranking goal, `上線驗收` = live verification.
 - Keep technical identifiers in English or source form: `canonical`, `JSON-LD`, `sitemap`, `robots.txt`, `out/`, `npm.cmd`, helper names, file paths, and URL paths.

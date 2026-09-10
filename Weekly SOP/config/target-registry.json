@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "siteId": "curtain-online",
+  "generatedFrom": "src/data/products.ts",
+  "updatedAt": "2026-09-09",
+  "targets": [
+    {
+      "clusterId": "core-curtain",
+      "layer": "core",
+      "primaryKeyword": "窗簾",
+      "variants": [
+        "窗簾推薦",
+        "窗簾店"
+      ],
+      "intent": "core-commercial",
+      "ownerUrl": "/",
+      "pageType": "home",
+      "priority": "P0",
+      "schemaProfile": "home",
+      "businessValue": "critical",
+      "lastChangedAt": "2026-09-09",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P001",
+      "layer": "product",
+      "primaryKeyword": "窗簾訂製價格",
+      "variants": [
+        "做窗簾價格",
+        "訂製窗簾價格",
+        "窗簾訂做價格",
+        "遮光窗簾",
+        "布簾訂製",
+        "客廳布簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/custom-curtains/",
+      "pageType": "product",
+      "priority": "P0",
+      "schemaProfile": "product",
+      "businessValue": "critical",
+      "lastChangedAt": "2026-08-26",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P002",
+      "layer": "product",
+      "primaryKeyword": "紗簾價格",
+      "variants": [
+        "透光不透人紗簾",
+        "無縫紗簾推薦",
+        "紗簾訂製",
+        "透光不透人窗簾",
+        "雙層窗簾",
+        "台北紗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/seamless-sheer-curtains/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-09-03",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P003",
+      "layer": "product",
+      "primaryKeyword": "蛇形窗簾",
+      "variants": [
+        "蛇形簾",
+        "S型窗簾",
+        "落地窗窗簾",
+        "客廳窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/s-fold-curtains/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-09-09",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P012",
+      "layer": "product",
+      "primaryKeyword": "醫院隔簾價格",
+      "variants": [
+        "醫療隔簾",
+        "醫院窗簾",
+        "防燃窗簾",
+        "抗菌窗簾",
+        "診所隔簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/hospital-curtains/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-06-24",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P004",
+      "layer": "product",
+      "primaryKeyword": "羅馬簾",
+      "variants": [
+        "羅馬簾訂製",
+        "小窗窗簾",
+        "摺疊簾",
+        "廚房窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/roman-shades/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-06-24",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P005",
+      "layer": "product",
+      "primaryKeyword": "捲簾",
+      "variants": [
+        "捲簾價格試算",
+        "捲簾安裝價格",
+        "台北捲簾價格",
+        "三重捲簾價格",
+        "捲簾線上估價",
+        "遮光捲簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/roller-blinds/",
+      "pageType": "product",
+      "priority": "P0",
+      "schemaProfile": "product",
+      "businessValue": "critical",
+      "lastChangedAt": "2026-08-06",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P006",
+      "layer": "product",
+      "primaryKeyword": "百葉窗價格試算",
+      "variants": [
+        "鋁百葉窗價格",
+        "百葉窗簾價格",
+        "台北鋁百葉窗價格",
+        "三重鋁百葉窗價格",
+        "鋁百葉窗價格試算",
+        "鋁百葉窗簾訂製",
+        "防潮窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/aluminum-blinds/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-09-03",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P007",
+      "layer": "product",
+      "primaryKeyword": "實木百葉窗價格試算",
+      "variants": [
+        "木百葉窗簾價格",
+        "台北實木百葉窗價格",
+        "三重實木百葉窗價格",
+        "實木百葉窗價格試算",
+        "木百葉窗簾訂製",
+        "書房窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/wooden-blinds/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-08-26",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P008",
+      "layer": "product",
+      "primaryKeyword": "竹簾",
+      "variants": [
+        "竹簾訂製",
+        "和室窗簾",
+        "日式窗簾",
+        "天然竹簾",
+        "竹簾價格"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/bamboo-blinds/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "medium",
+      "lastChangedAt": "2026-06-24",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P009",
+      "layer": "product",
+      "primaryKeyword": "風琴簾",
+      "variants": [
+        "台北風琴簾價格",
+        "三重風琴簾價格",
+        "風琴簾價格試算",
+        "蜂巢簾價格",
+        "蜂巢簾價格試算",
+        "節能窗簾",
+        "隔熱窗簾",
+        "西曬窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/honeycomb-blinds/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-07-29",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P010",
+      "layer": "product",
+      "primaryKeyword": "調光簾",
+      "variants": [
+        "調光簾價格試算",
+        "調光簾一才價格",
+        "台北調光簾價格",
+        "三重調光簾價格",
+        "調光簾線上估價",
+        "斑馬簾價格"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/zebra-blinds/",
+      "pageType": "product",
+      "priority": "P0",
+      "schemaProfile": "product",
+      "businessValue": "critical",
+      "lastChangedAt": "2026-06-24",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P011",
+      "layer": "product",
+      "primaryKeyword": "柔紗簾",
+      "variants": [
+        "柔紗簾價格",
+        "柔紗簾價格試算",
+        "柔紗簾訂製",
+        "精品窗簾",
+        "透光窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/soft-sheer-blinds/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-06-24",
+      "status": "active"
+    },
+    {
+      "clusterId": "product-P013",
+      "layer": "product",
+      "primaryKeyword": "直立簾",
+      "variants": [
+        "垂直簾",
+        "落地窗直立簾",
+        "辦公室窗簾",
+        "大型窗簾"
+      ],
+      "intent": "product-transactional",
+      "ownerUrl": "/products/vertical-blinds/",
+      "pageType": "product",
+      "priority": "P1",
+      "schemaProfile": "product",
+      "businessValue": "high",
+      "lastChangedAt": "2026-06-24",
+      "status": "active"
+    }
+  ],
+  "monitorOnlyAssets": [
+    {
+      "id": "brand-about",
+      "label": "宏森品牌／公司頁",
+      "type": "brand",
+      "url": "/about/",
+      "monitoringTerms": [
+        "宏森窗簾",
+        "宏森窗簾評價"
+      ]
+    },
+    {
+      "id": "calculator",
+      "label": "窗簾價格試算工具",
+      "type": "calculator",
+      "url": "/calculator/",
+      "monitoringTerms": [
+        "窗簾價格試算",
+        "窗簾線上估價",
+        "百葉窗價格試算"
+      ]
+    },
+    {
+      "id": "curtain-price-guide-2026",
+      "label": "2026 窗簾價格指南",
+      "type": "price_guide",
+      "url": "/blog/curtain-price-guide-2026/",
+      "monitoringTerms": [
+        "窗簾價格多少合理",
+        "窗簾價格",
+        "窗簾安裝費用"
+      ]
+    },
+    {
+      "id": "geo-banqiao",
+      "label": "板橋窗簾服務頁",
+      "type": "geo",
+      "url": "/location/banqiao/",
+      "monitoringTerms": [
+        "板橋窗簾",
+        "板橋窗簾價格"
+      ]
+    },
+    {
+      "id": "geo-taipei",
+      "label": "台北窗簾服務頁",
+      "type": "geo",
+      "url": "/location/taipei/",
+      "monitoringTerms": [
+        "台北窗簾",
+        "台北窗簾推薦"
+      ]
+    },
+    {
+      "id": "geo-sanchong",
+      "label": "三重窗簾服務頁",
+      "type": "geo",
+      "url": "/location/sanchong/",
+      "monitoringTerms": [
+        "三重窗簾",
+        "三重窗簾推薦"
+      ]
+    },
+    {
+      "id": "geo-shulin",
+      "label": "樹林窗簾服務頁",
+      "type": "geo",
+      "url": "/location/shulin/",
+      "monitoringTerms": [
+        "樹林窗簾"
+      ]
+    },
+    {
+      "id": "geo-tucheng",
+      "label": "土城窗簾服務頁",
+      "type": "geo",
+      "url": "/location/tucheng/",
+      "monitoringTerms": [
+        "土城窗簾",
+        "土城窗簾推薦"
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { CalculatorForm, CalculatorProductMenu } from './CalculatorClient';
 import { products } from '@/data/products';
+import { calculatorFaq } from '@/data/calculatorFaq';
 import { buildCalculatorUrl } from '@/lib/seo';
 
 const calculatorProducts = products.map((product) => ({
@@ -11,45 +12,6 @@ const calculatorProducts = products.map((product) => ({
   canonicalSlug: product.canonicalSlug,
   requires_track: product.requires_track,
 }));
-
-const calculatorFaq = [
-  {
-    q: '窗簾價格試算和正式報價會差很多嗎？',
-    a: '通常差異不大，但窗型、配件與施工條件會影響最終金額；建議先做窗簾價格試算，再以現場丈量確認正式報價。',
-  },
-  {
-    q: '窗簾線上估價適合先比較哪些品項？',
-    a: '若你是第一次比價，建議先固定同一尺寸比較捲簾、鋁百葉、實木百葉與調光簾，再依遮光、清潔、木質感與安裝條件收斂到 1 到 2 個方案。',
-  },
-  {
-    q: '可以先估價再決定是否預約丈量嗎？',
-    a: '可以，建議先完成線上估價再聯絡，溝通效率會更高。',
-  },
-  {
-    q: '三重窗簾價格試算後如何比價最有效率？',
-    a: '建議固定同一尺寸比較捲簾、調光簾、實木百葉窗三個品項，再切到三重窗簾服務頁確認在地丈量流程。',
-  },
-  {
-    q: '百葉窗價格試算要先比較哪些品項？',
-    a: '建議先用同一尺寸比較鋁百葉、實木百葉與風琴簾，再依防潮、木質感、隔熱與安裝條件判斷最適合的方案。',
-  },
-  {
-    q: '窗簾價格試算要先看價格指南還是直接輸入尺寸？',
-    a: '如果已經有寬高尺寸，可直接用本頁線上估價；若還在比款式，可先看 2026 窗簾價格指南，再回來用同尺寸比較各品項。',
-  },
-  {
-    q: '實木百葉窗價格試算適合從哪裡開始？',
-    a: '建議先切到木百葉品項並套用三重或台北區域，再到實木百葉產品頁確認木種、葉片與安裝條件。',
-  },
-  {
-    q: '估價結果會包含安裝費嗎？',
-    a: '會。系統會依品項規則估算材料費與安裝費，並回傳總價。',
-  },
-  {
-    q: '板橋窗簾價格試算後，下一步怎麼安排最快？',
-    a: '建議先用同尺寸比較布簾、捲簾或風琴簾，再帶著試算結果安排板橋到府丈量，通常能更快收斂到正式報價。',
-  },
-];
 
 export default function CalculatorPage() {
   return (
@@ -69,10 +31,10 @@ export default function CalculatorPage() {
       <div className="page-hero">
         <div className="section-container">
           <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-            窗簾價格試算 / 線上估價
+            1 分鐘窗簾價格試算 / 線上估價
           </div>
-          <h1>窗簾價格試算、窗簾線上估價與百葉窗價格試算</h1>
-          <p>輸入尺寸即可比較鋁百葉、實木百葉、捲簾、調光簾與風琴簾價格，先完成窗簾線上估價，再安排三重、板橋或台北到府丈量與正式報價。</p>
+          <h1>窗簾價格試算與窗簾線上估價：1 分鐘比較安裝費</h1>
+          <p>輸入尺寸即可做窗簾價格試算與窗簾線上估價，比較鋁百葉、實木百葉、捲簾、紗簾、調光簾與風琴簾價格，系統先估材料與基本安裝費；再用同尺寸比較差異，安排三重、板橋或台北到府丈量確認正式報價。</p>
         </div>
       </div>
 
@@ -83,11 +45,14 @@ export default function CalculatorPage() {
             <p>先用線上工具掌握窗簾價格與安裝費用區間，再由專人到府確認窗型、配件與施工條件。</p>
           </div>
           <div style={{ marginBottom: '1.25rem', display: 'grid', gap: '0.5rem' }}>
-            <Link href="/calculator/?product=P005" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              捲簾價格試算：用同尺寸快速抓入門預算
+            <Link href="/products/roller-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              已鎖定捲簾：先看捲簾產品、遮光與安裝條件
             </Link>
-            <Link href="/calculator/?product=P006" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              百葉窗價格試算：鋁百葉防潮方案先抓預算
+            <Link href="/products/aluminum-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              已鎖定鋁百葉：先看防潮需求、葉片與安裝條件
+            </Link>
+            <Link href="/calculator/?product=P002" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              紗簾價格試算：透光不透人紗簾與安裝費同尺寸比較
             </Link>
             <Link href={buildCalculatorUrl('P007')} style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               實木百葉窗價格試算：直接帶入木百葉品項
@@ -99,7 +64,13 @@ export default function CalculatorPage() {
               調光簾價格試算：比較客廳與臥室控光預算
             </Link>
             <Link href="/blog/curtain-price-guide-2026/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
-              訂製窗簾價格、百葉窗價格與安裝費怎麼看？
+              窗簾價格多少合理？先看 2026 價格指南與安裝費
+            </Link>
+            <Link href="/location/taipei/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              台北窗簾價格試算：估價後安排到府丈量
+            </Link>
+            <Link href="/products/seamless-sheer-curtains/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
+              紗簾價格與透光不透人紗簾怎麼比？
             </Link>
             <Link href="/products/wooden-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               實木百葉價格怎麼算？看木種、葉片與安裝條件
@@ -134,9 +105,12 @@ export default function CalculatorPage() {
           <div style={{ display: 'grid', gap: '1rem' }}>
             {[
               '先輸入接近實際的寬高尺寸，可先抓窗簾價格區間，再由現場丈量微調。',
-              '窗簾安裝費用會受窗型、配件與施工難度影響，估價頁可先看大方向預算。',
+              '窗簾安裝費用會受窗型、配件與施工難度影響，估價頁可先看材料與基本安裝費的大方向預算。',
+              '想判斷窗簾價格多少合理，請用同一組尺寸比較 2 到 3 種品項，避免只看單才價格。',
+              '台北窗簾估價前，請先準備每扇窗的寬高、想比較的品項、安裝區域與主要需求（如遮光、採光或隱私）；若有窗簾盒、特殊窗型、既有軌道或現場照片也可一併提供。自量尺寸只供預算比較，正式報價仍以現場丈量為準。',
               '若要比較不同產品，建議固定同一尺寸切換捲簾、鋁百葉、實木百葉、調光簾與風琴簾，判斷更直覺。',
               '若你想先做「百葉窗價格試算」，可先比較鋁百葉與實木百葉，再依防潮、木質感與安裝條件挑選。',
+              '若你想先比較「紗簾價格」，可用同尺寸切換無縫紗簾與遮光布簾，確認透光不透人、雙層搭配與安裝費差異。',
               '若你想先衝「實木百葉窗價格試算」，可先切換木百葉品項再套用三重或台北區域，會更接近實際報價條件。',
               '若你正在搜尋「三重窗簾」或「板橋窗簾」，可直接從本頁快速切到對應地區頁比對在地方案與交期。',
             ].map((text, index) => (

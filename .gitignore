@@ -25,8 +25,15 @@ secrets.*
 credentials.*
 *.token
 
-# Weekly SOP: local operational data (do not upload to GitHub)
-Weekly SOP/
+# Weekly SOP: track root launcher/scripts only; keep operational data local
+Weekly SOP/*
+!Weekly SOP/
+!Weekly SOP/*.cmd
+!Weekly SOP/*.hta
+!Weekly SOP/*.ps1
+!Weekly SOP/*change-log.md
+!Weekly SOP/config/
+!Weekly SOP/config/*.json
 plan.md
 
 private/users.php

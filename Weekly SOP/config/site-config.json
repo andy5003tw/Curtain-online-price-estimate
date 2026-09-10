@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "siteId": "curtain-online",
+  "siteUrl": "https://online.hong-sen.com/",
+  "expectedHost": "online.hong-sen.com",
+  "gscProperty": "https://online.hong-sen.com/",
+  "timezone": "Asia/Taipei",
+  "dataLagDays": 2,
+  "allowedHosts": [
+    "online.hong-sen.com"
+  ]
+}

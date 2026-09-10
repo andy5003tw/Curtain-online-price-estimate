@@ -1,4 +1,4 @@
-﻿export type CityGroup = 'taipei' | 'new-taipei';
+export type CityGroup = 'taipei' | 'new-taipei';
 
 export type LocationPage = {
   id: string;
@@ -94,6 +94,66 @@ export const locationPages: LocationPage[] = [
     ],
     cityGroup: 'taipei',
     relatedAreaIds: ['sanchong', 'zhongzheng', 'xinyi'],
+  },
+  {
+    id: 'new-taipei',
+    title: '新北窗簾價格試算｜新北窗簾推薦、線上估價與到府丈量',
+    areaName: '新北市',
+    shortDescription: '想做新北窗簾價格試算、找新北窗簾推薦或新北窗簾線上估價？先用同尺寸比較窗簾訂製、調光簾、捲簾、實木百葉與無縫紗簾，再安排新北 17 區免費到府丈量。',
+    heroImage: '/Construction Cases_img/LINE_ALBUM_疏洪西路（蛇型簾+一般紗）_260414_2.webp',
+    lastModified: '2026-09-09',
+    keywords: ['新北窗簾推薦', '新北窗簾訂製', '新北窗簾線上估價', '新北窗簾價格試算', '新北窗簾價格', '新北百葉窗價格試算', '新北窗簾店', '新北捲簾價格', '新北調光簾價格', '新北實木百葉窗價格'],
+    featuredProductIds: ['P003', 'P010', 'P005', 'P006'],
+    serviceHighlights: [
+      '先用新北窗簾線上估價 1 分鐘抓預算，同尺寸比較蛇形簾、調光簾、捲簾與鋁百葉，再安排新北 17 區在地工班到府丈量確認正式報價。',
+      '若你正在搜尋新北窗簾推薦，可先固定同尺寸比較窗簾訂製、調光簾、捲簾、鋁百葉與實木百葉窗。',
+      '新北市涵蓋新板特區、副都心高樓景觀宅與在地透天，客廳落地窗常見大面採光與西曬隔熱需求。',
+      '若新成屋客廳想兼顧採光與夜間隱私，建議先看蛇形簾與無縫紗簾搭配，臥室則推薦全遮光捲簾。',
+      '三重、板橋、新莊、中和、永和等核心區均有專屬工班就近服務，丈量看樣與安裝調校更快速。',
+      '依採光、西曬與防潮需求提供新北捲簾價格、新北調光簾價格、新北實木百葉窗價格的對應建議。',
+      '新北百葉窗價格試算可先比較鋁百葉、實木百葉與風琴簾，再依防潮、木質感與隔熱需求決定。',
+      '若想判斷新北窗簾價格是否合理，請用同一尺寸比較 2 到 3 種品項，再把安裝費與丈量條件一起看。',
+      '工廠直營廠辦合一，免去傳統門市抽成與層層轉包，提供更透明實惠的報價。',
+      '多數新北案件可在完成估價後 1-2 天內安排丈量，方便先抓預算與施工交期。',
+      '新北全區完工後均提供五金軌道保固與維護支援，使用更安心。',
+    ],
+    advantages: [
+      '新北市全區免費到府丈量，攜帶百種布板色卡與五金樣本現場挑選。',
+      '工廠直營廠辦合一，價格透明實在，省去傳統窗簾店高額店面租金。',
+      '新北在地專業施工工班，注重防塵安裝與完整售後保固服務。',
+    ],
+    districts: [
+      '三重區', '板橋區', '新莊區', '中和區', '永和區', '新店區', '土城區', '蘆洲區',
+      '林口區', '汐止區', '泰山區', '五股區', '樹林區', '鶯歌區', '三峽區', '淡水區', '八里區'
+    ],
+    faqs: [
+      {
+        q: '新北窗簾訂製可以先看線上估價再預約丈量嗎？',
+        a: '可以，先用新北窗簾價格試算輸入尺寸，比較調光簾、捲簾與蛇形簾價格區間，再安排到府丈量確認布料、窗型與最終報價。',
+      },
+      {
+        q: '搜尋新北窗簾推薦，先比較哪三種款式最快？',
+        a: '建議先固定同一尺寸比較調光簾、遮光捲簾與蛇形簾三種熱門品項，再依採光、隱私與空間風格決定最終方向。',
+      },
+      {
+        q: '新北市到府丈量需要收費嗎？',
+        a: '宏森窗簾在新北市 17 個主要服務區域提供免費到府丈量，現場會攜帶樣本布料供您挑選搭配，不收車馬費。',
+      },
+      {
+        q: '新北窗簾線上估價後多久可安排丈量？',
+        a: '新北多數行政區可在估價後 1-2 天內迅速安排在地工班到府丈量，週末熱門時段建議提前線上預約。',
+      },
+      {
+        q: '新北新成屋與透天窗簾，建議如何規劃？',
+        a: '新成屋大面落地窗建議優先考慮蛇形簾或無縫紗簾搭配調光簾；透天與西曬房則建議採用隔熱效果佳的風琴簾或遮光布簾。',
+      },
+      {
+        q: '新北市從丈量到安裝通常要多久？',
+        a: '常規款式約 5-7 個工作天，特殊客製或大面積案場約 7-14 個工作天，確認訂單時會提供明確完工交期。',
+      },
+    ],
+    cityGroup: 'new-taipei',
+    relatedAreaIds: ['sanchong', 'banqiao', 'xinzhuang'],
   },
   {
     id: 'sanchong',
@@ -1344,6 +1404,28 @@ export const locationPages: LocationPage[] = [
     relatedAreaIds: ['danshui', 'wugu', 'linkou'],
   },
 ];
+
+export const cityOverviewLocationPageIds = ['taipei', 'new-taipei'] as const;
+
+export function isCityOverviewLocationPage(page: Pick<LocationPage, 'id'>): boolean {
+  return cityOverviewLocationPageIds.includes(page.id as (typeof cityOverviewLocationPageIds)[number]);
+}
+
+export function getAdministrativeLocationPages(): LocationPage[] {
+  return locationPages.filter(page => !isCityOverviewLocationPage(page));
+}
+
+export function getLocationCoverageSummary() {
+  const administrativePages = getAdministrativeLocationPages();
+
+  return {
+    taipeiAdministrativeAreaCount: administrativePages.filter(page => page.cityGroup === 'taipei').length,
+    newTaipeiAdministrativeAreaCount: administrativePages.filter(page => page.cityGroup === 'new-taipei').length,
+    administrativeAreaCount: administrativePages.length,
+    cityOverviewCount: cityOverviewLocationPageIds.length,
+    indexableLocationPageCount: locationPages.length,
+  };
+}
 
 export function getLocationPageById(id: string) {
   return locationPages.find(page => page.id === id);

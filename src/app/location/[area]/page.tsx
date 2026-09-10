@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getLocationPageById, locationPages } from '@/data/locationPages';
+import { getLocationPageById, isCityOverviewLocationPage, locationPages } from '@/data/locationPages';
 import { products } from '@/data/products';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
@@ -206,7 +206,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
       url: absoluteUrl('/'),
     },
     areaServed: {
-      '@type': 'AdministrativeArea',
+      '@type': isCityOverviewLocationPage(pageData) ? 'City' : 'AdministrativeArea',
       name: pageData.areaName
     },
     description: locationCopy.description,
@@ -348,7 +348,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
           <div style={{ textAlign: 'center', marginTop: '3rem' }}>
              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                <Link href="/products" className="btn-secondary" style={{ fontSize: '1.05rem', padding: '0.8rem 2.5rem' }}>查看全部窗簾款式</Link>
-               <Link href="/location/" className="btn-outline" style={{ fontSize: '1.05rem', padding: '0.8rem 2.5rem' }}>返回 30 區總覽</Link>
+               <Link href="/location/" className="btn-outline" style={{ fontSize: '1.05rem', padding: '0.8rem 2.5rem' }}>返回 29 區總覽</Link>
              </div>
           </div>
         </div>

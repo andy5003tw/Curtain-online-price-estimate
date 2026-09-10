@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Calculator, CheckCircle2, ChevronRight } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 import { buildCalculatorUrl } from '@/lib/seo';
@@ -37,18 +37,51 @@ interface CalcApiError {
 
 type CalcApiResponse = CalcApiSuccess | CalcApiError;
 
+const CALCULATOR_PRODUCT_CHANGE_EVENT = 'calculator-product-change';
+
+function updateCalculatorProductUrl(productId: string, area?: string) {
+  const nextUrl = buildCalculatorUrl(productId, area);
+  window.history.pushState(null, '', nextUrl);
+  window.dispatchEvent(new CustomEvent(CALCULATOR_PRODUCT_CHANGE_EVENT, { detail: productId }));
+}
+
 export function CalculatorForm({ products }: CalculatorClientProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const isGitHubPages =
     typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
-  const selectedProduct = searchParams.get('product') || products[0].id;
+  const productFromUrl = searchParams.get('product') || products[0].id;
   const selectedArea = searchParams.get('area') || undefined;
+  const [selectedProduct, setSelectedProduct] = useState(productFromUrl);
   const [width, setWidth] = useState<number | ''>('');
   const [height, setHeight] = useState<number | ''>('');
   const [result, setResult] = useState<CalcResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  useEffect(() => setSelectedProduct(productFromUrl), [productFromUrl]);
+
+  useEffect(() => {
+    const handleProductChange = (event: Event) => {
+      const productId = (event as CustomEvent<string>).detail;
+      if (products.some((product) => product.id === productId)) setSelectedProduct(productId);
+    };
+    const handleHistoryNavigation = () => {
+      const productId = new URLSearchParams(window.location.search).get('product') || products[0].id;
+      setSelectedProduct(productId);
+    };
+
+    window.addEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+    window.addEventListener('popstate', handleHistoryNavigation);
+    return () => {
+      window.removeEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+      window.removeEventListener('popstate', handleHistoryNavigation);
+    };
+  }, [products]);
+
+  const changeProduct = (productId: string) => {
+    if (productId === selectedProduct) return;
+    setSelectedProduct(productId);
+    updateCalculatorProductUrl(productId, selectedArea);
+  };
 
   useEffect(() => {
     const widthValue = Number(width);
@@ -119,7 +152,7 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
             </div>
             <select
               value={selectedProduct}
-              onChange={(e) => router.push(buildCalculatorUrl(e.target.value, selectedArea), { scroll: false })}
+              onChange={(e) => changeProduct(e.target.value)}
               className="form-select"
             >
               {products.map((product) => (
@@ -246,13 +279,47 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
 
 export function CalculatorProductMenu({ products }: CalculatorClientProps) {
   const searchParams = useSearchParams();
-  const selectedProduct = searchParams.get('product') || products[0].id;
+  const productFromUrl = searchParams.get('product') || products[0].id;
   const selectedArea = searchParams.get('area') || undefined;
+  const [selectedProduct, setSelectedProduct] = useState(productFromUrl);
   const menuBasePath = selectedArea
     ? `/calculator/?product={productId}&area=${encodeURIComponent(selectedArea)}`
     : '/calculator/?product={productId}';
 
-  return <ProductScrollMenu products={products} currentProductId={selectedProduct} basePath={menuBasePath} />;
+  useEffect(() => setSelectedProduct(productFromUrl), [productFromUrl]);
+
+  useEffect(() => {
+    const handleProductChange = (event: Event) => {
+      const productId = (event as CustomEvent<string>).detail;
+      if (products.some((product) => product.id === productId)) setSelectedProduct(productId);
+    };
+    const handleHistoryNavigation = () => {
+      const productId = new URLSearchParams(window.location.search).get('product') || products[0].id;
+      setSelectedProduct(productId);
+    };
+
+    window.addEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+    window.addEventListener('popstate', handleHistoryNavigation);
+    return () => {
+      window.removeEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+      window.removeEventListener('popstate', handleHistoryNavigation);
+    };
+  }, [products]);
+
+  const changeProduct = (productId: string) => {
+    if (productId === selectedProduct) return;
+    setSelectedProduct(productId);
+    updateCalculatorProductUrl(productId, selectedArea);
+  };
+
+  return (
+    <ProductScrollMenu
+      products={products}
+      currentProductId={selectedProduct}
+      basePath={menuBasePath}
+      onProductSelect={(product) => changeProduct(product.id)}
+    />
+  );
 }
 
 export default function CalculatorClient({ products }: CalculatorClientProps) {

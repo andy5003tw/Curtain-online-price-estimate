@@ -62,7 +62,7 @@
     "canonicalSlug": "s-fold-curtains",
     "primaryKeyword": "蛇形窗簾",
     "secondaryKeywords": ["蛇形簾", "S型窗簾", "落地窗窗簾", "客廳窗簾"],
-    "updatedAt": "2026-05-12",
+    "updatedAt": "2026-09-09",
     "name": "蛇形窗簾",
     "image": "/images/P003_Snake curtain.webp",
     "image_alt": "現代蛇形窗簾 - 大器 S 型垂墜感",
@@ -76,10 +76,10 @@
       "sewing_fee": 240,
       "installation_fee": 70
     },
-    "description": "獨特的 S 型曲線設計，讓布料呈現如波浪般的整齊垂墜感。",
+    "description": "蛇形窗簾以專用軌道形成規律 S 型摺距，適合客廳落地窗的整齊垂墜與訂製規劃；可先線上估價，再安排丈量確認布量與軌道條件。",
     "seo": {
-      "meta_title": "蛇形窗簾｜客廳落地窗 S 型布簾、軌道與線上估價",
-      "meta_description": "比較蛇形窗簾的 S 型摺距、專用軌道與客廳落地窗規劃；先線上估價，再依窗簾盒、布量與丈量條件確認正式規格。",
+      "meta_title": "蛇形窗簾｜S型窗簾、客廳落地窗專用軌道與線上估價",
+      "meta_description": "想為客廳落地窗規劃蛇形窗簾或 S 型窗簾？先比較固定摺距、專用軌道與布料垂墜，再依窗簾盒、布量與丈量條件確認正式規格。",
       "keywords": ["蛇形窗簾", "蛇形簾", "S型窗簾", "客廳窗簾", "落地窗窗簾"]
     }
   },

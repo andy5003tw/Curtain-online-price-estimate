@@ -243,6 +243,10 @@ function checkSchemaContracts() {
       if (localBusinessCount > 1) fail(`Location route creates a duplicate LocalBusiness entity on ${page.route}`);
       const serviceNode = page.schemaNodes.find(node => node['@type'] === 'Service');
       if (serviceNode?.provider?.['@id'] !== `${SITE_URL}/#localBusiness`) fail(`Location Service provider must reference the shared company entity on ${page.route}`);
+      const expectedAreaType = ['/location/taipei/', '/location/new-taipei/'].includes(page.route) ? 'City' : 'AdministrativeArea';
+      if (serviceNode?.areaServed?.['@type'] !== expectedAreaType) {
+        fail(`Location Service areaServed must be ${expectedAreaType} on ${page.route}`);
+      }
     }
     if (schemaHasType(page.schemaNodes, 'Review') || schemaHasType(page.schemaNodes, 'AggregateRating')) {
       fail(`Unbound Review/AggregateRating schema is not allowed on ${page.route}`);
@@ -259,6 +263,49 @@ function checkSchemaContracts() {
     for (const pattern of prohibitedClaims) {
       if (pattern.test(page.visibleText)) fail(`Unsupported evidence claim on ${page.route}: ${pattern}`);
     }
+  }
+}
+
+function checkLocationHubContract(geoRoutes) {
+  const cityOverviewRoutes = new Set(['/location/taipei/', '/location/new-taipei/']);
+  const administrativeRoutes = geoRoutes.filter(route => !cityOverviewRoutes.has(route));
+  if (administrativeRoutes.length !== 29) fail(`Expected 29 administrative location routes; found ${administrativeRoutes.length}`);
+  if (geoRoutes.length !== 31) fail(`Expected 31 indexable location routes; found ${geoRoutes.length}`);
+
+  const hub = auditedPages.get('/location/');
+  if (!hub) return;
+  const itemList = hub.schemaNodes.find(node => node['@type'] === 'ItemList');
+  if (!itemList) {
+    fail('Location hub schema missing ItemList');
+    return;
+  }
+  if (Number(itemList.numberOfItems) !== geoRoutes.length) {
+    fail(`Location hub ItemList count must be ${geoRoutes.length}; found ${itemList.numberOfItems}`);
+  }
+
+  const itemRoutes = (itemList.itemListElement || []).map(item => {
+    const url = String(item?.url || '');
+    if (!url) {
+      fail('Location hub ItemList contains an item without a URL');
+      return '';
+    }
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      fail(`Location hub ItemList URL is invalid: ${url}`);
+      return '';
+    }
+    if (parsed.hash) fail(`Location hub ItemList must not contain fragment URL: ${url}`);
+    return normalizeRoute(parsed.pathname);
+  }).filter(Boolean);
+
+  const expectedRoutes = new Set(geoRoutes);
+  if (itemRoutes.length !== expectedRoutes.size || new Set(itemRoutes).size !== itemRoutes.length) {
+    fail('Location hub ItemList must contain each indexable location route exactly once');
+  }
+  for (const route of expectedRoutes) {
+    if (!itemRoutes.includes(route)) fail(`Location hub ItemList missing sitemap location route: ${route}`);
   }
 }
 
@@ -455,6 +502,7 @@ if (!fs.existsSync(outDir)) {
   }
 
   checkGeoFlow(geoRoutes);
+  checkLocationHubContract(geoRoutes);
   checkProductAreaFlow();
   checkUniqueTitlesAndH1s();
   checkSchemaContracts();

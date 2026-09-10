@@ -25,10 +25,8 @@
       font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
       font-size: 16px;
       color: #102a43;
-      background:
-        radial-gradient(circle at 14% 8%, #e2f3ff 0%, rgba(226, 243, 255, 0) 46%),
-        radial-gradient(circle at 88% 90%, #d8f6ea 0%, rgba(216, 246, 234, 0) 38%),
-        linear-gradient(140deg, #f8fbff 0%, #f2f7fb 100%);
+      background: #f2f7fb;
+      zoom: 1.1;
     }
 
     .card {
@@ -47,8 +45,51 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
       margin-bottom: 8px;
     }
+
+    .heading-tools {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid #c7dbef;
+      border-radius: 999px;
+      background: #f7fbff;
+    }
+
+    .font-control-label {
+      margin: 0 3px 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #315d79;
+      white-space: nowrap;
+    }
+
+    .btn-font-scale {
+      width: auto;
+      min-height: 30px;
+      padding: 4px 8px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
+      color: #315d79;
+      box-shadow: none;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .btn-font-scale:hover { background: #e5f1fa; }
+    .btn-font-scale.active { color: #ffffff; background: #126a88; border-color: #075e54; }
 
     h1 {
       margin: 0;
@@ -148,7 +189,7 @@
 
     .btn-run {
       color: #0f2e46;
-      background: linear-gradient(160deg, #d8efe8 0%, #cfe6f5 100%);
+      background: #d8efe8;
       border-color: #004b3d;
       box-shadow: 0 8px 16px rgba(0, 79, 102, 0.2);
       font-size: 18px;
@@ -156,7 +197,7 @@
 
     .btn-fetch-gsc {
       color: #ffffff;
-      background: linear-gradient(145deg, #087f6b 0%, #126a88 100%);
+      background: #087f6b;
       border-color: #075e54;
       box-shadow: 0 9px 18px rgba(7, 94, 84, 0.24);
       font-size: 18px;
@@ -187,27 +228,29 @@
     .seo-geo-actions {
       display: grid;
       grid-template-columns: 1fr;
-      border: 2px solid #2c7a87;
-      background: #e8f5f7;
+      gap: 10px;
     }
 
     .btn-seo-geo {
-      border: 0;
-      border-bottom: 2px solid #2c7a87;
-      border-radius: 0;
+      border: 2px solid #2c7a87;
+      border-radius: 999px;
       color: #0f2e46;
-      background: transparent;
-      box-shadow: none;
+      background: #e8f5f7;
+      box-shadow: 0 4px 10px rgba(16, 42, 67, 0.10);
       min-height: 56px;
     }
 
-    .btn-seo-geo:last-child {
-      border-bottom: 0;
+    .seo-geo-actions .btn-seo-geo:first-child {
+      color: #ffffff;
+      background: #087f6b;
+      border-color: #075e54;
     }
 
     .btn-seo-geo:hover {
       background: #d9eef2;
     }
+
+    .seo-geo-actions .btn-seo-geo:first-child:hover { background: #086f68; }
 
     .btn-ai-visibility {
       color: #ffffff;
@@ -236,12 +279,59 @@
       font-size: 13px;
     }
 
+    .btn-monthly-ai-toggle {
+      width: auto;
+      min-height: 40px;
+      margin-top: 10px;
+      padding: 8px 16px;
+      border: 1px solid #4d8fbe;
+      border-radius: 999px;
+      color: #0b3d63;
+      background: #e5f5ff;
+      box-shadow: 0 3px 8px rgba(16, 42, 67, 0.10);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .btn-monthly-ai-toggle:hover { background: #cfe7fb; }
+
     .advanced-seo-geo-actions {
       display: none;
       margin-top: 8px;
+      padding: 10px;
       border: 1px dashed #8ca8b6;
       background: #f7fbfc;
     }
+
+    .advanced-seo-geo-actions .btn-seo-geo {
+      min-height: 54px;
+      margin-bottom: 9px;
+      border: 2px solid transparent;
+      border-radius: 999px;
+      box-shadow: 0 4px 10px rgba(16, 42, 67, 0.12);
+    }
+
+    .advanced-seo-geo-actions .btn-seo-geo:last-of-type { margin-bottom: 2px; }
+
+    .advanced-seo-geo-actions .btn-ai-visibility {
+      color: #ffffff;
+      background: #087f6b;
+      border-color: #075e54;
+    }
+
+    .advanced-seo-geo-actions .btn-ai-luna {
+      color: #ffffff;
+      background: #6554a8;
+      border-color: #56438f;
+    }
+
+    .advanced-seo-geo-actions .btn-gsc-generative-ai {
+      color: #0b3d63;
+      background: #e5f5ff;
+      border-color: #4d8fbe;
+    }
+
+    .advanced-seo-geo-actions .btn-gsc-generative-ai:hover { background: #cfe7fb; }
 
     .queue-panel {
       margin-top: 12px;
@@ -273,11 +363,35 @@
       gap: 12px;
     }
 
+    .queue-head-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-queue-detail {
+      width: auto;
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid #9db8cc;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #163a56;
+      box-shadow: none;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
     .queue-body {
       padding: 12px;
       font-size: 14px;
       line-height: 1.55;
       color: #244763;
+    }
+
+    .queue-details {
+      display: none;
+      border-top: 1px solid #d8e6f2;
     }
 
     .queue-meta {
@@ -354,12 +468,12 @@
     }
 
     .six-zone {
-      min-height: 174px;
+      min-height: 0;
       border: 1px solid #cfe0ef;
       border-left: 5px solid #9eb7cc;
       border-radius: 10px;
       background: #fbfdff;
-      padding: 11px 12px;
+      padding: 0;
     }
 
     .six-zone.ok { border-left-color: #2f855a; background: #f7fdf9; }
@@ -367,19 +481,33 @@
     .six-zone.error { border-left-color: #c53030; background: #fff5f5; }
 
     .six-zone-title {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      box-shadow: none;
+      color: #0b2f4a;
       font-size: 15px;
       font-weight: 800;
-      color: #0b2f4a;
-      margin-bottom: 7px;
+      text-align: left;
     }
 
+    .six-zone-title:hover { background: rgba(217, 238, 242, 0.58); }
+    .six-zone-toggle-icon { display: inline-block; width: 20px; color: #315d79; }
+
     .six-zone-body {
+      display: none;
+      padding: 0 12px 12px;
       font-size: 13px;
       line-height: 1.58;
       color: #244763;
       white-space: pre-wrap;
       word-break: break-word;
     }
+
+    .six-zone.expanded .six-zone-body { display: block; }
 
     @media screen and (max-width: 760px) {
       .six-zone-grid { grid-template-columns: 1fr; }
@@ -576,6 +704,47 @@
   <script type="text/javascript">
     var isUiBusy = false;
     var currentSeoGeoNextAction = { type: "none", enabled: false, label: "正在判斷目前下一步", reason: "" };
+    var fontScaleOptions = [0.9, 1, 1.1, 1.25, 1.4];
+    var defaultFontScale = 1.1;
+    var fontScaleStorageKey = "weeklySopLauncher.fontScale";
+
+    function readSavedFontScale() {
+      try {
+        var saved = parseFloat(window.localStorage.getItem(fontScaleStorageKey));
+        for (var i = 0; i < fontScaleOptions.length; i++) {
+          if (saved === fontScaleOptions[i]) { return saved; }
+        }
+      } catch (e) {}
+      return defaultFontScale;
+    }
+
+    function applyFontScale(scale, shouldSave) {
+      scale = Number(scale);
+      var valid = false;
+      for (var i = 0; i < fontScaleOptions.length; i++) {
+        if (scale === fontScaleOptions[i]) { valid = true; break; }
+      }
+      if (!valid) { scale = defaultFontScale; }
+      document.body.style.zoom = String(scale);
+      var label = document.getElementById("fontScaleValue");
+      if (label) { label.innerText = Math.round(scale * 100) + "%"; }
+      var buttons = document.getElementsByTagName("button");
+      for (var j = 0; j < buttons.length; j++) {
+        if (buttons[j].getAttribute("data-font-scale")) {
+          buttons[j].className = buttons[j].className.replace(/\s*active\b/g, "");
+          if (Number(buttons[j].getAttribute("data-font-scale")) === scale) {
+            buttons[j].className += " active";
+          }
+        }
+      }
+      if (shouldSave) {
+        try { window.localStorage.setItem(fontScaleStorageKey, String(scale)); } catch (e2) {}
+      }
+    }
+
+    function setFontScaleFromControl() {
+      applyFontScale(this.getAttribute("data-font-scale"), true);
+    }
 
     function getRootFolder() {
       var raw = decodeURIComponent(window.location.pathname);
@@ -635,6 +804,26 @@
       var btn = document.getElementById("btnToggleDetails");
       panel.style.display = "none";
       btn.innerText = "展開明細";
+    }
+
+    function toggleQueueDetails() {
+      var panel = document.getElementById("queueDetails");
+      var btn = document.getElementById("btnToggleQueueDetails");
+      if (!panel || !btn) { return; }
+      if (panel.style.display === "block") {
+        panel.style.display = "none";
+        btn.innerText = "展開工作佇列明細";
+      } else {
+        panel.style.display = "block";
+        btn.innerText = "收合工作佇列明細";
+      }
+    }
+
+    function resetQueueDetailsCollapsed() {
+      var panel = document.getElementById("queueDetails");
+      var btn = document.getElementById("btnToggleQueueDetails");
+      if (panel) { panel.style.display = "none"; }
+      if (btn) { btn.innerText = "展開工作佇列明細"; }
     }
 
     function setButtonsBusy(isBusy) {
@@ -1023,7 +1212,16 @@
       var panel = document.getElementById(id);
       if (!panel) { return; }
       panel.className = "six-zone " + (mode || "");
-      panel.innerHTML = '<div class="six-zone-title">' + htmlEscape(title) + '</div><div class="six-zone-body">' + htmlEscape(text) + '</div>';
+      panel.innerHTML = '<button type="button" class="six-zone-title" title="展開或收合詳細資料"><span class="six-zone-toggle-icon">&#9656;</span>' + htmlEscape(title) + '</button><div class="six-zone-body">' + htmlEscape(text) + '</div>';
+      var toggle = panel.getElementsByTagName("button")[0];
+      if (toggle) {
+        toggle.onclick = function () {
+          var open = /\bexpanded\b/.test(panel.className);
+          panel.className = panel.className.replace(/\s*expanded\b/g, "") + (open ? "" : " expanded");
+          var icon = this.getElementsByTagName("span")[0];
+          if (icon) { icon.innerHTML = open ? "&#9656;" : "&#9662;"; }
+        };
+      }
     }
 
     function renderSixZoneDashboard() {
@@ -1035,11 +1233,11 @@
       if (!plan) {
         var unavailable = "尚未產生 latest/seo-geo-action-plan.json。先產生 action plan 後才會顯示本輪資料、策略與成效摘要。";
         setSixZone("zoneDataTrust", "1. 資料可信度", unavailable, "warn");
-        setSixZone("zoneOwnerPortfolio", "2. Owner Portfolio", unavailable, "warn");
-        setSixZone("zoneDecision", "3. 7d 監控／28d 決策", unavailable, "warn");
+        setSixZone("zoneOwnerPortfolio", "2. 關鍵字 × 對應主頁組合", unavailable, "warn");
+        setSixZone("zoneDecision", "3. 7 天監控／28 天決策", unavailable, "warn");
         setSixZone("zoneStrategy", "4. 本輪策略審核", unavailable, "warn");
-        setSixZone("zoneImplementation", "5. 實作與部署", unavailable, "warn");
-        setSixZone("zonePerformance", "6. 成效與 AI Visibility", unavailable, "warn");
+        setSixZone("zoneImplementation", "5. 實作與網站上線", unavailable, "warn");
+        setSixZone("zonePerformance", "6. 成效與 AI 可見度", unavailable, "warn");
         return;
       }
       var fresh7 = getNested(plan, ["freshness", "7d"], {}), fresh28 = getNested(plan, ["freshness", "28d"], {});
@@ -1055,7 +1253,7 @@
       var observations = asArray(plan.observations), registry = getTargetRegistry(root);
       var top10 = countWhere(observations, function (row) { return Number(row["28d position"]) > 0 && Number(row["28d position"]) <= 10; });
       var lowShare = countWhere(observations, function (row) { return Number(row["28d owner share"]) < 80 && Number(row["28d cluster impressions"]) >= 50; });
-      setSixZone("zoneOwnerPortfolio", "2. Keyword × Owner Portfolio", [
+      setSixZone("zoneOwnerPortfolio", "2. 關鍵字 × 對應主頁組合（Owner Portfolio）", [
         registry.text || "registry data unavailable",
         "active owners=" + (plan.active_owner_count || observations.length) + " / observations=" + observations.length + " / 28d Top 10=" + top10,
         "source compliant=" + countWhere(observations, function (row) { return row.output_compliant === true; }) + " / owner-share review=" + lowShare,
@@ -1063,7 +1261,7 @@
       ].join("\n"), registry.mode === "ok" ? "ok" : "error");
 
       var reviews = asArray(plan.review_windows);
-      setSixZone("zoneDecision", "3. 7d 監控／28d 決策", [
+      setSixZone("zoneDecision", "3. 7 天監控／28 天決策", [
         "7d final=" + getNested(plan, ["snapshot", "7d", "end_date"], "n/a") + "（監控／異常告警）",
         "28d final=" + getNested(plan, ["snapshot", "28d", "end_date"], "n/a") + "（正式策略判斷）",
         "review windows：7d eligible=" + countWhere(reviews, function (row) { return row.review_7d_status === "eligible"; }) + "/" + reviews.length + "；28d eligible=" + countWhere(reviews, function (row) { return row.review_28d_status === "eligible"; }) + "/" + reviews.length,
@@ -1080,7 +1278,7 @@
       ].join("\n"), projectionValid ? (effective.status === "observation_only" ? "warn" : "ok") : "error");
 
       var lifecycle = effective.status;
-      setSixZone("zoneImplementation", "5. 實作與部署", [
+      setSixZone("zoneImplementation", "5. 實作與網站上線", [
         "lifecycle=" + lifecycle + " / active round=" + (state ? state.active_round : "n/a") + " / total rounds=" + (state ? state.total_rounds : "n/a"),
         "data_validated → strategy_approved → implemented → local_validated → deployed → live_verified → observing_7d → reviewed_28d → completed",
         projectionValid ? (lifecycle === "observation_only" ? "無 executable Round；複製、前進、部署與 lifecycle 寫入均保持 disabled。" : "每一步都需要 queue/cycle 綁定的 receipt evidence。") : "projection inconsistent；所有後續操作已停用。",
@@ -1092,6 +1290,7 @@
       // receipt.  GSC ranking/CTR/impressions must never become a proxy for it.
       var aiVisibility = readJsonIfExists(root + "\\latest\\ai-visibility-summary.json");
       var aiLunaComparison = readJsonIfExists(root + "\\latest\\ai-visibility-luna-comparison.json");
+      var gscGenerativeAi = readJsonIfExists(root + "\\latest\\gsc-generative-ai-analysis.json");
       var aiMetrics = aiVisibility && aiVisibility.metrics ? aiVisibility.metrics : null;
       var aiDirect = aiVisibility && aiVisibility.status === "complete" && aiVisibility.measurement_source === "direct_ai_engine_observation" && aiVisibility.gsc_inference_prohibited === true;
       var aiText = aiDirect ? [
@@ -1107,10 +1306,12 @@
         aiLunaComparison && aiLunaComparison.status === "complete" ? "Luna 對照=" + getNested(aiLunaComparison, ["luna", "model"], "gpt-5.6-luna") + " / baseline=" + getNested(aiLunaComparison, ["baseline", "model"], "n/a") + " / mini latest 保持不變=" + getNested(aiLunaComparison, ["safety", "latest_summary_unchanged"], false) + " / report=latest/ai-visibility-luna-comparison.json" : "Luna 對照：尚未執行（不影響目前 mini summary）",
         "AI 指標僅來自固定問題集的 direct AI engine observation；不由 GSC 推論。"
       ].join("\n") : "AI Visibility：data unavailable（尚無固定問題集的 direct AI engine observation receipt）。請匯入含 engine、model、日期、answer、brand mention、citation URL 與 accuracy 的完整觀測 JSON；GSC 指標不會用來推論 AI rate。";
-      setSixZone("zonePerformance", "6. 成效與 AI Visibility", [
+      setSixZone("zonePerformance", "6. 成效與 AI 可見度（AI Visibility）", [
         "CTR benchmark=" + (benchmark.available === true ? (benchmark.start_date || "n/a") + "~" + (benchmark.end_date || "n/a") : "data unavailable：" + (benchmark.reason || "未建立")),
         "Query delta=" + (delta.comparison_type || "data unavailable") + " / current=" + (delta.current_start_date || "n/a") + "~" + (delta.current_end_date || "n/a"),
         "signals=" + (delta.signal_count || 0) + " / noise=" + (delta.noise_count || 0) + " / pending=" + (delta.pending_confirmation_count || 0),
+        gscGenerativeAi && gscGenerativeAi.status === "complete" ? "GSC 生成式 AI 功能：" + getNested(gscGenerativeAi, ["period", "start_date"], "n/a") + "~" + getNested(gscGenerativeAi, ["period", "end_date"], "n/a") + " / 曝光=" + getNested(gscGenerativeAi, ["impressions", "total"], "n/a") + " / 台灣=" + getNested(gscGenerativeAi, ["countries", "taiwan_share"], "n/a") + "% / latest/gsc-generative-ai-analysis.md" : "GSC 生成式 AI 功能：尚未分析 Excel（可在每月檢查區選取 XLSX）",
+        "GSC 生成式 AI 曝光與 direct AI Visibility 分開記錄，不可互相推論。",
         aiText
       ].join("\n"), aiDirect ? "ok" : "warn");
     }
@@ -1802,7 +2003,7 @@
             "重複檔案，報表未更新；若繼續只會沿用舊 7d/28d baseline" :
             "讀取 latest 7d/28d 與 target registry 產生 queue") :
             (!hasPwsh ? "找不到 pwsh；請先安裝 PowerShell 7" : "需先有 fresh 7d 報表與有效 target registry"));
-        setButtonState("btnOpenSeoGeoActionPlan", !hasPlanHtml, "查看目前 SEO/GEO 報表",
+        setButtonState("btnOpenSeoGeoActionPlan", !hasPlanHtml, "查看目前 SEO/GEO 優化報表",
           hasPlanHtml ? "開啟 latest action plan HTML" : "尚未產生 action plan");
         var singlePageReviewCount = asArray(optionalItems).filter(function (item) { return item && (item.review_type === "single_page_p0_review" || item.review_type === "single_page_alignment_review"); }).length;
         setButtonState("btnCopyOptionalSeoGeoPrompt", !hasOptionalPrompt,
@@ -1844,18 +2045,21 @@
         var aiRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-observation.ps1";
         var aiLunaComparisonRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-luna-comparison.ps1";
         var aiAutoImporter = fso.GetParentFolderName(root) + "\\scripts\\import-latest-ai-visibility.ps1";
+        var gscGenerativeAiAnalyzer = root + "\\analyze-gsc-generative-ai.ps1";
         var aiQuestionSet = root + "\\config\\ai-visibility-question-set.json";
         var canImportAiVisibility = hasPwsh && fso.FileExists(aiWriter) && fso.FileExists(aiAutoImporter) && fso.FileExists(aiQuestionSet);
         var canRunAiVisibility = canImportAiVisibility && fso.FileExists(aiRunner);
         var canRunAiVisibilityLunaComparison = canImportAiVisibility && fso.FileExists(aiRunner) && fso.FileExists(aiLunaComparisonRunner);
-        setButtonState("btnImportAiVisibility", !canRunAiVisibility, "AI 自動測試＋匯入 Visibility",
+        setButtonState("btnImportAiVisibility", !canRunAiVisibility, "AI 可見度自動測試＋匯入",
           canRunAiVisibility ? "使用同一 OpenAI model 獨立跑固定 6 題，寫入收件匣後自動匯入；需要 OPENAI_API_KEY" : "需要 PowerShell 7、AI Visibility runner／importer／writer 與固定問題集");
-        setButtonState("btnRunAiVisibilityLunaComparison", !canRunAiVisibilityLunaComparison, "Luna 對照測試（不覆蓋 mini）",
+        setButtonState("btnRunAiVisibilityLunaComparison", !canRunAiVisibilityLunaComparison, "Luna 對照測試（不覆蓋目前正式結果）",
           canRunAiVisibilityLunaComparison ? "以 gpt-5.6-luna 重跑同一固定 6 題；只寫入新的 observation 與對照報告，不會匯入或覆蓋目前 gpt-5.4-mini summary" : "需要 PowerShell 7、Luna comparison runner、AI Visibility runner 與固定問題集");
         setButtonState("btnImportAiVisibilityInbox", !canImportAiVisibility, "只匯入收件匣最新 JSON",
           canImportAiVisibility ? "不呼叫 AI API；自動讀取 Weekly SOP\\inbox\\ai-visibility 中最新的完整 JSON" : "需要 PowerShell 7、AI Visibility importer／writer 與固定問題集");
         setButtonState("btnImportAiVisibilityManual", !canImportAiVisibility, "手動選擇 AI Visibility JSON",
           canImportAiVisibility ? "找不到收件匣檔案時使用；仍只接受 direct AI engine observation" : "需要 PowerShell 7、AI Visibility writer 與固定問題集");
+        setButtonState("btnAnalyzeGscGenerativeAi", !(hasPwsh && fso.FileExists(gscGenerativeAiAnalyzer)), "分析 GSC 生成式 AI Excel 報表",
+          hasPwsh && fso.FileExists(gscGenerativeAiAnalyzer) ? "選取 Search Console「生成式 AI 功能」XLSX，產生本機曝光摘要；不會更新 AI Visibility 指標" : "需要 PowerShell 7 與 analyze-gsc-generative-ai.ps1");
         setButtonState("btnSeoGeoDeployDryRun", !canDeploy, "部署預演（FTP dry-run，不實際上傳）",
           canDeploy ? "先產生 queue-bound deployment manifest；不會連線或上傳" : "需要 workflow consistency PASS 且 lifecycle=local_validated");
         setButtonState("btnSeoGeoDeploy", !canDeploy, "正式上傳網站（FTP 部署）",
@@ -1964,6 +2168,7 @@
         setButtonState("btnRunAiVisibilityLunaComparison", true, "Luna 對照測試（不覆蓋 mini）", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityInbox", true, "只匯入收件匣最新 JSON", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityManual", true, "手動選擇 AI Visibility JSON", "流程狀態讀取失敗");
+        setButtonState("btnAnalyzeGscGenerativeAi", true, "分析 GSC 生成式 AI Excel", "流程狀態讀取失敗");
         renderWorkflowPanel("error", "流程狀態：讀取失敗", e.message);
       }
     }
@@ -1998,11 +2203,28 @@
       return { cls: "", label: "待排程" };
     }
 
+    function localizeLifecycleStatus(status) {
+      var labels = {
+        observation_only: "僅監控",
+        awaiting_implemented_receipt: "等待完成修改驗收",
+        implemented: "已完成修改",
+        local_validated: "本機檢查通過",
+        deployed: "網站已上傳",
+        live_verified: "已完成網站上線驗證",
+        observing_7d: "觀察 7 天成效中",
+        reviewed_28d: "已完成 28 天檢討",
+        completed: "本輪已結束",
+        stale_plan: "計畫已過期"
+      };
+      return labels[status] ? labels[status] + "（" + status + "）" : (status || "資料未提供");
+    }
+
     function refreshQueueStatus() {
       var panel = document.getElementById("queueStatusPanel");
       var body = document.getElementById("queueStatusBody");
+      var summary = document.getElementById("queueStatusSummary");
       var badge = document.getElementById("queueStatusBadge");
-      if (!panel || !body || !badge) { return; }
+      if (!panel || !body || !summary || !badge) { return; }
 
       var root = getRootFolder();
       var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
@@ -2018,8 +2240,9 @@
           badge.innerText = "尚未建立";
           var log = readTextIfExists(logPath);
           var logLine = log ? log.replace(/\r?\n/g, " ").substring(0, 220) : "尚無 last-run log";
+          summary.innerText = "工作佇列尚未建立（Queue）。下一步：產生 SEO/GEO 優化建議。";
           body.innerHTML =
-            '<div class="queue-meta">Queue 尚未建立或本次產生失敗。\n請先按「產生 SEO/GEO 優化建議」，若仍失敗請查看：\n' +
+            '<div class="queue-meta">工作佇列尚未建立或本次產生失敗（Queue）。\n請先按「產生 SEO/GEO 優化建議」，若仍失敗請查看：\n' +
             htmlEscape(logPath) + "\n\n最近錯誤摘要：" + htmlEscape(logLine) + "</div>";
           return;
         }
@@ -2033,17 +2256,22 @@
         var isLocalValidated = snapshot.isLocalValidated;
         var isStale = snapshot.isStale;
         var activeRoundLabel = isObservation ? "監控" : (snapshot.isAwaitingImplemented ? "等待 implemented receipt" : (isLocalValidated ? "lifecycle 進行中" : activeRound));
-        badge.innerText = isStale ? "stale_plan" : (isObservation ? "observation_only" :
-          (snapshot.isAwaitingImplemented ? "awaiting_implemented_receipt" : (isLocalValidated ? (state.status || "lifecycle") : ("Round " + activeRound + "/" + totalRounds))));
+        badge.innerText = isStale ? localizeLifecycleStatus("stale_plan") : (isObservation ? localizeLifecycleStatus("observation_only") :
+          (snapshot.isAwaitingImplemented ? localizeLifecycleStatus("awaiting_implemented_receipt") : (isLocalValidated ? localizeLifecycleStatus(state.status || "lifecycle") : ("第 " + activeRound + " 輪／共 " + totalRounds + " 輪"))));
 
-        var meta = "Queue ID：" + (state.queue_id || "n/a") +
+        var meta = "工作佇列 ID（Queue ID）：" + (state.queue_id || "n/a") +
           "\nCycle key：" + (state.cycle_key || "n/a") +
-          "\n狀態：" + (state.status || "n/a") +
+          "\n狀態：" + localizeLifecycleStatus(state.status) +
           "\n產生時間：" + (state.generated_at || "n/a") +
           "\nactive_round：" + activeRoundLabel + " / total_rounds：" + totalRounds +
           "\ncompleted_rounds：" + (completed.length ? completed.join(", ") : "none") +
           "\ncopied_rounds：" + (copied.length ? copied.join(", ") : "none") +
           "\nReceipt gate：" + (snapshot.receiptGate.passed ? "passed" : snapshot.receiptGate.reason);
+        var currentRoundText = isObservation ? "監控模式" :
+          ((snapshot.isAwaitingImplemented || isLocalValidated) ? activeRoundLabel : ("第 " + activeRoundLabel + " 輪／共 " + totalRounds + " 輪"));
+        summary.innerText = "狀態：" + localizeLifecycleStatus(state.status) + " / " +
+          "目前：" + currentRoundText + " / " +
+          "下一步：" + (snapshot.receiptGate.passed ? "可前進" : snapshot.receiptGate.reason);
         if (isStale) {
           meta += "\n\nProvenance：stale_plan\n原因：" + asArray(snapshot.provenance.reasons).join("；") +
             "\n已停用 Copy／Advance；請重新產生 SEO/GEO 優化建議。";
@@ -2102,7 +2330,8 @@
       } catch (e) {
         panel.className = "queue-panel error";
         badge.innerText = "error";
-        body.innerHTML = '<div class="queue-meta">Queue 狀態讀取失敗：' + htmlEscape(e.message) + '</div>';
+        summary.innerText = "工作佇列狀態讀取失敗，請展開明細查看原因。";
+        body.innerHTML = '<div class="queue-meta">工作佇列狀態讀取失敗（Queue）：' + htmlEscape(e.message) + '</div>';
       }
     }
 
@@ -2846,6 +3075,33 @@
       }
     }
 
+    function analyzeGscGenerativeAiExcel() {
+      try {
+        var root = getRootFolder();
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var analyzer = root + "\\analyze-gsc-generative-ai.ps1";
+        if (!fso.FileExists(analyzer)) { throw new Error("找不到 GSC 生成式 AI 分析程式：\n" + analyzer); }
+        var inputPath = pickInputFile("選取 GSC 生成式 AI 功能 Excel", "Excel Workbook (*.xlsx)|*.xlsx");
+        if (!inputPath) { setStatusSummary("已取消選取 GSC 生成式 AI Excel。", ""); return; }
+        inputPath = String(inputPath).replace(/^\s+|\s+$/g, "");
+        if (!fso.FileExists(inputPath)) { throw new Error("找不到 Excel 檔案：\n" + inputPath); }
+        var logPath = root + "\\latest\\gsc-generative-ai-last-run.log";
+        var cmd = 'cmd /d /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + analyzer.replace(/"/g, '""') + '" -InputPath "' + inputPath.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("正在分析 GSC「生成式 AI 功能」Excel；只會產生曝光摘要，不會更新 AI Visibility 指標...", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Command:\n" + cmd + "\n\nInput:\n" + inputPath + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? "GSC 生成式 AI Excel 分析完成。\n\n摘要：\n" + root + "\\latest\\gsc-generative-ai-analysis.md\n\n此資料僅描述 GSC 生成式 AI 曝光，不會推論 AI Visibility 的提及／引用率。" : "GSC 生成式 AI Excel 分析失敗。\n\n" + logText, code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("GSC 生成式 AI Excel 分析失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        renderSixZoneDashboard();
+        updateWorkflowControls();
+      }
+    }
+
     function importLatestAiVisibilityObservation() {
       try {
         var root = getRootFolder();
@@ -3077,7 +3333,7 @@
       if (!panel || !link) { return false; }
       var show = panel.style.display !== "block";
       panel.style.display = show ? "block" : "none";
-      link.innerText = show ? "收合每月 AI Visibility 檢查" : "顯示每月 AI Visibility 檢查（選用）";
+      link.innerText = show ? "收合每月 AI 可見度／生成式 AI 檢查" : "顯示每月 AI 可見度／生成式 AI 檢查（選用）";
       return false;
     }
 
@@ -3119,8 +3375,19 @@
       bindClick("btnOpenSeoGeoActionPlan", openLatestSeoGeoActionPlan);
       bindClick("btnImportAiVisibility", runAiVisibilityAutomation);
       bindClick("btnRunAiVisibilityLunaComparison", runAiVisibilityLunaComparison);
+      bindClick("btnAnalyzeGscGenerativeAi", analyzeGscGenerativeAiExcel);
+      bindClick("btnToggleQueueDetails", toggleQueueDetails);
       bindClick("toggleMonthlyAiAction", toggleMonthlyAiAction);
       bindClick("btnToggleDetails", toggleDetails);
+      var fontButtons = document.getElementsByTagName("button");
+      for (var i = 0; i < fontButtons.length; i++) {
+        if (fontButtons[i].getAttribute("data-font-scale")) {
+          fontButtons[i].onclick = setFontScaleFromControl;
+        }
+      }
+      applyFontScale(readSavedFontScale(), false);
+      resetQueueDetailsCollapsed();
+      resetDetailsCollapsed();
       refreshHealth();
     }
   </script>
@@ -3129,35 +3396,47 @@
   <div class="card">
     <div class="heading">
       <h1>Weekly SOP 一鍵執行</h1>
-      <span class="tag">GSC API / 一鍵更新 7d 與 28d</span>
+      <div class="heading-tools">
+        <div class="font-controls" title="調整介面字體大小；設定會記住">
+          <span class="font-control-label">字體 <span id="fontScaleValue">110%</span></span>
+          <button type="button" class="btn-font-scale" data-font-scale="0.9">90%</button>
+          <button type="button" class="btn-font-scale" data-font-scale="1">100%</button>
+          <button type="button" class="btn-font-scale" data-font-scale="1.1">110%</button>
+          <button type="button" class="btn-font-scale" data-font-scale="1.25">125%</button>
+          <button type="button" class="btn-font-scale" data-font-scale="1.4">140%</button>
+        </div>
+        <span class="tag">GSC API／一鍵更新 7 天與 28 天</span>
+      </div>
     </div>
 
     <p class="intro">日常只要看流程提示，按下目前可用的按鈕。系統會自動以 Search Console 的 final 資料更新報表、建立行動報告，並在每一步做安全檢查。</p>
 
     <div class="flow-panel" id="workflowStatusPanel">
       <div class="flow-title" id="workflowStatusTitle">流程狀態：檢查中</div>
-      <div class="flow-next" id="workflowStatusNext">正在讀取 latest 7d / 28d、target registry、queue state 與 validation receipt。</div>
+      <div class="flow-next" id="workflowStatusNext">正在讀取最新 7 天／28 天資料、目標關鍵字對應表、工作佇列狀態與驗收紀錄。</div>
     </div>
 
     <div class="report-actions">
       <button id="btnFetchGscLatest" class="btn-fetch-gsc">更新最新 GSC 資料</button>
     </div>
-    <p class="report-actions-note">系統只接受 Google Search Console 已 finalized 的完整日期；更新完成後會自動重建 SEO/GEO 行動報告。</p>
+    <p class="report-actions-note">系統只接受 Google 搜尋主控台已完成結算的完整日期；更新完成後會自動重建 SEO/GEO 行動報告。</p>
 
-    <div class="section-title">目前 SEO/GEO 步驟</div>
+    <div class="section-title">目前 SEO/GEO（搜尋與生成式引擎優化）步驟</div>
     <div class="seo-geo-actions">
       <button id="btnSeoGeoNextSmart" class="btn-seo-geo">執行目前下一步</button>
-      <button id="btnOpenSeoGeoActionPlan" class="btn-upload-fallback">查看目前 SEO/GEO 報表</button>
+      <button id="btnOpenSeoGeoActionPlan" class="btn-upload-fallback">查看目前 SEO/GEO 優化報表</button>
     </div>
     <p class="seo-geo-note">這個按鈕會依目前狀態自動切換為：複製 AI 指令、驗證並前進、部署預演、正式上傳、上線驗證，或記錄必要 lifecycle receipt。正式上傳與 28 天策略決策仍會要求你確認。</p>
-    <a id="toggleMonthlyAiAction" class="advanced-actions-link" href="#">顯示每月 AI Visibility 檢查（選用）</a>
+    <button id="toggleMonthlyAiAction" type="button" class="btn-monthly-ai-toggle">顯示每月 AI 可見度／生成式 AI 檢查（選用）</button>
     <div id="monthlyAiAction" class="advanced-seo-geo-actions">
-      <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">執行 AI Visibility 檢查</button>
-      <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-visibility">Luna 對照測試（額外模型費用）</button>
+      <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">執行 AI 可見度檢查</button>
+      <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-luna">Luna 對照測試（額外模型費用）</button>
+      <button id="btnAnalyzeGscGenerativeAi" class="btn-seo-geo btn-gsc-generative-ai">分析 GSC 生成式 AI Excel 報表</button>
       <p class="seo-geo-note">一般檢查會用預設模型完成並匯入固定 6 題。Luna 對照會以 <strong>gpt-5.6-luna</strong> 另跑同一組題目，產生獨立比較報告，不會覆蓋目前正式結果；因會多呼叫一個模型，將增加該模型的 API 用量／費用。兩者皆需要設定 <strong>OPENAI_API_KEY</strong>。</p>
+      <p class="seo-geo-note">「分析 GSC 生成式 AI Excel」請選取 GSC 下載的 <strong>.xlsx</strong>。它只分析 GSC 生成式 AI 功能曝光，不會改寫 direct AI Visibility 的提及、引用或正確性指標。</p>
     </div>
 
-    <div class="section-title">六區 Weekly SOP 總覽</div>
+    <div class="section-title">六區每週作業總覽</div>
     <div class="six-zone-grid" id="sixZoneDashboard">
       <div class="six-zone" id="zoneDataTrust">讀取中...</div>
       <div class="six-zone" id="zoneOwnerPortfolio">讀取中...</div>
@@ -3169,10 +3448,14 @@
 
     <div class="queue-panel" id="queueStatusPanel">
       <div class="queue-head">
-        <span>目前 Queue 狀態</span>
+        <div class="queue-head-left">
+          <span>目前工作佇列狀態（Queue）</span>
+          <button id="btnToggleQueueDetails" type="button" class="btn-queue-detail">展開工作佇列明細</button>
+        </div>
         <span id="queueStatusBadge">檢查中...</span>
       </div>
-      <div class="queue-body" id="queueStatusBody">檢查中...</div>
+      <div class="queue-body" id="queueStatusSummary">檢查中...</div>
+      <div class="queue-details" id="queueDetails"><div class="queue-body" id="queueStatusBody">檢查中...</div></div>
     </div>
 
     <div class="status-wrap" id="statusWrap">
@@ -3197,19 +3480,19 @@
             <div class="health-value" id="healthNpmValue">檢查中...</div>
           </div>
           <div class="health-item" id="health7d">
-            <div class="health-label">Latest 7d</div>
+            <div class="health-label">最新 7 天資料</div>
             <div class="health-value" id="health7dValue">檢查中...</div>
           </div>
           <div class="health-item" id="health28d">
-            <div class="health-label">Latest 28d</div>
+            <div class="health-label">最新 28 天資料</div>
             <div class="health-value" id="health28dValue">檢查中...</div>
           </div>
           <div class="health-item" id="healthPool">
-            <div class="health-label">Target Registry</div>
+            <div class="health-label">目標關鍵字對應表</div>
             <div class="health-value" id="healthPoolValue">檢查中...</div>
           </div>
           <div class="health-item" id="healthPlan">
-            <div class="health-label">Action Plan</div>
+            <div class="health-label">優化行動報告</div>
             <div class="health-value" id="healthPlanValue">檢查中...</div>
           </div>
         </div>
@@ -3218,7 +3501,7 @@
       </div>
     </div>
 
-    <div class="footer">Weekly SOP Launcher | UI 2026-07-15 | PowerShell 7 required</div>
+    <div class="footer">Weekly SOP 啟動器｜介面版本 2026-07-15｜需要 PowerShell 7</div>
   </div>
 </body>
 </html>

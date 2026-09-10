@@ -14,6 +14,11 @@ export default function Footer() {
             <p>
               提供窗簾相關產品估價、丈量與施工服務，服務住家、辦公室及商業空間。線上價格供前期比較，材料規格與正式報價依個別案件確認。
             </p>
+            <div className="footer-trust-chips">
+              <span>30年工班經驗</span>
+              <span>雙北免費丈量</span>
+              <span>工廠直營透明價</span>
+            </div>
             <a
               href={CATALOG_URL}
               target="_blank"
@@ -69,18 +74,22 @@ export default function Footer() {
           </div>
 
           {/* SEO Navigation */}
-          <div className="footer-col">
+          <div className="footer-col footer-col-wide">
             <h4>服務區域與選購指南</h4>
-            <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <li><Link href="/location/taipei/" className="seo-link">📍 台北市窗簾推薦</Link></li>
-              <li><Link href="/location/sanchong/" className="seo-link">📍 三重區窗簾推薦</Link></li>
-              <li><Link href="/location/daan/" className="seo-link">📍 大安區窗簾推薦</Link></li>
-              <li><Link href="/location/zhongshan/" className="seo-link">📍 中山區窗簾推薦</Link></li>
-              <li><Link href="/location/shilin/" className="seo-link">📍 士林區窗簾推薦</Link></li>
-              <li><Link href="/location/neihu/" className="seo-link">📍 內湖區窗簾推薦</Link></li>
-              <li><Link href="/curtain/blackout/" className="seo-link">📖 遮光窗簾挑選指南</Link></li>
-              <li><Link href="/curtain/living-room/" className="seo-link">📖 客廳窗簾挑選攻略</Link></li>
-            </ul>
+            <div className="footer-links-grid">
+              <ul className="footer-links-subcol">
+                <li><Link href="/location/taipei/" className="seo-link">📍 台北市窗簾推薦</Link></li>
+                <li><Link href="/location/sanchong/" className="seo-link">📍 三重區窗簾推薦</Link></li>
+                <li><Link href="/location/daan/" className="seo-link">📍 大安區窗簾推薦</Link></li>
+                <li><Link href="/location/zhongshan/" className="seo-link">📍 中山區窗簾推薦</Link></li>
+              </ul>
+              <ul className="footer-links-subcol">
+                <li><Link href="/location/shilin/" className="seo-link">📍 士林區窗簾推薦</Link></li>
+                <li><Link href="/location/neihu/" className="seo-link">📍 內湖區窗簾推薦</Link></li>
+                <li><Link href="/curtain/blackout/" className="seo-link">📖 遮光窗簾挑選指南</Link></li>
+                <li><Link href="/curtain/living-room/" className="seo-link">📖 客廳窗簾挑選攻略</Link></li>
+              </ul>
+            </div>
             <style>{`
               .seo-link { color: var(--stone-300); text-decoration: none; transition: color 0.2s; }
               .seo-link:hover { color: white; }

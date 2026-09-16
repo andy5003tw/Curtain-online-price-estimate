@@ -67,3 +67,9 @@
 
 - 已修正 `scripts/deploy-ftp.ps1`，使 quick 模式自動納入一般 public 圖片與字型（`avif/gif/ico/jpg/jpeg/png/svg/webp/woff/woff2/ttf/otf`），避免日後只更新 HTML 而遺漏被引用的背景圖或字型。
 - 不連網 quick dry run 已確認選取 1,245 個 `out/` 網站產物，並驗證 14/14 本輪 Hero WebP 都會納入；本次僅修正未來部署選檔邏輯，未重複上傳已成功的圖片。
+
+## 未使用 Hero PNG 清理（2026-09-17）
+
+- 掃描確認 16 張 `public/` Hero PNG 沒有任何頁面、CSS、程式或文件引用，網站實際使用的是已部署的 WebP。
+- 10 張主導航 PNG 與 2 張城市桌機 PNG 已以 SHA-256 確認和 `download/` 備份相同後移除；兩張城市舊手機 PNG 與兩張服務總覽 PNG 改先備份至 `download/`（避免與不同內容的同名舊備份覆蓋）再移除 public 副本。
+- 結果：這些 Hero 位置的 `public/` PNG 剩餘 0；WebP 與原始備份皆保留，毋須重新部署。

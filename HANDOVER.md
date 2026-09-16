@@ -285,3 +285,9 @@ cmd.exe /c "npm.cmd run seo:preflight"
 
 - 已修正 `scripts/deploy-ftp.ps1` 的 `Get-QuickFiles`：quick 模式除 HTML／TXT／XML、`.htaccess` 與 `_next/static/*` 外，現也會自動選取 public 靜態資產副檔名 `avif`、`gif`、`ico`、`jpg/jpeg`、`png`、`svg`、`webp`、`woff/woff2`、`ttf`、`otf`。
 - 不連網 dry run 已選取 1,245 個 `out/` 網站產物，並程式化確認本輪 14/14 Hero WebP 均會被列入。未進行第二次正式部署，因目前所有這些 WebP 已由熱修上傳並完成 HTTP GET 驗收。
+
+### 2026-09-17 未使用 PNG 清理
+
+- 已確認 `public/nav-hero/`、`public/location_img/city-hero/` 與 `public/location_img/location-hero-*.png` 的 16 張 PNG 均沒有頁面、CSS、程式或文件引用；現行網站僅引用已部署的 WebP。
+- 已移除 `public/` 的 16 張未使用 PNG：10 張主導航與 2 張城市桌機圖已比對 SHA-256 與既有 `download/` 備份一致後刪除；2 張城市舊手機圖及 2 張服務總覽圖則先以 `*-public-archive.png`／原檔名備份至 `download/` 再移除 public 副本。
+- 清理後 `public/` 此三個 Hero 位置的未使用 PNG 為 0；所有 WebP 與既有高品質備份均保留。

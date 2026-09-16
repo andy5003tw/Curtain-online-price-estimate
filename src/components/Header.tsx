@@ -9,7 +9,10 @@ import { CATALOG_URL } from '@/lib/seo';
 export default function Header() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const isLocationPage = pathname === '/location' || pathname === '/location/' || pathname?.startsWith('/location/');
+  const isCurrentPage = (href: string) => (
+    pathname === href || pathname === `${href}/` || pathname?.startsWith(`${href}/`)
+  );
+  const isLocationPage = isCurrentPage('/location');
 
   return (
     <header className="site-header">
@@ -24,14 +27,14 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="desktop-nav">
-          <Link href="/about">關於我們</Link>
-          <Link href="/products">產品系列</Link>
-          <Link href="/cases">施工案例</Link>
-          <Link href="/blog">窗簾知識</Link>
-          <Link href="/calculator">線上估價</Link>
+          <Link href="/about" className={`nav-link${isCurrentPage('/about') ? ' is-current' : ''}`} aria-current={isCurrentPage('/about') ? 'page' : undefined}>關於我們</Link>
+          <Link href="/products" className={`nav-link${isCurrentPage('/products') ? ' is-current' : ''}`} aria-current={isCurrentPage('/products') ? 'page' : undefined}>產品系列</Link>
+          <Link href="/cases" className={`nav-link${isCurrentPage('/cases') ? ' is-current' : ''}`} aria-current={isCurrentPage('/cases') ? 'page' : undefined}>施工案例</Link>
+          <Link href="/blog" className={`nav-link${isCurrentPage('/blog') ? ' is-current' : ''}`} aria-current={isCurrentPage('/blog') ? 'page' : undefined}>窗簾知識</Link>
+          <Link href="/calculator" className={`nav-link${isCurrentPage('/calculator') ? ' is-current' : ''}`} aria-current={isCurrentPage('/calculator') ? 'page' : undefined}>線上估價</Link>
           <Link
             href="/location/"
-            className={`nav-location-link${isLocationPage ? ' is-current' : ''}`}
+            className={`nav-link nav-location-link${isLocationPage ? ' is-current' : ''}`}
             aria-current={isLocationPage ? 'page' : undefined}
           >
             <MapPin size={15} aria-hidden="true" />
@@ -59,14 +62,14 @@ export default function Header() {
 
       {/* Mobile Nav */}
       <nav className={`mobile-nav${open ? ' open' : ''}`}>
-        <Link href="/about" onClick={() => setOpen(false)}>關於我們</Link>
-        <Link href="/products" onClick={() => setOpen(false)}>產品系列</Link>
-        <Link href="/cases" onClick={() => setOpen(false)}>施工案例</Link>
-        <Link href="/blog" onClick={() => setOpen(false)}>窗簾知識</Link>
-        <Link href="/calculator" onClick={() => setOpen(false)}>線上估價</Link>
+        <Link href="/about" className={`nav-link${isCurrentPage('/about') ? ' is-current' : ''}`} aria-current={isCurrentPage('/about') ? 'page' : undefined} onClick={() => setOpen(false)}>關於我們</Link>
+        <Link href="/products" className={`nav-link${isCurrentPage('/products') ? ' is-current' : ''}`} aria-current={isCurrentPage('/products') ? 'page' : undefined} onClick={() => setOpen(false)}>產品系列</Link>
+        <Link href="/cases" className={`nav-link${isCurrentPage('/cases') ? ' is-current' : ''}`} aria-current={isCurrentPage('/cases') ? 'page' : undefined} onClick={() => setOpen(false)}>施工案例</Link>
+        <Link href="/blog" className={`nav-link${isCurrentPage('/blog') ? ' is-current' : ''}`} aria-current={isCurrentPage('/blog') ? 'page' : undefined} onClick={() => setOpen(false)}>窗簾知識</Link>
+        <Link href="/calculator" className={`nav-link${isCurrentPage('/calculator') ? ' is-current' : ''}`} aria-current={isCurrentPage('/calculator') ? 'page' : undefined} onClick={() => setOpen(false)}>線上估價</Link>
         <Link
           href="/location/"
-          className={`nav-location-link${isLocationPage ? ' is-current' : ''}`}
+          className={`nav-link nav-location-link${isLocationPage ? ' is-current' : ''}`}
           aria-current={isLocationPage ? 'page' : undefined}
           onClick={() => setOpen(false)}
         >

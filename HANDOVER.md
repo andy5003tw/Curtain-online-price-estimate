@@ -224,18 +224,7 @@ cmd.exe /c "npm.cmd run seo:preflight"
 
 - `/location/` Hero 已由卡片改為全寬形象 Banner；左側內容與 `.breadcrumb-inner` 對齊（1280px 最大寬度與 24px 內距），桌機由右側窗簾空間圖襯托，手機使用獨立直幅圖。H1、可見服務說明、Schema、canonical、sitemap 與 31 項 `ItemList` 未改。
 - 台北市／新北市服務區錨點仍在 Banner 內；「先看全部產品」與「前往線上估價」已移到 Banner 外的置中操作列。
-- `src/components/Header.tsx` 的桌機／手機選單均已新增 `📍 服務地點`，順序為「線上估價 → 服務地點 → 官方型錄」。在 `/location/` 與 `/location/[area]/` 顯示目前頁狀態並使用 `aria-current="page"`；響應式切換點為 980px。
-- 壓縮後網站素材：`public/location_img/location-hero-desktop.webp`（39,996 bytes）及 `location-hero-mobile.webp`（35,684 bytes）。`source/location-hero-original-20260916/` 是使用者提供的本機壓縮來源，禁止部署或提交；未使用的原始 PNG 暫留 `public/location_img/` 作回復備份。
-- 驗證結果：`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`、`npm.cmd run deploy:ftp:dry` 均通過。
-- **部署完成（2026-09-16）**：完整 quick deploy 在遠端檔案大小查詢的被動資料通道卡住，因此改以專案既有 `scripts/deploy-ftp.ps1 -Mode paths -Force` 上傳最小必要範圍。`/location/` HTML／RSC 資料、兩張 WebP 及新版 build manifest 共 11 檔均完成（uploaded=11、skipped=0、failed=0）。正式站 live verification 通過：`https://online.hong-sen.com/location/` HTTP 200、canonical 正確、2 組 JSON-LD 可解析、服務地點連結與兩張 WebP 均存在；sitemap 包含 `/location/`，`/products/P003/` 仍 301 至 `/products/s-fold-curtains/`。
-
----
-
-## 八、2026-09-16 服務地點 Banner／NAV／圖片壓縮交接
-
-- `/location/` Hero 已由卡片改為全寬形象 Banner；左側內容與 `.breadcrumb-inner` 對齊（1280px 最大寬度與 24px 內距），桌機由右側窗簾空間圖襯托，手機使用獨立直幅圖。H1、可見服務說明、Schema、canonical、sitemap 與 31 項 `ItemList` 未改。
-- 台北市／新北市服務區錨點仍在 Banner 內；「先看全部產品」與「前往線上估價」已移到 Banner 外的置中操作列。
-- `src/components/Header.tsx` 的桌機／手機選單均已新增 `📍 服務地點`，順序為「線上估價 → 服務地點 → 官方型錄」。在 `/location/` 與 `/location/[area]/` 顯示目前頁狀態並使用 `aria-current="page"`；響應式切換點為 980px。
+- `src/components/Header.tsx` 的桌機／手機選單均已新增 `📍 服務地點`，順序為「線上估價 → 服務地點 → 官方型錄」。六個一般導航（關於我們、產品系列、施工案例、窗簾知識、線上估價、服務地點）均依目前 pathname 套用深咖啡色 `#6a2d0c`、粗體與 `aria-current="page"`；響應式切換點為 980px。
 - 壓縮後網站素材：`public/location_img/location-hero-desktop.webp`（39,996 bytes）及 `location-hero-mobile.webp`（35,684 bytes）。`source/location-hero-original-20260916/` 是使用者提供的本機壓縮來源，禁止部署或提交；未使用的原始 PNG 暫留 `public/location_img/` 作回復備份。
 - 驗證結果：`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`、`npm.cmd run deploy:ftp:dry` 均通過。
 - **部署完成（2026-09-16）**：完整 quick deploy 在遠端檔案大小查詢的被動資料通道卡住，因此改以專案既有 `scripts/deploy-ftp.ps1 -Mode paths -Force` 上傳最小必要範圍。`/location/` HTML／RSC 資料、兩張 WebP 及新版 build manifest 共 11 檔均完成（uploaded=11、skipped=0、failed=0）。正式站 live verification 通過：`https://online.hong-sen.com/location/` HTTP 200、canonical 正確、2 組 JSON-LD 可解析、服務地點連結與兩張 WebP 均存在；sitemap 包含 `/location/`，`/products/P003/` 仍 301 至 `/products/s-fold-curtains/`。

@@ -130,8 +130,8 @@ img {
   white-space: nowrap;
 }
 
-.nav-location-link.is-current {
-  color: var(--amber-700) !important;
+.desktop-nav .nav-link.is-current {
+  color: #6a2d0c;
   font-weight: 700;
 }
 
@@ -183,9 +183,9 @@ img {
   align-items: center;
 }
 
-.mobile-nav .nav-location-link.is-current {
+.mobile-nav .nav-link.is-current {
   background: var(--amber-50);
-  color: var(--amber-700);
+  color: #6a2d0c;
   font-weight: 700;
 }
 

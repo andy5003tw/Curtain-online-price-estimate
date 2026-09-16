@@ -7,6 +7,25 @@ import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, prod
 import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, MapPin, CheckCircle2, Calculator, BookOpen, Sparkles, ShieldCheck, ArrowUpRight } from 'lucide-react';
 
+const cityHeroVisuals = {
+  taipei: {
+    desktop: '/location_img/city-hero/taipei-desktop.webp',
+    mobile: '/location_img/city-hero/taipei-mobile-angle-v2.webp',
+    eyebrow: '台北都會核心・到府丈量服務',
+    title: '台北市窗簾價格試算',
+    description: '從景觀高窗到都會住宅，以同一尺寸比較材質與預算，再安排專人攜帶樣本到府丈量，確認最適合空間的窗簾方案。',
+    theme: 'taipei',
+  },
+  'new-taipei': {
+    desktop: '/location_img/city-hero/new-taipei-desktop.webp',
+    mobile: '/location_img/city-hero/new-taipei-mobile-angle-v2.webp',
+    eyebrow: '新北在地工班・快速到府服務',
+    title: '新北市窗簾價格試算',
+    description: '從核心捷運生活圈到河岸景觀新宅，以同一尺寸比較材質與預算，再由在地工班到府確認窗型與正式報價。',
+    theme: 'new-taipei',
+  },
+} as const;
+
 function buildLocationCopy(areaName: string) {
   return {
     title: `${areaName}窗簾價格試算｜丈量、估價與安裝條件`,
@@ -47,6 +66,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
   const pageData = getLocationPageById(area);
   if (!pageData) notFound();
   const locationCopy = buildLocationCopy(pageData.areaName);
+  const cityHero = cityHeroVisuals[pageData.id as keyof typeof cityHeroVisuals];
   const relatedAreas = pageData.relatedAreaIds
     .map(areaId => getLocationPageById(areaId))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -323,15 +343,37 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
         </div>
       </nav>
 
-      <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${withBasePath(pageData.heroImage)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div className="section-container">
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto 1.5rem auto' }}>
-            <MapPin size={16} /> 專屬在地服務
+      {cityHero ? (
+        <section className={`city-location-hero city-location-hero--${cityHero.theme}`}>
+          <picture className="city-location-hero__visual">
+            <source media="(max-width: 640px)" srcSet={withBasePath(cityHero.mobile)} />
+            <img src={withBasePath(cityHero.desktop)} alt={`${pageData.areaName}窗簾服務空間形象`} fetchPriority="high" />
+          </picture>
+          <div className="city-location-hero__inner">
+            <div className="city-location-hero__copy">
+              <span className="city-location-hero__eyebrow"><MapPin size={15} /> {cityHero.eyebrow}</span>
+              <h1>{cityHero.title}</h1>
+              <p data-ai-answer="true">{cityHero.description}</p>
+            </div>
+            <div className="city-location-hero__actions">
+              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="city-location-hero__primary">
+                線上價格試算 <ChevronRight size={17} />
+              </Link>
+              <Link href="/location/" className="city-location-hero__secondary">查看雙北服務區域</Link>
+            </div>
           </div>
-          <h1>{locationCopy.title}</h1>
-          <p data-ai-answer="true" style={{ maxWidth: '800px', margin: '0 auto', color: 'rgba(255,255,255,0.9)' }}>{locationCopy.description}</p>
+        </section>
+      ) : (
+        <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${withBasePath(pageData.heroImage)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div className="section-container">
+            <div className="tag" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto 1.5rem auto' }}>
+              <MapPin size={16} /> 專屬在地服務
+            </div>
+            <h1>{locationCopy.title}</h1>
+            <p data-ai-answer="true" style={{ maxWidth: '800px', margin: '0 auto', color: 'rgba(255,255,255,0.9)' }}>{locationCopy.description}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <section className="py-section bg-white">
         <div className="section-container" style={{ maxWidth: '1080px' }}>

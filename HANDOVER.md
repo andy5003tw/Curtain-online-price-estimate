@@ -228,3 +228,60 @@ cmd.exe /c "npm.cmd run seo:preflight"
 - 壓縮後網站素材：`public/location_img/location-hero-desktop.webp`（39,996 bytes）及 `location-hero-mobile.webp`（35,684 bytes）。`source/location-hero-original-20260916/` 是使用者提供的本機壓縮來源，禁止部署或提交；未使用的原始 PNG 暫留 `public/location_img/` 作回復備份。
 - 驗證結果：`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`、`npm.cmd run deploy:ftp:dry` 均通過。
 - **部署完成（2026-09-16）**：完整 quick deploy 在遠端檔案大小查詢的被動資料通道卡住，因此改以專案既有 `scripts/deploy-ftp.ps1 -Mode paths -Force` 上傳最小必要範圍。`/location/` HTML／RSC 資料、兩張 WebP 及新版 build manifest 共 11 檔均完成（uploaded=11、skipped=0、failed=0）。後續 NAV active 狀態再以同一模式部署首頁、`/about/`、`/products/`、`/cases/`、`/blog/`、`/calculator/`、`/location/` 的 HTML／RSC 與 Header JS/CSS 共 44 檔（uploaded=44、failed=0）。正式站逐頁回讀確認六個目的頁皆含正確 `is-current`、`aria-current="page"` 與深咖啡色 CSS；`/location/` canonical、2 組 JSON-LD、WebP、sitemap 與 `/products/P003/` 301 亦持續正常。
+
+---
+
+## 九、2026-09-16/2026-09-17 AI Banner 與 About 卡片交接（本機待壓縮／待部署）
+
+### 已完成的本機變更
+
+- 台北市與新北市市級頁各新增桌機／手機 AI Hero（共 4 張），並保留台北冷灰藍、新北暖沙金的視覺差異。資產路徑：`public/location_img/city-hero/`；原始備份：`download/city-hero/`。
+- `/about/`、`/products/`、`/cases/`、`/blog/`、`/calculator/` 新增共用 `EditorialLandingHero`。每頁都有短 H1、短說明、兩個具體 CTA、桌機／手機各一張 AI 圖；詳細文字與連結移到 Hero 下方導讀區。
+- 五頁的原始 AI 圖：`public/nav-hero/`；不可覆蓋備份：`download/nav-hero/`。共 10 張 PNG，basename 為 `about|products|cases|blog|calculator` 搭配 `-desktop` 或 `-mobile`。
+- Hero H1 仍是唯一 H1；其 CSS 比照 `/location/` 的較精緻比例：`clamp(2rem, 3.2vw, 3rem)`、800 字重、`line-height: 1.25`。桌機文案上移、CTA 下移；手機版不使用位移。
+- About 首段右側施工圖頂緣現對齊左側標題／文字；三項優勢已改為有對應 Lucide 圖示的三欄卡片（試算、品質、交期），並在手機改為單欄。
+- 2026-09-17 更新台北／新北市級頁手機 Hero：兩張圖已改為室內斜角取景，保留左上文字留白與城市差異；手機 CTA 改為同一列、左右等寬，並以 `margin-top: auto` 推至 Hero 底部。壓縮後網站實際使用 `taipei-mobile-angle-v2.webp`、`new-taipei-mobile-angle-v2.webp`；PNG 原始版本另存於 `download/city-hero/`，既有備份未覆蓋。
+
+### 使用者壓縮圖片後的必做步驟
+
+1. 使用者會將壓縮版本放到 `source/nav-hero/` 並通知 AI；檔名需保留相同 basename，可改為 `.webp`、`.jpg` 或 `.png`。
+2. 先核對每張圖的桌機／手機角色、像素尺寸、檔案大小、無文字／無浮水印及可讀性；若副檔名變更，更新 `EditorialLandingHero` 的圖片路徑。
+3. 僅用壓縮版本替換 `public/nav-hero/` 的網站資產；`download/nav-hero/` 必須保留原始 PNG 作回復備份。
+4. 重新跑 `npm.cmd run build`、`npm.cmd run seo:check`，並在桌機與手機檢查五頁 Hero 的裁切、H1、CTA 與錨點。
+
+### 壓縮圖片已置換（2026-09-17）
+
+- 使用者提供的壓縮來源已由 `source/nav-hero-20260917/` 與 `source/city-hero-20260917/` 放入網站資產；五個主導航頁的 10 張 Hero 現改引用 `public/nav-hero/*.webp`。
+- 台北／新北市級頁的桌機圖與斜角手機圖現改引用 `public/location_img/city-hero/*.webp`；手機圖使用 `taipei-mobile-angle-v2.webp`、`new-taipei-mobile-angle-v2.webp`。
+- 壓縮圖保留原像素尺寸（桌機 1672×941、手機 941×1672），檔案約縮減 97%；`download/nav-hero/` 與 `download/city-hero/` 的 PNG 原始備份均未覆蓋。
+- 已通過 `npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`，七個靜態頁輸出均含 WebP 引用；尚未 FTP 部署。
+
+### 部署狀態與限制
+
+- 本段 UI 變更已於 2026-09-17 完成 FTP quick 部署與正式站驗收；**尚未建立 Git commit**。
+- 不改 Schema、canonical、sitemap、keyword owner 或既有 SEO/GEO lifecycle receipt；若未來部署，僅按使用者授權的前端路徑範圍上傳，且不得將 `download/`、`source/`、`plan.md` 或 `HANDOVER.md` 部署至公開站。
+
+### 2026-09-17 部署嘗試（FTP 連線阻塞）
+
+- 已重新完成 `npm.cmd run build`（81 頁）、`npm.cmd run seo:check`、`npm.cmd run seo:preflight` 與 `npm.cmd run deploy:ftp:dry`，全部通過；乾跑確認 quick 模式僅選取 `out/` 的 487 個網站產物。
+- 正式執行 `npm.cmd run deploy:ftp` 時，遠端 `ftp://ftp.hong-sen.com/online.hong-sen.com` 在建立上傳連線即回傳 `Unable to connect to the remote server`；前 14 個檔案均失敗且沒有成功上傳，已主動停止，故正式站未發生部分更新。
+- 遠端 FTP 可連線後，先重新執行 `npm.cmd run deploy:ftp:dry`，再執行一次 `npm.cmd run deploy:ftp`；成功後才可進行正式站頁面驗收。仍不得上傳 `download/`、`source/` 或 Markdown 文件，也不要把本次失敗誤記為已部署。
+- **再次嘗試（2026-09-17，WebP 素材置換後）**：本機 build、`seo:check`、`seo:preflight` 與 quick dry run 均通過（487 檔）；正式 quick upload 仍在前 6 個檔案的 `GetRequestStream` 階段回傳相同連線錯誤，已停止，uploaded=0。WebP、手機 CTA 與所有本輪 UI 仍只在本機完成。
+
+### 2026-09-17 成功部署與正式站驗收
+
+- 前兩次失敗的原因已釐清為受限沙盒的對外 TCP 連線限制：同一時段在可連網的非沙盒環境可連 `ftp.hong-sen.com:21` 與正式站 HTTPS，並非 FTP 主機或帳密異常。
+- 在使用者授權後，以既有 `npm.cmd run deploy:ftp` quick 流程完成部署：selected=487、uploaded=100、skipped=387、failed=0、uploadedMB=10；部署 manifest 為 `Weekly SOP/latest/seo-geo-deployment-manifest.json`。上傳根目錄仍僅為 `out/`，沒有上傳 `download/`、`source/` 或 Markdown 文件。
+- 正式站回讀通過：`/about/`、`/products/`、`/cases/`、`/blog/`、`/calculator/`、`/location/taipei/`、`/location/new-taipei/` 均為 HTTP 200，canonical、JSON-LD、對應 WebP 與各頁 CTA 均存在；城市頁並確認斜角手機 WebP 與「線上價格試算」CTA。sitemap 可見城市 URL；產品舊路徑 `/products/P003/` 可正常取得內容。
+
+### 2026-09-17 Hero WebP 補傳熱修
+
+- 正式站畫面檢查發現第一輪 quick deploy 雖已上傳更新後的 HTML，Hero 背景圖未顯示。根因是 `scripts/deploy-ftp.ps1` 的 `quick` 選檔規則僅包含 HTML／TXT／XML／`.htaccess` 與 `_next/static/*`，不會包含 `out/nav-hero/` 或 `out/location_img/city-hero/` 的一般 public WebP。
+- 已用既有 `paths + Force` 精確補傳 14 張頁面實際引用的 WebP：五個主導航頁各桌機／手機圖 10 張，加上台北／新北各桌機／手機圖 4 張。結果：selected=14、uploaded=14、skipped=0、failed=0、uploadedMB=0.75。
+- 獨立熱修 manifest：`Weekly SOP/latest/2026-09-17-hero-webp-hotfix-deployment-manifest.json`。正式站逐張 GET 驗證 14 張均為 HTTP 200、`image/webp` 且大小正確；`/about/` HTML 同時確認含 `nav-hero/about-desktop.webp` 引用。未上傳任何 `download/`、`source/` 或文件。
+- 後續任何新 public 圖片均不得只跑 quick deploy；需在同一次授權部署中以 `paths + Force` 將實際資產路徑一併補傳，並以 HTTP GET 驗證每一個圖片 URL。
+
+### 2026-09-17 Quick 部署靜態資產規則修復
+
+- 已修正 `scripts/deploy-ftp.ps1` 的 `Get-QuickFiles`：quick 模式除 HTML／TXT／XML、`.htaccess` 與 `_next/static/*` 外，現也會自動選取 public 靜態資產副檔名 `avif`、`gif`、`ico`、`jpg/jpeg`、`png`、`svg`、`webp`、`woff/woff2`、`ttf`、`otf`。
+- 不連網 dry run 已選取 1,245 個 `out/` 網站產物，並程式化確認本輪 14/14 Hero WebP 均會被列入。未進行第二次正式部署，因目前所有這些 WebP 已由熱修上傳並完成 HTTP GET 驗收。

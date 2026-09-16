@@ -9,6 +9,11 @@ coverage/
 *.pid
 .upload-out-files.txt
 
+# Local image compression inputs and high-resolution recovery backups.
+# The production WebP copies under public/ remain tracked.
+source/
+download/
+
 # Local environment and secrets
 .env*
 !.env.example

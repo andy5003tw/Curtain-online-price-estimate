@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CheckCircle2, Phone, MapPin, ShieldCheck, Factory, Clock, Calculator, ChevronRight } from 'lucide-react';
+import { Phone, MapPin, ShieldCheck, Factory, Clock, Calculator, ChevronRight } from 'lucide-react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import { businessEvidence } from '@/data/businessEvidence';
+import EditorialLandingHero from '@/components/EditorialLandingHero';
 
 const ABOUT_TITLE = '工廠直營窗簾｜台北窗簾免費丈量、報價流程與品牌服務';
 const ABOUT_DESCRIPTION = '想找工廠直營窗簾或台北窗簾免費丈量？宏森提供台北、新北到府丈量、窗簾價格試算、工廠直營報價與安裝服務流程。';
@@ -31,9 +32,9 @@ const processSteps = [
 ];
 
 const advantages = [
-  { title: '報價流程', desc: '先以線上工具抓預算，再依丈量、材質、配件與施工條件確認書面報價。' },
-  { title: '品質管控', desc: '每一窗窗簾皆在自有工廠監製，從車工細節、對花精準度到摺皺倍數，皆能嚴格把關。' },
-  { title: '交貨速度', desc: '自有工廠不需轉單外包，大幅縮短製作時程，從丈量到安裝都能提供最迅速的彈性服務。' },
+  { title: '報價流程', desc: '先以線上工具抓預算，再依丈量、材質、配件與施工條件確認書面報價。', icon: Calculator },
+  { title: '品質管控', desc: '每一窗窗簾皆在自有工廠監製，從車工細節、對花精準度到摺皺倍數，皆能嚴格把關。', icon: ShieldCheck },
+  { title: '交貨速度', desc: '自有工廠不需轉單外包，大幅縮短製作時程，從丈量到安裝都能提供最迅速的彈性服務。', icon: Clock },
 ];
 
 const iconicCases = [
@@ -91,18 +92,38 @@ export default function AboutPage() {
         </div>
       </nav>
 
-      <div className="page-hero">
-        <div className="section-container">
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>工廠直營窗簾 / 台北窗簾免費丈量 / 品牌信任</div>
-          <h1>工廠直營窗簾服務：台北窗簾免費丈量、估價與安裝流程</h1>
-          <p>宏森深耕三重與大台北窗簾市場，提供工廠直營窗簾報價、台北窗簾免費丈量與到府安裝服務。若你想先抓預算，可先看價格指南、地區服務頁，再進線上估價。</p>
+      <EditorialLandingHero
+        theme="about"
+        eyebrow="30 年工廠直營・雙北到府服務"
+        title="工廠直營，讓窗簾更剛好"
+        description="從丈量、選料到安裝，由同一團隊完成。"
+        desktopImage="/nav-hero/about-desktop.webp"
+        mobileImage="/nav-hero/about-mobile.webp"
+        imageAlt="窗簾布樣與量測工具置於暖色工作檯旁的情境"
+        primaryAction={{ href: '#service-steps', label: '查看服務流程' }}
+        secondaryAction={{ href: '/calculator/', label: '開始線上估價' }}
+      />
+
+      <section className="editorial-guide" aria-labelledby="about-guide-heading">
+        <div className="section-container editorial-guide__inner">
+          <div className="editorial-guide__copy">
+            <h2 id="about-guide-heading">台北窗簾免費丈量，從預算到安裝一次釐清</h2>
+            <p>宏森提供工廠直營窗簾報價、到府丈量與安裝服務；想先抓預算，可先比較價格與服務區域，再安排正式量尺。</p>
+          </div>
+          <nav className="editorial-guide__links" aria-label="關於我們快速入口">
+            <Link href="/calculator/">窗簾價格試算</Link>
+            <Link href="/blog/curtain-price-guide-2026/">2026 價格指南</Link>
+            <Link href="/products/">窗簾款式比較</Link>
+            <Link href="/cases/">施工案例</Link>
+            <Link href="/location/">雙北服務區域</Link>
+          </nav>
         </div>
-      </div>
+      </section>
 
       {/* Intro & Advantages */}
       <section className="py-section bg-white">
         <div className="section-container">
-          <div className="about-grid" style={{ marginBottom: '4rem' }}>
+          <div className="about-grid about-intro-grid">
             <div className="about-text">
               <div className="tag">我們的堅持</div>
               <h2>工廠直營，品質、交期與報價一次看清楚</h2>
@@ -132,27 +153,30 @@ export default function AboutPage() {
                 ，再依所在地進入對應地區頁。
               </p>
               
-              <div className="adv-list" style={{ marginTop: '2rem' }}>
-                {advantages.map((adv, i) => (
-                  <div key={i} style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                      <CheckCircle2 size={18} className="text-amber-600" /> {adv.title}
-                    </h3>
-                    <p style={{ fontSize: '0.925rem', color: 'var(--stone-600)', lineHeight: 1.6 }}>{adv.desc}</p>
-                  </div>
-                ))}
-              </div>
             </div>
             <div className="about-imgs">
               <img src={withBasePath('/Curtain installation_img/Curtain installation_01.webp')} alt="宏森窗簾工廠直營品質監控" loading="lazy" />
               <img src={withBasePath('/Curtain installation_img/Curtain installation_03.webp')} alt="專業窗簾師傅現場施工" loading="lazy" />
             </div>
           </div>
+
+          <div className="about-advantages" aria-label="宏森窗簾三項服務優勢">
+            {advantages.map((adv) => {
+              const Icon = adv.icon;
+              return (
+                <article key={adv.title} className="about-advantage-card">
+                  <div className="about-advantage-card__icon" aria-hidden="true"><Icon size={26} strokeWidth={2.1} /></div>
+                  <h3>{adv.title}</h3>
+                  <p>{adv.desc}</p>
+                </article>
+              );
+            })}
+          </div>
         </div>
       </section>
 
       {/* Service Process */}
-      <section className="py-section bg-stone-50">
+      <section id="service-steps" className="py-section bg-stone-50 section-anchor">
         <div className="section-container">
           <div className="about-grid items-start" style={{ gap: '3rem' }}>
             <div className="about-text" style={{ flex: '1 1 50%' }}>

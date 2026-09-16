@@ -6,6 +6,7 @@ import { constructionCases } from '@/data/constructionCases';
 import { absoluteUrl } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import { MapPin, Tag, Calendar, Image as ImageIcon, Search, Filter, X, ChevronRight, ChevronLeft, XCircle } from 'lucide-react';
+import EditorialLandingHero from '@/components/EditorialLandingHero';
 
 const ALL_DISTRICTS = '所有地區';
 const ALL_TYPES = '所有款式';
@@ -387,19 +388,23 @@ export default function CasesPage() {
         </div>
       </nav>
 
-      <div className="page-hero">
-        <div className="section-container">
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>窗簾施工案例 / 客廳窗簾實景 / 免費丈量前先看</div>
-          <h1>窗簾施工案例｜客廳窗簾實景、款式比較與估價流程</h1>
-          <p>先看三重、板橋、新莊、台北與士林的窗簾施工案例，對照客廳窗簾實景、遮光窗簾、捲簾與無縫紗簾，再帶同一組尺寸接到窗簾價格試算、產品總覽與地區丈量安排。</p>
-        </div>
-      </div>
+      <EditorialLandingHero
+        theme="cases"
+        eyebrow="雙北窗簾施工案例・實景先看"
+        title="看見空間，找到適合的窗簾"
+        description="先比採光、窗型與風格，再帶尺寸收斂預算。"
+        desktopImage="/nav-hero/cases-desktop.webp"
+        mobileImage="/nav-hero/cases-mobile.webp"
+        imageAlt="完成窗簾施工的明亮現代居家客廳"
+        primaryAction={{ href: '#cases-filter-section', label: '依空間篩選案例' }}
+        secondaryAction={{ href: '/calculator/', label: '看完案例去試算' }}
+      />
 
       <section className="py-section bg-stone-50">
         <div className="section-container">
-          <div style={{ marginBottom: '2rem', background: 'white', border: '1px solid var(--stone-200)', borderRadius: '1rem', padding: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.75rem' }}>
-              AI 短答案：看完案例後，怎麼最快走到正式報價？
+          <div className="editorial-guide-card" style={{ marginBottom: '2rem', background: 'white', border: '1px solid var(--stone-200)', borderRadius: '1rem', padding: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.75rem' }}>
+              客廳窗簾實景、款式比較與估價流程
             </h2>
             <p style={{ margin: '0 0 1rem 0', color: 'var(--stone-600)', lineHeight: 1.8, fontSize: '0.95rem' }}>
               先用窗簾施工案例確認想比的窗型、採光需求與款式，再把同一組尺寸帶進價格試算工具。若你已經鎖定客廳窗簾實景中的布簾、遮光窗簾、捲簾或風琴簾，可直接切到窗簾產品總覽、對應產品頁與預算分配文章，讓估價與丈量流程接得更順。
@@ -419,7 +424,7 @@ export default function CasesPage() {
           </div>
           
           {/* Filters */}
-          <div className="filters-row" id="cases-filter-section" style={{ marginBottom: '3rem', background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid var(--stone-200)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+          <div className="filters-row section-anchor" id="cases-filter-section" style={{ marginBottom: '3rem', background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid var(--stone-200)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
               <div className="filter-group">
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--stone-500)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>服務區域</label>

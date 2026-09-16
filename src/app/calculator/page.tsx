@@ -4,6 +4,7 @@ import { CalculatorForm, CalculatorProductMenu } from './CalculatorClient';
 import { products } from '@/data/products';
 import { calculatorFaq } from '@/data/calculatorFaq';
 import { buildCalculatorUrl } from '@/lib/seo';
+import EditorialLandingHero from '@/components/EditorialLandingHero';
 
 const calculatorProducts = products.map((product) => ({
   id: product.id,
@@ -24,19 +25,36 @@ export default function CalculatorPage() {
         </div>
       </nav>
 
+      <EditorialLandingHero
+        theme="calculator"
+        eyebrow="線上估價・先掌握材料與基本安裝費"
+        title="1 分鐘，掌握預算範圍"
+        description="輸入接近實際的尺寸，先比較不同窗簾的預算方向。"
+        desktopImage="/nav-hero/calculator-desktop.webp"
+        mobileImage="/nav-hero/calculator-mobile.webp"
+        imageAlt="窗邊布樣與量尺整理於估價準備桌面的情境"
+        primaryAction={{ href: '#calculator-form', label: '開始 1 分鐘試算' }}
+        secondaryAction={{ href: '#calculator-basics', label: '先看估價重點' }}
+      />
+
+      <section className="editorial-guide" aria-labelledby="calculator-guide-heading">
+        <div className="section-container editorial-guide__inner">
+          <div className="editorial-guide__copy">
+            <h2 id="calculator-guide-heading">窗簾價格試算與窗簾線上估價</h2>
+            <p>先用同一組尺寸比較材料與基本安裝費，再安排雙北到府丈量確認窗型、配件與正式報價。</p>
+          </div>
+          <nav className="editorial-guide__links" aria-label="線上估價快速入口">
+            <a href="#calculator-form">立即開始試算</a>
+            <Link href="/blog/curtain-price-guide-2026/">2026 價格指南</Link>
+            <Link href="/location/taipei/">台北到府丈量</Link>
+            <Link href="/products/">先比較窗簾款式</Link>
+          </nav>
+        </div>
+      </section>
+
       <Suspense fallback={null}>
         <CalculatorProductMenu products={calculatorProducts} />
       </Suspense>
-
-      <div className="page-hero">
-        <div className="section-container">
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-            1 分鐘窗簾價格試算 / 線上估價
-          </div>
-          <h1>窗簾價格試算與窗簾線上估價：1 分鐘比較安裝費</h1>
-          <p>輸入尺寸即可做窗簾價格試算與窗簾線上估價，比較鋁百葉、實木百葉、捲簾、紗簾、調光簾與風琴簾價格，系統先估材料與基本安裝費；再用同尺寸比較差異，安排三重、板橋或台北到府丈量確認正式報價。</p>
-        </div>
-      </div>
 
       <section className="py-section bg-stone-50">
         <div className="section-container" style={{ maxWidth: '900px' }}>
@@ -44,7 +62,7 @@ export default function CalculatorPage() {
             <h2>先試算，再丈量：窗簾報價流程一次完成</h2>
             <p>先用線上工具掌握窗簾價格與安裝費用區間，再由專人到府確認窗型、配件與施工條件。</p>
           </div>
-          <div style={{ marginBottom: '1.25rem', display: 'grid', gap: '0.5rem' }}>
+          <nav className="calculator-quick-links" aria-label="估價品項與地區快速連結">
             <Link href="/products/roller-blinds/" style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               已鎖定捲簾：先看捲簾產品、遮光與安裝條件
             </Link>
@@ -90,14 +108,16 @@ export default function CalculatorPage() {
             <Link href={buildCalculatorUrl('P007', 'sanchong')} style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}>
               三重實木百葉窗價格試算（快速入口）
             </Link>
+          </nav>
+          <div id="calculator-form" className="section-anchor">
+            <Suspense fallback={<div style={{ textAlign: 'center', padding: '3rem', color: 'var(--stone-400)' }}>載入估價工具...</div>}>
+              <CalculatorForm products={calculatorProducts} />
+            </Suspense>
           </div>
-          <Suspense fallback={<div style={{ textAlign: 'center', padding: '3rem', color: 'var(--stone-400)' }}>載入估價工具...</div>}>
-            <CalculatorForm products={calculatorProducts} />
-          </Suspense>
         </div>
       </section>
 
-      <section className="py-section bg-white border-t border-stone-200">
+      <section id="calculator-basics" className="py-section bg-white border-t border-stone-200 section-anchor">
         <div className="section-container" style={{ maxWidth: '900px' }}>
           <div className="section-heading">
             <h2>窗簾價格試算前，先看三個重點</h2>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
+import EditorialLandingHero from '@/components/EditorialLandingHero';
 import { products } from '@/data/products';
 import { withBasePath } from '@/lib/base-path';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
@@ -141,32 +142,33 @@ export default function ProductsPage() {
         </div>
       </nav>
 
-      <ProductScrollMenu products={products} />
+      <EditorialLandingHero
+        theme="products"
+        eyebrow="窗簾款式比較・找到適合空間的選擇"
+        title="先選情境，再選窗簾"
+        description="用同一組需求，比出材質、採光與預算方向。"
+        desktopImage="/nav-hero/products-desktop.webp"
+        mobileImage="/nav-hero/products-mobile.webp"
+        imageAlt="現代居家窗邊呈現紗簾與布簾材質層次的情境"
+        primaryAction={{ href: '#product-categories', label: '依空間比較款式' }}
+        secondaryAction={{ href: '/calculator/', label: '帶尺寸線上估價' }}
+      />
 
-      <section className="py-section bg-white">
-        <div className="section-container" style={{ maxWidth: '880px', margin: '0 auto' }}>
-          <div className="tag" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-            窗簾產品總覽 / 窗簾款式比較 / 估價分流
+      <section className="editorial-guide" aria-labelledby="products-guide-heading">
+        <div className="section-container editorial-guide__inner">
+          <div className="editorial-guide__copy">
+            <h2 id="products-guide-heading">窗簾款式比較：先縮小候選，再進單一產品頁估價</h2>
+            <p>先從布簾、捲簾、百葉與功能型產品挑出 2 到 3 種候選款式；已鎖定品項時，再確認材質與安裝條件。</p>
           </div>
-          <h1>窗簾款式比較：先選適合情境，再進單一產品頁估價</h1>
-          <p style={{ lineHeight: 1.85 }}>
-            本頁只負責款式比較，不取代首頁的窗簾推薦與到府丈量入口，也不取代單一產品頁的規格說明。先把訂製布簾、捲簾、鋁百葉、實木百葉、調光簾、柔紗簾與風琴簾縮小到 2 到 3 個候選款式；已鎖定捲簾或鋁百葉時，請直接進對應產品頁確認材質、安裝條件，再帶同尺寸進線上估價。
-          </p>
-          <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.55rem' }}>
-            {quickLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{ color: 'var(--amber-700)', fontWeight: 700, textDecoration: 'underline' }}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+          <nav className="editorial-guide__links" aria-label="產品系列快速入口">
+            {quickLinks.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}
+          </nav>
         </div>
       </section>
 
-      <section className="py-section bg-stone-50">
+      <ProductScrollMenu products={products} />
+
+      <section id="product-categories" className="py-section bg-stone-50 section-anchor">
         <div className="section-container">
           <CategorySection
             tag="Soft Treatments"

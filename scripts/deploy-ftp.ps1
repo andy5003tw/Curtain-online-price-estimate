@@ -193,6 +193,9 @@ function Get-QuickFiles {
       $relative -like '*.html' -or
       $relative -like '*.txt' -or
       $relative -like '*.xml' -or
+      # Static-export public assets are copied under `out/` rather than
+      # `_next/static/`; excluding them leaves live HTML pointing at 404s.
+      $relative -match '\.(?:avif|gif|ico|jpe?g|png|svg|webp|woff2?|ttf|otf)$' -or
       $relative -eq 'robots.txt' -or
       $relative -eq '.htaccess'
   }

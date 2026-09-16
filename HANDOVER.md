@@ -75,6 +75,30 @@
   - 已通過 keyword owner、production build、`seo:check`、`seo:preflight`；FTP quick delta 部署共上傳 136 檔、略過 351 檔、失敗 0，另以 paths + Force 補傳同大小但內容更新的 `sitemap.xml`。
   - 正式站驗收通過：首頁、`/location/`、`/location/new-taipei/` canonical 正確；服務總覽 ItemList 為 31 筆且無 fragment URL；新北市 Service `areaServed` 為 `City`；sitemap HTTP 200、63 個 URL，首頁與服務總覽 lastmod 均為 `2026-09-10`。
 
+- [x] **10. 雙北與全區地區專頁（`/location/[area]/`）核心圖文看板與 CSS 美化升級（2026-09-10）**
+  - 將原先單調純文字區塊重構為「旗艦級圖文雙層樞紐（Flagship Service & Trust Hub）」。
+  - **模組一：雙欄圖文看板**（左圖 4.2 : 右文 5.8 黃金比例），新北精選「疏洪西路客廳落地窗雙層蛇形簾」、台北精選「都會採光豪宅實景」；右側將重複黃底方塊精簡融合為「STEP 01 線上估價 ➔ STEP 02 免費丈量 ➔ STEP 03 書面報價」3 步驟透明流程步進條。
+  - **模組二：主要服務涵蓋生活圈面板**，將靜態純文字藥丸升級為可點擊跳轉至各行政區專頁之互動膠囊按鈕（加強內部連結 SEO 權重），並於下方配置「雙北熱門空間完工實景推薦」3 格微相簿（客廳落地窗蛇形簾、書房調光簾、臥室全遮光捲簾）。
+  - **模組三：價格試算與 SEO 快速入口分層重構**，主 CTA 大按鈕置頂，SEO 關鍵字連結收整為精緻微邊框晶片矩陣，100% 維持原有 URL 與 Anchor Text 權重。
+  - 通過 `npm.cmd run build`、`seo:check`、`seo:preflight` 與 `keyword-owner-check.mjs` 全數檢核，並通過實機瀏覽器走訪截圖驗收。
+
+- [x] **11. 服務區域總覽頁（`/location/`）垂直排列版面回歸與跳轉定位確認（2026-09-10）**
+  - 使用者評估後要求維持垂直上下自然排列（台北市在上方、新北市在下方），移除頁籤切換封裝，回歸 100% 原生流暢體驗。
+  - 確保台北市（`#taipei-city`）與新北市（`#new-taipei-city`）錨點在視窗中滾動定位精準順暢（`scrollMarginTop: '90px'`），點擊立即平滑導航。
+
+- [x] **12. 服務區域總覽頁（`/location/`）頂部按鈕與專頁按鈕質感優化（2026-09-10，已部署）**
+  - **頂部快速跳轉按鈕增加指引文字**：
+    - `🏛️ 台北市服務區（12 行政區） 往下捲動 ↓`
+    - `🏙️ 新北市服務區（17 行政區） 往下捲動 ↓`
+    明確指引訪客點選後會平滑向下捲動定位至對應城市區塊。
+  - **雙北分水嶺專頁按鈕配色與 Hover 微動效全面升級**：
+    - 按鈕 `[進入台北市全區專頁 →]` 與 `[進入新北市全區專頁 →]`（`.city-header-link-btn`）底色移除原先深咖啡色，改採用與橫條標題字體相同的香檳明亮金黃色（`#fef08a`），搭配深咖啡色字體（`#6a2d0c`，加粗 700），對比鮮明吸睛。
+    - 滑鼠懸停（Hover）動態反饋：底色平滑切換為純白亮光色（`#ffffff`），按鈕產生上浮動作（`transform: translateY(-2px)`）並加強立體柔和陰影，按鈕內箭頭 `→`（`.header-btn-arrow`）同時向右微移 4px（`transform: translateX(4px)`），創造出高質感的互動導引。
+  - **全站靜態編譯與正式主機增量部署**：
+    - 通過 `npm.cmd run build`（81 頁全數編譯成功）、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`。
+    - 透過 `npm.cmd run deploy:ftp` 完成快速增量部署（487 個比對檔案，134 個異動檔案上傳成功，353 個檔案跳過，0 失敗）。
+    - 線上正式站（`https://online.hong-sen.com/location/`）已抓取 HTML 實機驗證通過。
+
 ---
 
 ## 三、 下一個 AI 接續任務清單（Next Tasks & Backlog）
@@ -168,3 +192,50 @@ cmd.exe /c "npm.cmd run seo:preflight"
 - **29 個行政區**：台北市 12 區＋新北市 17 區。
 - **2 個市級總覽**：`/location/taipei/` 與 `/location/new-taipei/`。
 - **31 個可索引地區 URL**：上述 29 個行政區頁加 2 個市級總覽；`/location/#new-taipei-city` 僅為頁內錨點，不是獨立可索引頁面。
+
+---
+
+## 七、2026-09-16 改版後 SEO／GEO／Schema 稽核交接
+
+### 已核對範圍
+
+- 頁面：`/`、`/location/`、`/location/taipei/`、`/location/new-taipei/`。
+- 背景：首頁、服務區總覽與台北市頁新增圖片／CSS 排列；新北市全區專頁已納入正式服務區架構。
+- 結果：本機靜態輸出與 `npm.cmd run seo:check` 通過；canonical、單一 H1、JSON-LD 解析、FAQ 與可見內容對齊、Breadcrumb、內部連結與服務區 schema 未發現 P0／阻擋問題。
+
+### 必須維持的正確口徑
+
+- `/location/`：`CollectionPage + ItemList`，列出 31 個 canonical 服務入口。
+- `/location/taipei/` 與 `/location/new-taipei/`：`Service.areaServed` 使用 `City`；行政區頁才使用 `AdministrativeArea`。
+- 所有服務區頁共同引用唯一公司實體 `https://online.hong-sen.com/#localBusiness`；新北市頁是服務總覽，**不得**建立不存在的地方分店、地址或第二個 LocalBusiness。
+- 台北市頁 12 區、新北市頁 17 區；首頁與服務總覽必須繼續連至兩個市級總覽 URL，不能將 `/location/#new-taipei-city` 當成可索引網址。
+
+### 後續 AI 的處理準則
+
+1. 目前 action plan 為 `observation_only`。除非使用者另行核准且有新的 decision-ready GSC cycle，**不要**因本次視覺改版直接修改 source、schema、sitemap、keyword owner、部署或 receipt。
+2. 「免費到府丈量／免費報價」、「30 年工班」、「快速到府」、「保固」、「免仲介抽成」等商業承諾，若無服務範圍、費用、排程、保固或報價流程的可公開證據，不新增至 schema 或 `data-ai-answer`；調整可見 FAQ 時，必須同步維持 FAQ JSON-LD parity。
+3. 後續新增圖片須使用真實素材：提供唯一、情境化 alt 與鄰近說明；避免重複關鍵字或虛構地標、客戶、建案、案例。另檢查首屏圖片格式／尺寸／LCP，以及非首屏 lazy-load。
+4. 若有真實且可核准的素材，可讓台北與新北市頁各增加 1–2 則不同的服務流程、材質情境或完工案例，連至對應行政區或產品頁，以保持兩個市級總覽的 GEO 差異；不可只複製通用文案。
+5. 下一個完整 GSC 7d／28d cycle 優先量測首頁、兩個市級頁及其行政區連結：曝光、CTR、排名、Query × Page owner share 與互搶；以數據決定是否建立核准 execution queue。
+
+---
+
+## 八、2026-09-16 服務地點 Banner／NAV／圖片壓縮交接
+
+- `/location/` Hero 已由卡片改為全寬形象 Banner；左側內容與 `.breadcrumb-inner` 對齊（1280px 最大寬度與 24px 內距），桌機由右側窗簾空間圖襯托，手機使用獨立直幅圖。H1、可見服務說明、Schema、canonical、sitemap 與 31 項 `ItemList` 未改。
+- 台北市／新北市服務區錨點仍在 Banner 內；「先看全部產品」與「前往線上估價」已移到 Banner 外的置中操作列。
+- `src/components/Header.tsx` 的桌機／手機選單均已新增 `📍 服務地點`，順序為「線上估價 → 服務地點 → 官方型錄」。在 `/location/` 與 `/location/[area]/` 顯示目前頁狀態並使用 `aria-current="page"`；響應式切換點為 980px。
+- 壓縮後網站素材：`public/location_img/location-hero-desktop.webp`（39,996 bytes）及 `location-hero-mobile.webp`（35,684 bytes）。`source/location-hero-original-20260916/` 是使用者提供的本機壓縮來源，禁止部署或提交；未使用的原始 PNG 暫留 `public/location_img/` 作回復備份。
+- 驗證結果：`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`、`npm.cmd run deploy:ftp:dry` 均通過。
+- **部署待辦**：2026-09-16 的實際 FTP quick deploy 在被動資料通道卡住，程序已停止且沒有成功 manifest；尚未完成 live verification。待 FTP 可正常建立資料通道後，重新跑 `npm.cmd run deploy:ftp`，再檢查 `https://online.hong-sen.com/location/` 的 HTTP 200、canonical、JSON-LD、`/location/` 連結與 WebP 載入。
+
+---
+
+## 八、2026-09-16 服務地點 Banner／NAV／圖片壓縮交接
+
+- `/location/` Hero 已由卡片改為全寬形象 Banner；左側內容與 `.breadcrumb-inner` 對齊（1280px 最大寬度與 24px 內距），桌機由右側窗簾空間圖襯托，手機使用獨立直幅圖。H1、可見服務說明、Schema、canonical、sitemap 與 31 項 `ItemList` 未改。
+- 台北市／新北市服務區錨點仍在 Banner 內；「先看全部產品」與「前往線上估價」已移到 Banner 外的置中操作列。
+- `src/components/Header.tsx` 的桌機／手機選單均已新增 `📍 服務地點`，順序為「線上估價 → 服務地點 → 官方型錄」。在 `/location/` 與 `/location/[area]/` 顯示目前頁狀態並使用 `aria-current="page"`；響應式切換點為 980px。
+- 壓縮後網站素材：`public/location_img/location-hero-desktop.webp`（39,996 bytes）及 `location-hero-mobile.webp`（35,684 bytes）。`source/location-hero-original-20260916/` 是使用者提供的本機壓縮來源，禁止部署或提交；未使用的原始 PNG 暫留 `public/location_img/` 作回復備份。
+- 驗證結果：`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`、`npm.cmd run deploy:ftp:dry` 均通過。
+- **部署待辦**：2026-09-16 的實際 FTP quick deploy 在被動資料通道卡住，程序已停止且沒有成功 manifest；尚未完成 live verification。待 FTP 可正常建立資料通道後，重新跑 `npm.cmd run deploy:ftp`，再檢查 `https://online.hong-sen.com/location/` 的 HTTP 200、canonical、JSON-LD、`/location/` 連結與 WebP 載入。

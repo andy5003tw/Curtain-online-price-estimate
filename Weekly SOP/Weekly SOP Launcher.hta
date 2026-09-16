@@ -21,17 +21,21 @@
 
     body {
       margin: 0;
-      padding: 22px;
+      /* Reserve the lower third for the fixed execution-status panel. */
+      padding: 22px 22px calc(33vh + 46px);
       font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
       font-size: 16px;
       color: #102a43;
       background: #f2f7fb;
-      zoom: 1.1;
+      overflow-x: hidden;
+      /* The selected font scale is applied after startup by applyFontScale(). */
+      zoom: 1;
     }
 
     .card {
-      width: 1040px;
-      max-width: 100%;
+      width: 100%;
+      max-width: none;
+      min-width: 0;
       margin: 0 auto;
       background: #ffffff;
       border: 1px solid #d8e6f2;
@@ -333,6 +337,21 @@
 
     .advanced-seo-geo-actions .btn-gsc-generative-ai:hover { background: #cfe7fb; }
 
+    .status-report-link {
+      display: inline-block;
+      margin: 7px 0 4px;
+      padding: 7px 12px;
+      border: 1px solid #4d8fbe;
+      border-radius: 999px;
+      color: #0b3d63;
+      background: #e5f5ff;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .status-report-link:hover { background: #cfe7fb; }
+
     .queue-panel {
       margin-top: 12px;
       border: 1px solid #cfe0ef;
@@ -546,7 +565,7 @@
     }
 
     .health-label {
-      font-size: 13px;
+      font-size: 0.928em;
       font-weight: 800;
       letter-spacing: 0.3px;
       color: #56718a;
@@ -555,7 +574,7 @@
 
     .health-value {
       margin-top: 4px;
-      font-size: 14px;
+      font-size: 1em;
       line-height: 1.45;
       color: #183b56;
       word-break: break-word;
@@ -600,16 +619,25 @@
     }
 
     .status-wrap {
-      margin-top: 14px;
+      position: fixed;
+      z-index: 1000;
+      right: 22px;
+      bottom: 18px;
+      left: 22px;
+      height: 33vh;
+      min-height: 180px;
+      margin: 0;
       background: #f7fbff;
       border: 1px solid #d8e6f2;
       border-radius: 12px;
-      overflow: hidden;
+      overflow: auto;
+      box-shadow: 0 -8px 24px rgba(16, 42, 67, 0.14);
+      font-size: 15px;
     }
 
     .status-head {
       padding: 10px 12px;
-      font-size: 15px;
+      font-size: 1em;
       font-weight: 700;
       color: #274760;
       background: #eef5fc;
@@ -638,7 +666,7 @@
 
     #statusSummary {
       padding: 11px 12px 8px;
-      font-size: 15px;
+      font-size: 1em;
       line-height: 1.58;
       white-space: pre-wrap;
       color: #2f4f67;
@@ -653,7 +681,7 @@
       width: auto;
       min-height: 40px;
       padding: 8px 16px;
-      font-size: 14px;
+      font-size: 0.933em;
       font-weight: 700;
       border-radius: 999px;
       color: #163a56;
@@ -669,7 +697,7 @@
       border-radius: 8px;
       border: 1px solid #d2e3f3;
       background: #ffffff;
-      font-size: 14px;
+      font-size: 0.933em;
       line-height: 1.55;
       color: #244763;
       max-height: 360px;
@@ -678,7 +706,7 @@
 
     .details-section-title {
       margin: 3px 0 8px;
-      font-size: 14px;
+      font-size: 1em;
       font-weight: 800;
       color: #0b2f4a;
     }
@@ -718,6 +746,13 @@
       return defaultFontScale;
     }
 
+    function applyStatusFontScale(scale) {
+      var statusWrap = document.getElementById("statusWrap");
+      if (statusWrap) {
+        statusWrap.style.fontSize = String(Math.round(15 * scale * 100) / 100) + "px";
+      }
+    }
+
     function applyFontScale(scale, shouldSave) {
       scale = Number(scale);
       var valid = false;
@@ -726,6 +761,12 @@
       }
       if (!valid) { scale = defaultFontScale; }
       document.body.style.zoom = String(scale);
+      // Keep the physical layout at the viewport width after MSHTA applies zoom.
+      // This matches the twyesn Anti UI pattern and prevents a horizontal scrollbar.
+      document.body.style.width = String(100 / scale) + "%";
+      // Fixed-position panels are outside the body zoom layout in MSHTA.
+      // Scale their type explicitly so their reading size matches the main UI.
+      applyStatusFontScale(scale);
       var label = document.getElementById("fontScaleValue");
       if (label) { label.innerText = Math.round(scale * 100) + "%"; }
       var buttons = document.getElementsByTagName("button");
@@ -778,6 +819,75 @@
     function setStatusSummary(text, mode) {
       document.getElementById("statusSummary").innerText = text;
       setStatusMode(mode || "");
+    }
+
+    function openLatestGscGenerativeAiAnalysis(keepStatus) {
+      try {
+        var root = getRootFolder();
+        var target = root + "\\latest\\gsc-generative-ai-analysis.md";
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        if (!fso.FileExists(target)) {
+          setStatusSummary("找不到 GSC 生成式 AI 分析報表。\n請先按「分析 GSC 生成式 AI Excel 報表＋匯入」。", "error");
+          return false;
+        }
+        var shell = new ActiveXObject("WScript.Shell");
+        shell.Run('cmd /c start "" "' + target + '"', 1, false);
+        if (!keepStatus) {
+          setGscGenerativeAiAnalysisCompleteStatus(root, true);
+        }
+        return true;
+      } catch (e) {
+        setStatusSummary("開啟 GSC 生成式 AI 分析報表失敗：" + e.message, "error");
+        return false;
+      }
+    }
+
+    function getGscGenerativeAiAnalysisSummary(root) {
+      var analysis = readJsonIfExists(root + "\\latest\\gsc-generative-ai-analysis.json");
+      if (!analysis || analysis.status !== "complete") { return "摘要資料暫時無法讀取；請開啟完整分析報表。"; }
+      var topPage = analysis.pages && analysis.pages.top_10 && analysis.pages.top_10.length ? analysis.pages.top_10[0] : null;
+      var period = analysis.period || {};
+      var impressions = analysis.impressions || {};
+      var countries = analysis.countries || {};
+      var lines = [
+        "資料期間：" + (period.start_date || "n/a") + " ～ " + (period.end_date || "n/a"),
+        "曝光：" + (impressions.total || 0) + "，日均：" + (impressions.average_per_day || "n/a"),
+        "台灣：" + (countries.taiwan_impressions || 0) + "（" + (countries.taiwan_share || "n/a") + "%）"
+      ];
+      if (topPage) { lines.push("熱門頁面：" + topPage.label + "（" + topPage.impressions + "）"); }
+      return lines.join("\n");
+    }
+
+    function showGscGenerativeAiAnalysisInStatus() {
+      try {
+        var root = getRootFolder();
+        var reportPath = root + "\\latest\\gsc-generative-ai-analysis.md";
+        var reportText = readTextIfExists(reportPath);
+        if (!reportText) {
+          setStatusSummary("找不到或無法讀取 GSC 生成式 AI 分析報表。\n請先按「分析 GSC 生成式 AI Excel 報表＋匯入」。", "error");
+          return false;
+        }
+        setStatusSummary("GSC 生成式 AI Excel 完整分析報表：\n\n" + reportText, "success");
+        return true;
+      } catch (e) {
+        setStatusSummary("讀取 GSC 生成式 AI 分析報表失敗：" + e.message, "error");
+        return false;
+      }
+    }
+
+    function setGscGenerativeAiAnalysisCompleteStatus(root, reportOpened) {
+      var status = document.getElementById("statusSummary");
+      if (!status) { return; }
+      var reportPath = root + "\\latest\\gsc-generative-ai-analysis.md";
+      status.innerText = (reportOpened ? "已開啟最新 GSC 生成式 AI 分析報表。\n\n" : "GSC 生成式 AI Excel 分析完成。\n\n") + "摘要：\n" + getGscGenerativeAiAnalysisSummary(root) + "\n\n完整分析報表：\n";
+      var link = document.createElement("a");
+      link.href = "#";
+      link.className = "status-report-link";
+      link.innerText = "在 UI 查看完整分析內容";
+      link.onclick = function () { showGscGenerativeAiAnalysisInStatus(); return false; };
+      status.appendChild(link);
+      status.appendChild(document.createTextNode("\n完整內容會在此執行狀態面板內顯示。\n\n此資料僅描述 GSC 生成式 AI 曝光，不會推論 AI Visibility 的提及／引用率。"));
+      setStatusMode("success");
     }
 
     function setStatusDetails(text) {
@@ -1780,6 +1890,34 @@
       }
     }
 
+    function getSeoGeoUiProjection(root) {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var script = fso.GetAbsolutePathName(root + "\\..\\scripts\\get-seo-geo-ui-projection.ps1");
+      if (!fso.FileExists(script)) { return { consistent: false, state: "projection_error", primary_action: { id: "NONE", enabled: false, reason: "找不到 UI projection script" }, actions: {} }; }
+      try {
+        var cmd = 'pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + script.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '"';
+        var exec = new ActiveXObject("WScript.Shell").Exec(cmd);
+        var output = exec.StdOut.ReadAll();
+        var error = exec.StdErr.ReadAll();
+        if (exec.ExitCode !== 0) { return { consistent: false, state: "projection_error", primary_action: { id: "NONE", enabled: false, reason: "UI projection 讀取失敗：" + (error || output || exec.ExitCode) }, actions: {} }; }
+        var result = parseJson(output);
+        if (!result || typeof result.consistent === "undefined" || !result.primary_action || !result.actions) { throw new Error("UI projection 格式無效"); }
+        return result;
+      } catch (e) {
+        return { consistent: false, state: "projection_error", primary_action: { id: "NONE", enabled: false, reason: "UI projection 讀取失敗：" + e.message }, actions: {} };
+      }
+    }
+
+    function actionIdToType(id) {
+      var map = {
+        GENERATE_PLAN: "generate_plan", OPEN_PLAN: "open_plan", COPY_ROUND_PROMPT: "copy_round",
+        ADVANCE_ROUND: "advance_round", APPROVE_SINGLE_PAGE: "approve_single_page",
+        DEPLOY_DRY_RUN: "dry_run", DEPLOY: "deploy", AUTO_DEPLOY: "auto_deploy",
+        LIVE_VERIFY: "live_verify", ADVANCE_LIFECYCLE: "lifecycle"
+      };
+      return map[id] || "none";
+    }
+
     function getQueueSnapshot(root) {
       var state = readJsonIfExists(root + "\\latest\\seo-geo-action-queue-state.json");
       if (!state) {
@@ -1959,6 +2097,22 @@
         }
       }
       setButtonState("btnSeoGeoNextSmart", !currentSeoGeoNextAction.enabled, currentSeoGeoNextAction.label, currentSeoGeoNextAction.reason);
+
+      // The PowerShell projection is the authoritative UI contract.  Retaining the
+      // legacy calculation above during this migration keeps non-primary controls
+      // stable, but it may never override the single state-changing primary action.
+      var ui = getSeoGeoUiProjection(root);
+      var primary = ui && ui.primary_action ? ui.primary_action : null;
+      if (!ui || ui.consistent !== true || !primary) {
+        currentSeoGeoNextAction = { type: "none", actionId: "NONE", enabled: false, label: "流程資料讀取失敗", reason: primary && primary.reason ? primary.reason : "UI projection 未通過 consistency gate" };
+      } else {
+        currentSeoGeoNextAction = { type: actionIdToType(primary.id), actionId: primary.id, enabled: primary.enabled === true, label: primary.label, reason: primary.reason };
+        var fetchAction = ui.actions.FETCH_GSC;
+        var openAction = ui.actions.OPEN_PLAN;
+        if (fetchAction) { setButtonState("btnFetchGscLatest", fetchAction.enabled !== true, fetchAction.label, fetchAction.reason); }
+        if (openAction) { setButtonState("btnOpenSeoGeoActionPlan", openAction.enabled !== true, openAction.label, openAction.reason); }
+      }
+      setButtonState("btnSeoGeoNextSmart", !currentSeoGeoNextAction.enabled, currentSeoGeoNextAction.label, currentSeoGeoNextAction.reason);
     }
 
     function updateWorkflowControls() {
@@ -2058,8 +2212,11 @@
           canImportAiVisibility ? "不呼叫 AI API；自動讀取 Weekly SOP\\inbox\\ai-visibility 中最新的完整 JSON" : "需要 PowerShell 7、AI Visibility importer／writer 與固定問題集");
         setButtonState("btnImportAiVisibilityManual", !canImportAiVisibility, "手動選擇 AI Visibility JSON",
           canImportAiVisibility ? "找不到收件匣檔案時使用；仍只接受 direct AI engine observation" : "需要 PowerShell 7、AI Visibility writer 與固定問題集");
-        setButtonState("btnAnalyzeGscGenerativeAi", !(hasPwsh && fso.FileExists(gscGenerativeAiAnalyzer)), "分析 GSC 生成式 AI Excel 報表",
+        setButtonState("btnAnalyzeGscGenerativeAi", !(hasPwsh && fso.FileExists(gscGenerativeAiAnalyzer)), "分析 GSC 生成式 AI Excel 報表＋匯入",
           hasPwsh && fso.FileExists(gscGenerativeAiAnalyzer) ? "選取 Search Console「生成式 AI 功能」XLSX，產生本機曝光摘要；不會更新 AI Visibility 指標" : "需要 PowerShell 7 與 analyze-gsc-generative-ai.ps1");
+        var gscGenerativeAiReport = root + "\\latest\\gsc-generative-ai-analysis.md";
+        setButtonState("btnOpenGscGenerativeAiAnalysis", !fso.FileExists(gscGenerativeAiReport), "在 UI 查看最新 GSC 生成式 AI 分析報表",
+          fso.FileExists(gscGenerativeAiReport) ? "直接在固定的執行狀態面板內顯示完整 Markdown 分析內容" : "尚無分析報表；請先選取並分析 GSC 生成式 AI Excel");
         setButtonState("btnSeoGeoDeployDryRun", !canDeploy, "部署預演（FTP dry-run，不實際上傳）",
           canDeploy ? "先產生 queue-bound deployment manifest；不會連線或上傳" : "需要 workflow consistency PASS 且 lifecycle=local_validated");
         setButtonState("btnSeoGeoDeploy", !canDeploy, "正式上傳網站（FTP 部署）",
@@ -2168,7 +2325,8 @@
         setButtonState("btnRunAiVisibilityLunaComparison", true, "Luna 對照測試（不覆蓋 mini）", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityInbox", true, "只匯入收件匣最新 JSON", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityManual", true, "手動選擇 AI Visibility JSON", "流程狀態讀取失敗");
-        setButtonState("btnAnalyzeGscGenerativeAi", true, "分析 GSC 生成式 AI Excel", "流程狀態讀取失敗");
+        setButtonState("btnAnalyzeGscGenerativeAi", true, "分析 GSC 生成式 AI Excel 報表＋匯入", "流程狀態讀取失敗");
+        setButtonState("btnOpenGscGenerativeAiAnalysis", true, "在 UI 查看最新 GSC 生成式 AI 分析報表", "流程狀態讀取失敗");
         renderWorkflowPanel("error", "流程狀態：讀取失敗", e.message);
       }
     }
@@ -2991,6 +3149,36 @@
       }
     }
 
+    function runSeoGeoAutoDeploy() {
+      try {
+        var root = getRootFolder();
+        var ui = getSeoGeoUiProjection(root);
+        var action = ui && ui.actions ? ui.actions.AUTO_DEPLOY : null;
+        if (!ui || ui.consistent !== true || !action || action.enabled !== true || String(ui.state || "") !== "local_validated") {
+          setStatusSummary("自動部署被 projection gate 阻擋：\n" + ((action && action.reason) || (ui && ui.primary_action && ui.primary_action.reason) || "需要 local_validated 與完整 preflight。"), "error");
+          return;
+        }
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var repoRoot = fso.GetParentFolderName(root);
+        var script = repoRoot + "\\scripts\\invoke-seo-geo-autodeploy.ps1";
+        if (!fso.FileExists(script)) { throw new Error("找不到 auto-deploy 協調器：\n" + script); }
+        var logPath = root + "\\latest\\seo-geo-autodeploy-last-run.log";
+        var cmd = 'cmd /d /c cd /d "' + repoRoot.replace(/"/g, '""') + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + script.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -Mode Execute > "' + logPath.replace(/"/g, '""') + '" 2>&1';
+        setButtonsBusy(true);
+        setStatusSummary("自動部署處理中…\n\n正在依序執行 preflight、dry-run、受驗證 FTP 上傳、部署 receipt、live verification 與 live_verified receipt。任何一步失敗都會停止。", "running");
+        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
+        var logText = readTextIfExists(logPath);
+        setStatusDetails("Auto-deploy command:\n" + cmd + "\n\nLog:\n" + logText);
+        setStatusSummary(code === 0 ? "自動部署已完成至 live_verified。後續 7 天／28 天量測仍需等待完整 GSC 資料，不會自動決策。" : "自動部署未完成；journal 已保留最後成功階段，且沒有寫入未通過的 lifecycle stage。\n\n" + logText, code === 0 ? "success" : "error");
+      } catch (e) {
+        setStatusSummary("自動部署失敗：" + e.message, "error");
+      } finally {
+        setButtonsBusy(false);
+        refreshQueueStatus();
+        updateWorkflowControls();
+      }
+    }
+
     function runSeoGeoLiveVerification() {
       try {
         var root = getRootFolder();
@@ -3092,7 +3280,11 @@
         var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
         var logText = readTextIfExists(logPath);
         setStatusDetails("Command:\n" + cmd + "\n\nInput:\n" + inputPath + "\n\nLog:\n" + logText);
-        setStatusSummary(code === 0 ? "GSC 生成式 AI Excel 分析完成。\n\n摘要：\n" + root + "\\latest\\gsc-generative-ai-analysis.md\n\n此資料僅描述 GSC 生成式 AI 曝光，不會推論 AI Visibility 的提及／引用率。" : "GSC 生成式 AI Excel 分析失敗。\n\n" + logText, code === 0 ? "success" : "error");
+        if (code === 0) {
+          setGscGenerativeAiAnalysisCompleteStatus(root);
+        } else {
+          setStatusSummary("GSC 生成式 AI Excel 分析失敗。\n\n" + logText, "error");
+        }
       } catch (e) {
         setStatusSummary("GSC 生成式 AI Excel 分析失敗：" + e.message, "error");
       } finally {
@@ -3305,12 +3497,24 @@
         setStatusSummary("目前沒有可執行的下一步。\n\n" + ((currentSeoGeoNextAction && currentSeoGeoNextAction.reason) || "請查看流程提示。"), "warn");
         return;
       }
+      if (currentSeoGeoNextAction.actionId) {
+        var freshProjection = getSeoGeoUiProjection(getRootFolder());
+        var freshAction = freshProjection && freshProjection.actions ? freshProjection.actions[currentSeoGeoNextAction.actionId] : null;
+        if (!freshProjection || freshProjection.consistent !== true || !freshAction || freshAction.enabled !== true) {
+          setStatusSummary("操作已停止：執行前重新檢查 projection 未通過。\n\n" + ((freshAction && freshAction.reason) || (freshProjection && freshProjection.primary_action && freshProjection.primary_action.reason) || "請重新整理流程狀態。"), "error");
+          updateWorkflowControls();
+          return;
+        }
+      }
       switch (currentSeoGeoNextAction.type) {
+        case "generate_plan": runSeoGeoActionPlan(true); break;
+        case "open_plan": openLatestSeoGeoActionPlan(); break;
         case "copy_round": copyLatestSeoGeoAiPrompt(); break;
         case "advance_round": advanceSeoGeoRound(); break;
         case "approve_single_page": approveSinglePageReview(); break;
         case "dry_run": runSeoGeoDeployment(true); break;
         case "deploy": runSeoGeoDeployment(false); break;
+        case "auto_deploy": runSeoGeoAutoDeploy(); break;
         case "live_verify": runSeoGeoLiveVerification(); break;
         case "lifecycle": invokeLifecycleNext(); break;
         default: setStatusSummary("目前下一步類型無法辨識，請重新整理 UI。", "error");
@@ -3376,6 +3580,7 @@
       bindClick("btnImportAiVisibility", runAiVisibilityAutomation);
       bindClick("btnRunAiVisibilityLunaComparison", runAiVisibilityLunaComparison);
       bindClick("btnAnalyzeGscGenerativeAi", analyzeGscGenerativeAiExcel);
+      bindClick("btnOpenGscGenerativeAiAnalysis", showGscGenerativeAiAnalysisInStatus);
       bindClick("btnToggleQueueDetails", toggleQueueDetails);
       bindClick("toggleMonthlyAiAction", toggleMonthlyAiAction);
       bindClick("btnToggleDetails", toggleDetails);
@@ -3393,7 +3598,7 @@
   </script>
 </head>
 <body onload="init()">
-  <div class="card">
+  <div class="card" id="mainCard">
     <div class="heading">
       <h1>Weekly SOP 一鍵執行</h1>
       <div class="heading-tools">
@@ -3431,7 +3636,8 @@
     <div id="monthlyAiAction" class="advanced-seo-geo-actions">
       <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">執行 AI 可見度檢查</button>
       <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-luna">Luna 對照測試（額外模型費用）</button>
-      <button id="btnAnalyzeGscGenerativeAi" class="btn-seo-geo btn-gsc-generative-ai">分析 GSC 生成式 AI Excel 報表</button>
+      <button id="btnAnalyzeGscGenerativeAi" class="btn-seo-geo btn-gsc-generative-ai">分析 GSC 生成式 AI Excel 報表＋匯入</button>
+      <button id="btnOpenGscGenerativeAiAnalysis" class="btn-upload-fallback">在 UI 查看最新 GSC 生成式 AI 分析報表</button>
       <p class="seo-geo-note">一般檢查會用預設模型完成並匯入固定 6 題。Luna 對照會以 <strong>gpt-5.6-luna</strong> 另跑同一組題目，產生獨立比較報告，不會覆蓋目前正式結果；因會多呼叫一個模型，將增加該模型的 API 用量／費用。兩者皆需要設定 <strong>OPENAI_API_KEY</strong>。</p>
       <p class="seo-geo-note">「分析 GSC 生成式 AI Excel」請選取 GSC 下載的 <strong>.xlsx</strong>。它只分析 GSC 生成式 AI 功能曝光，不會改寫 direct AI Visibility 的提及、引用或正確性指標。</p>
     </div>

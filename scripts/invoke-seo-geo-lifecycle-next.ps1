@@ -220,7 +220,7 @@ switch ($nextStage) {
     $evidence.uploaded = [int]$manifest.summary.uploaded
     $evidence.skipped = [int]$manifest.summary.skipped
     $evidence.failed = [int]$manifest.summary.failed
-    $evidence.command = 'pwsh scripts/deploy-ftp.ps1 -Mode quick'
+    $evidence.command = if ($manifest.deploy_plan) { 'pwsh scripts/deploy-ftp.ps1 -Mode paths -DeployPlanPath latest/seo-geo-deploy-plan.json' } else { 'pwsh scripts/deploy-ftp.ps1 -Mode quick' }
     $evidence.completed_at = [string]$manifest.completed_at
     $evidence.target_host = [string]$manifest.target_host
     $evidence.deployment_manifest = [ordered]@{ path = 'latest/seo-geo-deployment-manifest.json'; sha256 = Get-Sha256 $deploymentPath }

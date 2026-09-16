@@ -11,6 +11,9 @@ $htaPath = Join-Path $weeklyRoot 'Weekly SOP Launcher.hta'
 $planPath = Join-Path $weeklyRoot 'latest\seo-geo-action-plan.json'
 $queuePath = Join-Path $weeklyRoot 'latest\seo-geo-action-queue-state.json'
 $projectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-effective-workflow.ps1'
+$uiProjectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-ui-projection.ps1'
+$deployPlanWriter = Join-Path $repoRoot 'scripts\new-seo-geo-deploy-plan.ps1'
+$autoDeployWriter = Join-Path $repoRoot 'scripts\invoke-seo-geo-autodeploy.ps1'
 $cycleTest = Join-Path $repoRoot 'scripts\test-seo-geo-cycle.ps1'
 $aiVisibilityTest = Join-Path $repoRoot 'scripts\test-ai-visibility.ps1'
 $aiVisibilityImporter = Join-Path $repoRoot 'scripts\import-latest-ai-visibility.ps1'
@@ -29,6 +32,9 @@ Assert-True (Test-Path -LiteralPath $htaPath -PathType Leaf) "Weekly SOP HTA not
 Assert-True (Test-Path -LiteralPath $planPath -PathType Leaf) "Action plan not found: $planPath"
 Assert-True (Test-Path -LiteralPath $queuePath -PathType Leaf) "Queue state not found: $queuePath"
 Assert-True (Test-Path -LiteralPath $projectionWriter -PathType Leaf) "Effective workflow projection writer not found: $projectionWriter"
+Assert-True (Test-Path -LiteralPath $uiProjectionWriter -PathType Leaf) "UI projection writer not found: $uiProjectionWriter"
+Assert-True (Test-Path -LiteralPath $deployPlanWriter -PathType Leaf) "Verified deploy plan writer not found: $deployPlanWriter"
+Assert-True (Test-Path -LiteralPath $autoDeployWriter -PathType Leaf) "Protected auto-deploy coordinator not found: $autoDeployWriter"
 Assert-True (Test-Path -LiteralPath $cycleTest -PathType Leaf) "SEO/GEO state behavior fixture is missing: $cycleTest"
 Assert-True (Test-Path -LiteralPath $aiVisibilityTest -PathType Leaf) "AI Visibility state behavior fixture is missing: $aiVisibilityTest"
 Assert-True (Test-Path -LiteralPath $aiVisibilityImporter -PathType Leaf) "AI Visibility one-click importer is missing: $aiVisibilityImporter"
@@ -53,7 +59,7 @@ foreach ($marker in @('function fetchLatestGscReports', 'fetch-gsc-latest.ps1', 
 }
 $primaryActions = [regex]::Match($hta, '(?s)<div class="seo-geo-actions">\s*<button id="btnSeoGeoNextSmart".*?</div>').Value
 Assert-True (([regex]::Matches($primaryActions, '<button\b')).Count -eq 2) 'Primary SEO/GEO panel must contain exactly the next-step and report buttons.'
-foreach ($marker in @('function executeCurrentSeoGeoNextStep', 'function invokeLifecycleNext', 'function getLifecycleNextInspection', 'invoke-seo-geo-lifecycle-next.ps1', '執行目前下一步', '查看目前 SEO/GEO 報表', '正式上傳網站（FTP 部署）')) {
+foreach ($marker in @('function executeCurrentSeoGeoNextStep', 'function invokeLifecycleNext', 'function getLifecycleNextInspection', 'function getSeoGeoUiProjection', 'function runSeoGeoAutoDeploy', 'AUTO_DEPLOY', 'invoke-seo-geo-lifecycle-next.ps1', 'invoke-seo-geo-autodeploy.ps1', '執行目前下一步', '查看目前 SEO/GEO 優化報表', '正式上傳網站（FTP 部署）')) {
   Assert-True ($hta.Contains($marker)) "Missing smart SEO/GEO UI marker: $marker"
 }
 foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionText', 'getEffectiveWorkflowProjection', 'strategy snapshot=', 'effective workflow=', 'single_page_alignment_review', 'observation_only', 'awaiting_implemented_receipt', 'btnLifecycleImplemented', 'btnLifecycleLocalValidated', 'btnSeoGeoDeployDryRun', 'btnSeoGeoDeploy', 'btnSeoGeoLiveVerify', 'btnImportAiVisibility', 'btnImportAiVisibilityInbox', 'btnImportAiVisibilityManual', 'btnRunAiVisibilityLunaComparison', 'runSeoGeoDeployment', 'runSeoGeoLiveVerification', 'runAiVisibilityAutomation', 'runAiVisibilityLunaComparison', 'run-ai-visibility-observation.ps1', 'run-ai-visibility-luna-comparison.ps1', 'importLatestAiVisibilityObservation', 'import-latest-ai-visibility.ps1', 'importAiVisibilityObservation', 'direct_ai_engine_observation', '品牌題：提及率=', '非品牌題：提及率=', '引用來源（按題計）', '自有網域：online.hong-sen.com=', 'accuracy（完全正確）=', 'accuracy review=', 'gsc_inference_prohibited', 'workflow consistency gate', 'queue_sha256', 'validation_receipt_sha256', 'write-seo-geo-workflow-transition.ps1', 'PowerShell transaction', 'function buildPostGscSubmissionReminder', '下一步操作提醒', '固定 6 題', 'observing_7d', 'decision_ready 7d manifest')) {
@@ -80,6 +86,15 @@ $projection = ($projectionText -join "`n") | ConvertFrom-Json
 Assert-True ([bool]$projection.consistency.valid) ('Effective workflow projection is inconsistent: ' + (@($projection.consistency.reasons) -join ', '))
 Assert-True ([string]$projection.strategy_snapshot.status -eq [string]$plan.workflow_status) 'Effective workflow projection does not preserve the immutable strategy snapshot status.'
 Assert-True ([string]$projection.effective.status -eq [string]$state.status) 'Effective workflow projection does not match the authoritative lifecycle state.'
+$uiProjectionText = @(& pwsh -NoLogo -NoProfile -File $uiProjectionWriter -RuntimeRoot $weeklyRoot 2>&1)
+Assert-True ($LASTEXITCODE -eq 0) ('UI projection failed: ' + ($uiProjectionText -join ' '))
+$uiProjection = ($uiProjectionText -join "`n") | ConvertFrom-Json
+Assert-True ([int]$uiProjection.schema_version -eq 1 -and $null -ne $uiProjection.primary_action -and $null -ne $uiProjection.actions) 'UI projection schema contract is invalid.'
+Assert-True ([string]$uiProjection.state -eq [string]$state.status) 'UI projection state does not match authoritative queue state.'
+foreach ($actionId in @('FETCH_GSC','COPY_ROUND_PROMPT','ADVANCE_ROUND','AUTO_DEPLOY','LIVE_VERIFY','ADVANCE_LIFECYCLE')) {
+  Assert-True ($uiProjection.actions.PSObject.Properties.Name -contains $actionId) "UI projection is missing action contract: $actionId"
+  Assert-True ($uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'enabled' -and $uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'reason') "UI action lacks enabled/reason: $actionId"
+}
 Assert-True ($state.PSObject.Properties.Name -contains 'precondition_gates') 'Queue state is missing precondition gates.'
 if ([string]$state.status -notin @('observation_only', 'active')) {
   Assert-True ([string]$projection.precondition_gates.data_validated.status -in @('passed', 'validated')) 'Lifecycle state must expose passed data_validated gate.'

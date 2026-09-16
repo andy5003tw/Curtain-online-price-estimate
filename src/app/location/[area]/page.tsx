@@ -5,7 +5,7 @@ import { getLocationPageById, isCityOverviewLocationPage, locationPages } from '
 import { products } from '@/data/products';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
-import { ChevronRight, MapPin, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, MapPin, CheckCircle2, Calculator, BookOpen, Sparkles, ShieldCheck, ArrowUpRight } from 'lucide-react';
 
 function buildLocationCopy(areaName: string) {
   return {
@@ -236,6 +236,77 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
     })),
   };
 
+  // 建立行政區名稱與代碼快速映射（用於市級總覽標籤可點擊跳轉）
+  const districtLinkMap = new Map<string, string>();
+  for (const p of locationPages) {
+    districtLinkMap.set(p.areaName, p.id);
+    districtLinkMap.set(p.areaName.replace(/區|市/g, ''), p.id);
+  }
+
+  // 雙北實景展示卡配置（新北疏洪西路客廳蛇形簾、台北都會採光豪宅）
+  const showcaseImageConfig: Record<string, { image: string; tag: string; title: string; desc: string }> = {
+    'new-taipei': {
+      image: '/Construction Cases_img/LINE_ALBUM_疏洪西路（蛇型簾+一般紗）_260414_2.webp',
+      tag: '新北精選案場實拍',
+      title: '客廳落地窗蛇形簾 ＋ 透光不透人一般紗',
+      desc: '新北景觀大戶與重劃區採光實景，兼顧白晝柔光漫射與夜間隱私',
+    },
+    taipei: {
+      image: '/about_img/about_01.webp',
+      tag: '台北都會精選實景',
+      title: '都會豪宅高採光雙層窗簾 ＋ 現代柔光配置',
+      desc: '大安、信義、天母住宅指定搭配，高雅波浪垂墜與極致控光',
+    },
+  };
+
+  const currentShowcase = showcaseImageConfig[pageData.id] ?? {
+    image: pageData.heroImage,
+    tag: `${pageData.areaName}案場實拍`,
+    title: `${pageData.areaName}窗簾客製化丈量與完工實景`,
+    desc: '宏森工班到府量身定制，專業窗型評估與安裝保固',
+  };
+
+  // 3 步驟透明估價流程步進條
+  const serviceSteps = [
+    {
+      step: 'STEP 01',
+      title: '線上 1 分鐘試算',
+      desc: `同尺寸比較${featuredProductNames ? featuredProductNames.split('、').slice(0, 2).join('與') : '窗簾款式'}預算`,
+    },
+    {
+      step: 'STEP 02',
+      title: '預約免費到府丈量',
+      desc: '專人攜帶布板色卡與五金樣本到現場挑選',
+    },
+    {
+      step: 'STEP 03',
+      title: '書面報價與安心施工',
+      desc: '確認窗簾盒軌道條件，透明報價保固安心',
+    },
+  ];
+
+  // 雙北精選在地完工微相簿
+  const miniGalleryShowcase = [
+    {
+      image: '/Construction Cases_img/LINE_ALBUM_20240813三重介壽路-蛇形簾_260414_1.webp',
+      badge: '客廳落地窗',
+      title: '雙層蛇形簾 ＋ 柔光紗',
+      desc: '大器波浪垂墜・漫射採光',
+    },
+    {
+      image: '/Construction Cases_img/LINE_ALBUM_20240614三重環河北一段-調光簾_260414_1.webp',
+      badge: '書房／辦公',
+      title: '精品調光斑馬簾',
+      desc: '自由調節光影・俐落好清潔',
+    },
+    {
+      image: '/Construction Cases_img/LINE_ALBUM_20240429板橋中正路379巷-捲簾_260414_1.webp',
+      badge: '臥室／西曬',
+      title: '全遮光防焰捲簾',
+      desc: '深度遮光睡眠・抗曬降溫',
+    },
+  ];
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
@@ -263,63 +334,154 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
       </div>
 
       <section className="py-section bg-white">
-        <div className="section-container" style={{ maxWidth: '900px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem' }}>
-            <div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--stone-900)' }}>{pageData.areaName}窗簾服務與報價界線</h2>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="section-container" style={{ maxWidth: '1080px' }}>
+          {/* 模組一：雙欄圖文品牌信任與服務界線（左圖 4.2 : 右文 5.8 黃金比例） */}
+          <div className="location-service-hub">
+            <div className="service-feature-image-card">
+              <img
+                src={withBasePath(currentShowcase.image)}
+                alt={`${pageData.areaName}窗簾完工案場實拍`}
+                loading="eager"
+              />
+              <div className="service-image-badge-top">
+                <Sparkles size={14} />
+                <span>{currentShowcase.tag}</span>
+              </div>
+              <div className="service-image-caption-bottom">
+                <span className="service-image-caption-title">{currentShowcase.title}</span>
+                <span className="service-image-caption-desc">{currentShowcase.desc}</span>
+              </div>
+            </div>
+
+            <div className="service-bounds-content">
+              <div className="service-bounds-header">
+                <div className="service-bounds-badge">
+                  <ShieldCheck size={14} />
+                  <span>在地直營・專業承諾</span>
+                </div>
+                <h2 className="service-bounds-title">{pageData.areaName}窗簾服務與報價界線</h2>
+              </div>
+
+              <ul className="service-bounds-list">
                 {auditedServiceFacts.map((fact, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '1.05rem', color: 'var(--stone-700)', lineHeight: 1.6 }}>
-                    <CheckCircle2 size={24} style={{ color: 'var(--amber-600)', flexShrink: 0, marginTop: '0.1rem' }} />
-                    {fact}
+                  <li key={i} className="service-bounds-item">
+                    <CheckCircle2 size={20} />
+                    <span>{fact}</span>
                   </li>
                 ))}
               </ul>
-            </div>
-            <div style={{ background: 'var(--stone-50)', padding: '2rem', borderRadius: '1.5rem', border: '1px solid var(--stone-200)' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--stone-900)', borderBottom: '2px solid var(--amber-200)', paddingBottom: '0.75rem', display: 'inline-block' }}>主要服務涵蓋區域</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                {pageData.districts.map((d, i) => (
-                  <span key={i} style={{ background: 'white', border: '1px solid var(--stone-200)', padding: '0.5rem 1rem', borderRadius: '2rem', fontSize: '0.95rem', color: 'var(--stone-700)' }}>
-                    {d}
-                  </span>
+
+              {/* 3 步驟透明估價流程步進條（替代原本重複的黃色底框） */}
+              <div className="service-step-track">
+                {serviceSteps.map((step, idx) => (
+                  <div key={idx} className="service-step-item">
+                    <span className="service-step-number">{step.step}</span>
+                    <span className="service-step-title">{step.title}</span>
+                    <span className="service-step-desc">{step.desc}</span>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div style={{ marginTop: '2rem', background: 'var(--amber-50)', borderRadius: '1rem', border: '1px solid var(--amber-100)', padding: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#92400E', marginBottom: '1rem' }}>{pageData.areaName}本頁可完成的事</h3>
-            <ul style={{ listStyle: 'none', display: 'grid', gap: '0.75rem' }}>
-              {auditedServiceFacts.map((highlight, i) => (
-                <li key={i} style={{ color: 'var(--stone-700)', lineHeight: 1.7, display: 'flex', gap: '0.5rem' }}>
-                  <span style={{ color: '#B45309' }}>•</span>
-                  <span>{highlight}</span>
-                </li>
-              ))}
-            </ul>
+          {/* 模組二：主要服務涵蓋生活圈面板 ＆ 完工微相簿 */}
+          <div className="location-districts-panel">
+            <div className="districts-panel-header">
+              <h3 className="districts-panel-title">
+                <MapPin size={20} style={{ color: 'var(--amber-600)' }} />
+                <span>主要服務涵蓋區域</span>
+              </h3>
+              <span className="districts-panel-hint">點選行政區可直接探索專屬案場與價格解析</span>
+            </div>
+
+            <div className="districts-pill-matrix">
+              {pageData.districts.map((d, i) => {
+                const targetAreaId = districtLinkMap.get(d) ?? districtLinkMap.get(d.replace(/區|市/g, ''));
+                if (targetAreaId && targetAreaId !== pageData.id) {
+                  return (
+                    <Link
+                      key={i}
+                      href={`/location/${targetAreaId}/`}
+                      className="district-pill-link"
+                      title={`查看${d}窗簾服務推薦與價格試算`}
+                    >
+                      <MapPin size={14} />
+                      <span>{d}</span>
+                    </Link>
+                  );
+                }
+                return (
+                  <span key={i} className="district-pill-static">
+                    {d}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* 在地完工微相簿 */}
+            <div className="gallery-mini-showcase">
+              <div className="gallery-mini-heading">
+                <Sparkles size={16} style={{ color: 'var(--amber-600)' }} />
+                <span>雙北熱門空間完工實景推薦</span>
+              </div>
+              <div className="gallery-mini-grid">
+                {miniGalleryShowcase.map((item, idx) => (
+                  <div key={idx} className="gallery-mini-card">
+                    <div className="gallery-mini-thumb">
+                      <img src={withBasePath(item.image)} alt={item.title} loading="lazy" />
+                      <span className="gallery-mini-badge">{item.badge}</span>
+                    </div>
+                    <div className="gallery-mini-info">
+                      <div className="gallery-mini-info-title">{item.title}</div>
+                      <div className="gallery-mini-info-desc">{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div style={{ marginTop: '1rem', background: 'white', borderRadius: '1rem', border: '1px solid var(--stone-200)', padding: '1.2rem' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.75rem' }}>
-              {pageData.areaName} 窗簾價格與估價快速入口
-            </h3>
-            <p style={{ margin: '0 0 0.85rem 0', color: 'var(--stone-600)', fontSize: '0.9rem', lineHeight: 1.7 }}>
-              先用線上工具做 {pageData.areaName} 窗簾價格試算，再用價格指南比對品項與安裝費用，最後安排丈量確認即可。
-            </p>
-            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ fontSize: '0.9rem' }}>
-                {pageData.areaName}線上估價
-              </Link>
-              <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ fontSize: '0.9rem' }}>
-                查看窗簾價格指南
-              </Link>
-              {ownerBoostLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="btn-outline" style={{ fontSize: '0.9rem' }}>
-                  {link.label}
-                </Link>
-              ))}
+          {/* 模組三：價格與估價快速入口分層重構 */}
+          <div className="location-quick-entry-card">
+            <div className="quick-entry-header">
+              <h3 className="quick-entry-title">
+                <Calculator size={22} style={{ color: 'var(--amber-600)' }} />
+                <span>{pageData.areaName} 窗簾價格與估價快速入口</span>
+              </h3>
+              <p className="quick-entry-desc">
+                先用線上工具做 {pageData.areaName} 窗簾價格試算，再用價格指南比對品項與安裝費用，最後安排專人到府丈量確認即可。
+              </p>
             </div>
+
+            {/* 第一層：主要行動 CTA */}
+            <div className="quick-entry-primary-actions">
+              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="quick-cta-btn-main">
+                <Calculator size={18} />
+                <span>{pageData.areaName}線上快速估價</span>
+                <ChevronRight size={18} />
+              </Link>
+              <Link href="/blog/curtain-price-guide-2026/" className="quick-cta-btn-sub">
+                <BookOpen size={18} />
+                <span>查看 2026 窗簾價格指南</span>
+              </Link>
+            </div>
+
+            {/* 第二層：次要 SEO 關鍵字晶片矩陣 */}
+            {ownerBoostLinks.length > 0 && (
+              <div>
+                <div className="seo-boost-group-title">
+                  <span>熱門窗型價格試算與深入推薦</span>
+                </div>
+                <div className="seo-boost-chips-grid">
+                  {ownerBoostLinks.map((link) => (
+                    <Link key={link.href} href={link.href} className="seo-quick-chip-link" title={link.label}>
+                      <span>{link.label}</span>
+                      <ArrowUpRight size={14} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

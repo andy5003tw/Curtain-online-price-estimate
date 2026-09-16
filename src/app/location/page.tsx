@@ -198,50 +198,49 @@ export default function LocationHubPage() {
       </nav>
 
       <section className="location-hero-section">
-        <div className="section-container">
-          <div className="location-hero-card">
-            <div>
-              <span className="location-hero-badge">📍 大台北 GEO 樞紐</span>
-            </div>
+        <div className="location-hero-banner">
+          <picture className="location-hero-visual">
+            <source media="(max-width: 640px)" srcSet={withBasePath('/location_img/location-hero-mobile.webp')} />
+            <img
+              src={withBasePath('/location_img/location-hero-desktop.webp')}
+              alt="雙北窗簾服務區域形象示意：自然採光客廳的窗簾搭配"
+              fetchPriority="high"
+            />
+          </picture>
+          <div className="location-hero-inner">
+            <span className="location-hero-badge">📍 大台北 GEO 樞紐</span>
             <h1 className="location-hero-title">台北與新北 {locationCoverage.administrativeAreaCount} 區行政區服務入口</h1>
             <p className="location-hero-desc">
               宏森 30 年工廠直營工班，整合台北與新北 {locationCoverage.administrativeAreaCount} 個行政區及 {locationCoverage.cityOverviewCount} 個市級總覽，提供現場精準丈量、同尺寸多材質透明比價與正式報價。
             </p>
-            <div className="location-hero-actions">
-              <Link href="/products/" className="btn-outline">先看全部產品</Link>
-              <Link href={buildCalculatorUrl()} className="btn-primary">
-                前往線上估價 <ChevronRight size={16} />
-              </Link>
-            </div>
 
-            <div className="location-hero-divider" />
-
-            {/* 城市快速跳轉錨點 */}
-            <div className="city-jump-nav" style={{ marginTop: 0 }}>
+            <div className="city-jump-nav">
               <a href="#taipei-city" className="city-jump-btn taipei">
-                🏛️ 台北市服務區（{locationCoverage.taipeiAdministrativeAreaCount} 行政區）↓
+                🏛️ 台北市服務區（{locationCoverage.taipeiAdministrativeAreaCount} 行政區） 往下捲動 ↓
               </a>
               <a href="#new-taipei-city" className="city-jump-btn new-taipei">
-                🏙️ 新北市服務區（{locationCoverage.newTaipeiAdministrativeAreaCount} 行政區）↓
+                🏙️ 新北市服務區（{locationCoverage.newTaipeiAdministrativeAreaCount} 行政區） 往下捲動 ↓
               </a>
             </div>
           </div>
         </div>
       </section>
 
+      <section className="location-hero-cta-strip" aria-label="服務地點快速入口">
+        <div className="location-hero-actions">
+          <Link href="/products/" className="btn-outline">先看全部產品</Link>
+          <Link href={buildCalculatorUrl()} className="btn-primary">
+            前往線上估價 <ChevronRight size={16} />
+          </Link>
+        </div>
+      </section>
+
       <section className="py-section bg-stone-50 border-t border-stone-200">
         <div className="section-container">
-          {renderedCityGroups.map((cityGroup, groupIdx) => {
+          {renderedCityGroups.map((cityGroup) => {
             const hero = cityGroup.heroPage;
             return (
-              <section
-                key={cityGroup.cityId}
-                id={cityGroup.anchorId}
-                style={{
-                  marginBottom: groupIdx === renderedCityGroups.length - 1 ? 0 : '4rem',
-                  scrollMarginTop: '80px',
-                }}
-              >
+              <div key={cityGroup.cityId} id={cityGroup.anchorId} style={{ scrollMarginTop: '90px' }}>
                 {/* 1. 城市級巨型分水嶺橫帶 */}
                 <div className={`city-section-header ${cityGroup.themeClass}`}>
                   <div>
@@ -253,7 +252,7 @@ export default function LocationHubPage() {
                       href={`/location/${hero.id}/`}
                       className="city-header-link-btn"
                     >
-                      進入{cityGroup.cityName}全區專頁 →
+                      進入{cityGroup.cityName}全區專頁 <span className="header-btn-arrow">→</span>
                     </Link>
                   )}
                 </div>
@@ -373,7 +372,7 @@ export default function LocationHubPage() {
                     </div>
                   </div>
                 ))}
-              </section>
+              </div>
             );
           })}
         </div>

@@ -110,7 +110,7 @@ img {
 .desktop-nav {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .desktop-nav a {
@@ -121,6 +121,18 @@ img {
 
 .desktop-nav a:hover {
   color: var(--stone-900);
+}
+
+.nav-location-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.nav-location-link.is-current {
+  color: var(--amber-700) !important;
+  font-weight: 700;
 }
 
 .nav-cta {
@@ -167,6 +179,16 @@ img {
   background: var(--stone-50);
 }
 
+.mobile-nav .nav-location-link {
+  align-items: center;
+}
+
+.mobile-nav .nav-location-link.is-current {
+  background: var(--amber-50);
+  color: var(--amber-700);
+  font-weight: 700;
+}
+
 .mobile-nav .mobile-cta {
   margin-top: 0.5rem;
   text-align: center;
@@ -177,7 +199,7 @@ img {
   font-weight: 700;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 980px) {
   .desktop-nav { display: none; }
   .mobile-menu-btn { display: block; }
   .mobile-nav.open { display: block; }
@@ -1822,22 +1844,52 @@ img {
 
 /* 5. Metro Dual-Card Layout & City Section Headers (生活圈雙卡平衡佈局與城市分界) */
 
-/* /location/ 頁面頂部卡片化容器 */
+/* /location/ 頁面全寬形象 Banner */
 .location-hero-section {
-  padding: 2.25rem 0 2rem;
-  background: linear-gradient(180deg, #faf9f6 0%, #f5f4f0 100%);
+  padding: 0;
+  background: #f7f4ee;
 }
 
-.location-hero-card {
-  background: #ffffff;
-  border-radius: 1.15rem;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
-  padding: 3.25rem 2.5rem 2.75rem;
-  width: 100%;
-  margin: 0 auto;
-  text-align: center;
+.location-hero-banner {
   position: relative;
+  isolation: isolate;
+  min-height: 32rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.location-hero-visual,
+.location-hero-visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.location-hero-visual img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.location-hero-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(255, 252, 246, 0.97) 0%, rgba(255, 252, 246, 0.9) 39%, rgba(255, 252, 246, 0.38) 58%, rgba(255, 252, 246, 0.04) 77%);
+}
+
+.location-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  min-height: 32rem;
+  margin: 0 auto;
+  padding: 4.25rem 1.5rem 3.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .location-hero-badge {
@@ -1852,11 +1904,12 @@ img {
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.03em;
-  margin-bottom: 1.15rem;
+  margin-bottom: 1rem;
 }
 
 .location-hero-title {
-  font-size: clamp(1.85rem, 3.2vw, 2.4rem);
+  max-width: 39rem;
+  font-size: clamp(2rem, 3.2vw, 3rem);
   font-weight: 800;
   color: var(--stone-900);
   letter-spacing: -0.02em;
@@ -1868,8 +1921,8 @@ img {
   font-size: 1rem;
   color: var(--stone-600);
   line-height: 1.75;
-  max-width: 720px;
-  margin: 0 auto 1.75rem;
+  max-width: 38rem;
+  margin: 0 0 1.75rem;
 }
 
 .location-hero-actions {
@@ -1877,31 +1930,47 @@ img {
   justify-content: center;
   gap: 0.85rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
-.location-hero-divider {
-  height: 1px;
-  width: 85%;
-  max-width: 520px;
-  margin: 0 auto 1.5rem;
-  background: linear-gradient(90deg, transparent, rgba(203, 213, 225, 0.8), transparent);
+.location-hero-cta-strip {
+  padding: 1.3rem 1.5rem;
+  background: #fffdfa;
+  border-bottom: 1px solid var(--stone-200);
 }
 
 @media (max-width: 640px) {
-  .location-hero-card {
-    padding: 2rem 1.25rem 1.75rem;
-    border-radius: 1.15rem;
+  .location-hero-banner,
+  .location-hero-inner {
+    min-height: 39rem;
+  }
+
+  .location-hero-banner::after {
+    background: linear-gradient(180deg, rgba(255, 252, 246, 0.98) 0%, rgba(255, 252, 246, 0.91) 48%, rgba(255, 252, 246, 0.34) 72%, rgba(255, 252, 246, 0.08) 100%);
+  }
+
+  .location-hero-inner {
+    padding: 2.75rem 1.5rem 2.25rem;
+    justify-content: flex-start;
+  }
+
+  .location-hero-title {
+    font-size: clamp(1.9rem, 9vw, 2.45rem);
+  }
+
+  .location-hero-desc {
+    font-size: 0.95rem;
   }
 }
 
 /* 城市快速跳轉導航 */
 .city-jump-nav {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.85rem;
   flex-wrap: wrap;
-  margin-top: 1.25rem;
+  margin-top: auto;
 }
 
 .city-jump-btn {
@@ -1919,13 +1988,13 @@ img {
 }
 
 .city-jump-btn.taipei {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.82);
   color: #6a2d0c !important;
   border: 1.5px solid #8f4214;
 }
 
 .city-jump-btn.new-taipei {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.82);
   color: var(--amber-700) !important;
   border: 1.5px solid var(--amber-600);
 }
@@ -1994,26 +2063,34 @@ img {
 .city-header-link-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.45rem 1.15rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  gap: 0.45rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 700;
   text-decoration: none;
-  color: white !important;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #6a2d0c !important;
+  background: #fef08a;
+  border: 1.5px solid #fde047;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .city-header-link-btn:hover {
-  background: white !important;
-  color: #1c1917 !important;
-  border-color: white !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #ffffff !important;
+  color: #6a2d0c !important;
+  border-color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+.city-header-link-btn .header-btn-arrow {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.city-header-link-btn:hover .header-btn-arrow {
+  transform: translateX(4px);
 }
 
 /* 雙卡黃金比例佈局（左圖 4 : 右文 6，左右卡片上下高度 100% 切齊對齊） */
@@ -2145,4 +2222,742 @@ img {
   }
 }
 
+/* ==========================================================================
+   地區專頁核心服務樞紐升級（Location Core Hub & Trust Showcase）
+   ========================================================================== */
 
+/* 主圖文服務看板（左圖 4.2 : 右文 5.8 黃金比例） */
+.location-service-hub {
+  display: grid;
+  grid-template-columns: 4.2fr 5.8fr;
+  gap: 2.25rem;
+  background: white;
+  border: 1.5px solid var(--stone-200);
+  border-radius: 1.5rem;
+  padding: 1.85rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  align-items: center;
+  margin-bottom: 2.25rem;
+  transition: box-shadow 0.3s ease;
+}
+
+.location-service-hub:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* 左側：精選案場實景展示卡（1:1 正方形） */
+.service-feature-image-card {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--stone-100);
+  align-self: center;
+}
+
+.service-feature-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.service-feature-image-card:hover img {
+  transform: scale(1.05);
+}
+
+/* 實景卡上的玻璃態浮雕標籤 */
+.service-image-badge-top {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(180, 83, 9, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.02em;
+}
+
+.service-image-caption-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2.5rem 1.25rem 1rem 1.25rem;
+  background: linear-gradient(to top, rgba(28, 25, 23, 0.88) 0%, rgba(28, 25, 23, 0.4) 60%, transparent 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.service-image-caption-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fef08a;
+}
+
+.service-image-caption-desc {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* 右側：服務界線與規範 */
+.service-bounds-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.service-bounds-header {
+  margin-bottom: 0.85rem;
+}
+
+.service-bounds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--amber-700);
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: var(--amber-50);
+  border: 1px solid var(--amber-200);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.6rem;
+}
+
+.service-bounds-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--stone-900);
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.service-bounds-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0.85rem 0 1.15rem 0;
+}
+
+.service-bounds-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.95rem;
+  color: var(--stone-700);
+  line-height: 1.55;
+}
+
+.service-bounds-item svg {
+  color: var(--amber-600);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+/* 3 步驟透明估價流程步進條（替代原本重複的黃色底框） */
+.service-step-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding-top: 1.15rem;
+  border-top: 1px dashed var(--stone-200);
+}
+
+.service-step-item {
+  background: var(--stone-50);
+  padding: 0.75rem 0.65rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--stone-200);
+  text-align: center;
+  transition: all 0.25s ease;
+}
+
+.service-step-item:hover {
+  background: var(--amber-50);
+  border-color: var(--amber-200);
+  transform: translateY(-2px);
+}
+
+.service-step-number {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--amber-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.service-step-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--stone-900);
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.service-step-desc {
+  font-size: 0.74rem;
+  color: var(--stone-500);
+  line-height: 1.35;
+}
+
+/* 模組二：主要服務涵蓋生活圈面板 */
+.location-districts-panel {
+  background: var(--stone-50);
+  border: 1.5px solid var(--stone-200);
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.districts-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.15rem;
+  border-bottom: 2px solid var(--amber-200);
+  padding-bottom: 0.75rem;
+}
+
+.districts-panel-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--stone-900);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.districts-panel-hint {
+  font-size: 0.82rem;
+  color: var(--stone-500);
+  font-weight: 500;
+}
+
+.districts-pill-matrix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.district-pill-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: white;
+  border: 1px solid var(--stone-200);
+  padding: 0.45rem 0.95rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--stone-700);
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.district-pill-link:hover {
+  background: var(--amber-50);
+  color: var(--amber-700);
+  border-color: var(--amber-400);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.12);
+}
+
+.district-pill-link svg {
+  color: var(--amber-600);
+  transition: transform 0.2s ease;
+}
+
+.district-pill-link:hover svg {
+  transform: scale(1.15);
+}
+
+.district-pill-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: white;
+  border: 1px solid var(--stone-200);
+  padding: 0.45rem 0.95rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  color: var(--stone-700);
+}
+
+/* 在地完工微相簿網格（3 格一列） */
+.gallery-mini-showcase {
+  border-top: 1px solid var(--stone-200);
+  padding-top: 1.25rem;
+}
+
+.gallery-mini-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--stone-800);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gallery-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.gallery-mini-card {
+  background: white;
+  border: 1px solid var(--stone-200);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-mini-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--amber-400);
+  box-shadow: 0 8px 20px rgba(180, 83, 9, 0.1);
+}
+
+.gallery-mini-thumb {
+  width: 100%;
+  height: 135px;
+  position: relative;
+  overflow: hidden;
+  background: var(--stone-100);
+}
+
+.gallery-mini-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.gallery-mini-card:hover .gallery-mini-thumb img {
+  transform: scale(1.08);
+}
+
+.gallery-mini-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(28, 25, 23, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: white;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.gallery-mini-info {
+  padding: 0.75rem 0.85rem;
+}
+
+.gallery-mini-info-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--stone-900);
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gallery-mini-info-desc {
+  font-size: 0.74rem;
+  color: var(--stone-500);
+  line-height: 1.4;
+}
+
+/* 模組三：價格與估價快速入口分層重構 */
+.location-quick-entry-card {
+  background: white;
+  border: 1.5px solid var(--stone-200);
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.quick-entry-header {
+  margin-bottom: 1.25rem;
+}
+
+.quick-entry-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--stone-900);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.quick-entry-desc {
+  color: var(--stone-600);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 主要 CTA 雙按鈕 */
+.quick-entry-primary-actions {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px dashed var(--stone-200);
+}
+
+.quick-cta-btn-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--amber-600);
+  color: white !important;
+  padding: 0.75rem 1.65rem;
+  border-radius: 0.75rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 3px 10px rgba(217, 119, 6, 0.25);
+}
+
+.quick-cta-btn-main:hover {
+  background: var(--amber-700);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+}
+
+.quick-cta-btn-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: white;
+  color: var(--stone-700) !important;
+  border: 1.5px solid var(--stone-300);
+  padding: 0.75rem 1.45rem;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quick-cta-btn-sub:hover {
+  border-color: var(--stone-600);
+  background: var(--stone-50);
+  color: var(--stone-900) !important;
+  transform: translateY(-2px);
+}
+
+/* 次要 SEO 關鍵字晶片矩陣 */
+.seo-boost-group-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--stone-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.seo-boost-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.seo-quick-chip-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--stone-50);
+  border: 1px solid var(--stone-200);
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.85rem;
+  color: var(--stone-700);
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seo-quick-chip-link:hover {
+  background: white;
+  border-color: var(--amber-500);
+  color: var(--amber-700);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.seo-quick-chip-link svg {
+  color: var(--stone-400);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.seo-quick-chip-link:hover svg {
+  color: var(--amber-600);
+  transform: translateX(2px);
+}
+
+/* 響應式佈局適配（平板與手機） */
+@media (max-width: 900px) {
+  .location-service-hub {
+    grid-template-columns: 1fr;
+    padding: 1.25rem;
+    gap: 1.5rem;
+  }
+  .service-feature-image-card {
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+  }
+  .service-step-track {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .gallery-mini-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .gallery-mini-thumb {
+    height: 160px;
+  }
+  .quick-entry-primary-actions {
+    flex-direction: column;
+  }
+  .quick-cta-btn-main,
+  .quick-cta-btn-sub {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ==========================================================================
+   雙子星旗艦城市頁籤切換系統（Location Dual-City Tab System）
+   ========================================================================== */
+
+.city-tabs-wrapper {
+  width: 100%;
+}
+
+/* 頁籤切換列（雙欄對稱） */
+.city-tabs-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+/* 頁籤按鈕本體 */
+.city-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 1.25rem 1.65rem;
+  border-radius: 1.25rem;
+  border: 2px solid var(--stone-200);
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.city-tab-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.city-tab-btn.inactive:hover {
+  border-color: var(--amber-400);
+  background: var(--amber-50);
+}
+
+/* 圖示方塊 */
+.tab-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--stone-100);
+  border: 1px solid var(--stone-200);
+  transition: all 0.3s ease;
+}
+
+.tab-icon-emoji {
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+/* 文字群組 */
+.tab-text-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tab-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.tab-title {
+  font-size: 1.32rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition: color 0.3s ease;
+}
+
+.tab-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.tab-sub {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  transition: color 0.3s ease;
+}
+
+/* 選中狀態（Active）- 尊榮咖啡金色調，與下方標題條渾然一體 */
+.city-tab-btn.active {
+  background: #6a2d0c;
+  border-color: #8f4214;
+  box-shadow: 0 8px 24px rgba(106, 45, 12, 0.25);
+}
+
+.city-tab-btn.active .tab-icon-box {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.city-tab-btn.active .tab-title {
+  color: #fef08a;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.city-tab-btn.active .tab-count-badge {
+  background: rgba(254, 240, 138, 0.25);
+  color: #fef08a;
+  border: 1px solid rgba(254, 240, 138, 0.4);
+}
+
+.city-tab-btn.active .tab-sub {
+  color: #fef9c3;
+  opacity: 0.95;
+}
+
+/* 未選中狀態（Inactive） */
+.city-tab-btn.inactive {
+  background: white;
+  border-color: var(--stone-200);
+}
+
+.city-tab-btn.inactive .tab-title {
+  color: var(--stone-800);
+}
+
+.city-tab-btn.inactive .tab-count-badge {
+  background: var(--stone-100);
+  color: var(--stone-600);
+  border: 1px solid var(--stone-200);
+}
+
+.city-tab-btn.inactive .tab-sub {
+  color: var(--stone-500);
+}
+
+/* 城市內容面板切換動態 */
+.city-tab-pane.hidden {
+  display: none;
+}
+
+.city-tab-pane.active {
+  display: block;
+  animation: cityTabFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cityTabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 手機響應式適配 */
+@media (max-width: 768px) {
+  .city-tabs-nav {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .city-tab-btn {
+    padding: 1.05rem 1.25rem;
+    gap: 0.85rem;
+  }
+  .tab-icon-box {
+    width: 44px;
+    height: 44px;
+  }
+  .tab-icon-emoji {
+    font-size: 1.35rem;
+  }
+  .tab-title {
+    font-size: 1.15rem;
+  }
+  .tab-sub {
+    font-size: 0.8rem;
+  }
+}

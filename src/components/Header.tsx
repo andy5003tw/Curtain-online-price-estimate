@@ -2,11 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, ChevronRight, Home } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Menu, X, ChevronRight, Home, MapPin } from 'lucide-react';
 import { CATALOG_URL } from '@/lib/seo';
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const isLocationPage = pathname === '/location' || pathname === '/location/' || pathname?.startsWith('/location/');
 
   return (
     <header className="site-header">
@@ -26,6 +29,14 @@ export default function Header() {
           <Link href="/cases">施工案例</Link>
           <Link href="/blog">窗簾知識</Link>
           <Link href="/calculator">線上估價</Link>
+          <Link
+            href="/location/"
+            className={`nav-location-link${isLocationPage ? ' is-current' : ''}`}
+            aria-current={isLocationPage ? 'page' : undefined}
+          >
+            <MapPin size={15} aria-hidden="true" />
+            服務地點
+          </Link>
           <a
             href={CATALOG_URL}
             target="_blank"
@@ -53,6 +64,15 @@ export default function Header() {
         <Link href="/cases" onClick={() => setOpen(false)}>施工案例</Link>
         <Link href="/blog" onClick={() => setOpen(false)}>窗簾知識</Link>
         <Link href="/calculator" onClick={() => setOpen(false)}>線上估價</Link>
+        <Link
+          href="/location/"
+          className={`nav-location-link${isLocationPage ? ' is-current' : ''}`}
+          aria-current={isLocationPage ? 'page' : undefined}
+          onClick={() => setOpen(false)}
+        >
+          <MapPin size={16} aria-hidden="true" />
+          服務地點
+        </Link>
         
         <div style={{ margin: '0.5rem 0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--stone-200)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--stone-400)', padding: '0 0.25rem', marginTop: '0.5rem', marginBottom: '0.25rem' }}>線上客服 / 免費估價</span>

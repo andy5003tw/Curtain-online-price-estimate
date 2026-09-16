@@ -12,6 +12,7 @@ param(
 
   [string[]]$Path = @(),
   [string]$PathFile = '',
+  [string]$DeployPlanPath = '',
   [string]$ManifestPath = 'Weekly SOP/latest/seo-geo-deployment-manifest.json',
   [string]$QueueId = '',
   [string]$CycleKey = '',
@@ -63,6 +64,20 @@ function ConvertTo-RelativePath {
   param([System.IO.FileInfo]$File)
 
   return ([System.IO.Path]::GetRelativePath($rootPath, $File.FullName) -replace '\\', '/')
+}
+
+function Read-Json([string]$JsonPath) {
+  if (-not (Test-Path -LiteralPath $JsonPath -PathType Leaf)) { throw "Deploy plan not found: $JsonPath" }
+  return Get-Content -LiteralPath $JsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
+}
+
+function Get-StringSet([object[]]$Values) {
+  return @($Values | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+function Test-SameSet([object[]]$Left, [object[]]$Right) {
+  $a = @(Get-StringSet $Left); $b = @(Get-StringSet $Right)
+  return $a.Count -eq $b.Count -and @($a | Where-Object { $_ -notin $b }).Count -eq 0
 }
 
 function ConvertTo-FtpPath {
@@ -227,12 +242,24 @@ function Write-DeploymentManifest {
   return $manifestFullPath
 }
 
+$deployPlan = $null
+if ($DeployPlanPath) {
+  if ($Mode -ne 'paths') { throw 'DeployPlanPath requires -Mode paths.' }
+  $deployPlan = Read-Json $DeployPlanPath
+  if ([int]$deployPlan.schema_version -ne 1 -or [string]$deployPlan.status -ne 'ready' -or -not [bool]$deployPlan.preflight.passed) { throw 'Deploy plan is not ready.' }
+  if ([string]$deployPlan.target_host -ne 'online.hong-sen.com' -or [string]$deployPlan.ftp_host -ne $HostName -or [string]$deployPlan.remote_root -ne $remoteRootTrimmed) { throw 'Deploy plan target does not match the configured FTP destination.' }
+  if ($QueueId -ne [string]$deployPlan.queue_id -or $CycleKey -ne [string]$deployPlan.cycle_key -or -not (Test-SameSet $normalizedActionIds @($deployPlan.action_ids))) { throw 'Deploy plan identity does not match deployment context.' }
+  if (@($deployPlan.files).Count -eq 0) { throw 'Deploy plan has no approved files.' }
+}
+
 $selectedFiles = switch ($Mode) {
   'quick' { @(Get-QuickFiles) }
   'all' { @(Get-ChildItem -LiteralPath $rootPath -Recurse -File) }
   'paths' {
     $inputs = @()
-    if ($PathFile) {
+    if ($deployPlan) {
+      $inputs += @($deployPlan.files | ForEach-Object { [string]$_.relative_path })
+    } elseif ($PathFile) {
       if (-not (Test-Path -LiteralPath $PathFile -PathType Leaf)) {
         throw "Path file not found: $PathFile"
       }
@@ -262,6 +289,17 @@ $fileMap = [ordered]@{}
 foreach ($file in $selectedFiles) {
   $relative = ConvertTo-RelativePath $file
   $fileMap[$relative] = $file
+}
+
+if ($deployPlan) {
+  $planned = @($deployPlan.files | Sort-Object relative_path)
+  if ($fileMap.Count -ne $planned.Count) { throw 'Resolved deploy files do not match the approved deploy plan.' }
+  foreach ($entry in $planned) {
+    $relative = [string]$entry.relative_path
+    if (-not $fileMap.Contains($relative)) { throw "Deploy plan file missing from resolved set: $relative" }
+    $actualHash = (Get-FileHash -LiteralPath $fileMap[$relative].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualHash -ne [string]$entry.sha256) { throw "Deploy plan hash drift detected: $relative" }
+  }
 }
 
 $items = @(
@@ -359,6 +397,7 @@ $deploymentManifest = [ordered]@{
     cycle_key = $CycleKey
     action_ids = $normalizedActionIds
   }
+  deploy_plan = if ($deployPlan) { [ordered]@{ path = $DeployPlanPath; sha256 = (Get-FileHash -LiteralPath $DeployPlanPath -Algorithm SHA256).Hash.ToLowerInvariant() } } else { $null }
   summary = [ordered]@{
     selected = $items.Count
     uploaded = $uploaded

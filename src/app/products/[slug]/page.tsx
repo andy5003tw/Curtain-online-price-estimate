@@ -42,7 +42,7 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
   P001: {
     features: ['優異遮光效果', '良好隔音性能', '多種布料與花色選擇', '耐洗耐用'],
     useCases: ['臥室', '客廳', '辦公室'],
-    fullDesc: '窗簾訂製價格先從同一尺寸開始比較布料、遮光等級、軌道與基本安裝費；想知道做窗簾價格，可先線上估價，再由到府丈量確認正式報價。一般布簾兼顧遮光、隔音與垂墜感，適合客廳主窗、臥室與書房的訂製需求。',
+    fullDesc: '窗簾訂製價格依尺寸、布料、遮光等級、軌道與安裝條件估算。想比較做窗簾價格、訂製窗簾價格或窗簾訂做價格，可先輸入尺寸估價，查看遮光窗簾與布簾訂製方案；客廳布簾正式報價由到府丈量確認。',
   },
   P002: {
     features: ['無縫設計、視覺更純淨', '透光不透人的遮蔽效果', '輕薄飄逸，極具美感', '適合搭配遮光布簾使用'],
@@ -118,7 +118,7 @@ const productSeoExtras: Record<string, {
       { label: '訂製窗簾價格：標準落地窗 (200×240 cm)', range: '約 NT$ 3,500 – 5,500 起' },
       { label: '做窗簾價格與基本安裝 (300×240 cm)', range: '約 NT$ 5,000 – 8,000 起' },
     ],
-    lsiParagraph: '窗簾訂製價格若想抓得準，通常要先釐清空間用途、遮光程度、布料手感、雙層需求與安裝條件。一般布簾（cloth curtains）是台灣居家最普及的窗簾選擇，適用於客廳落地窗、主臥室、書房及辦公室。若你正在比較做窗簾價格、訂製窗簾價格、窗簾訂做價格、遮光窗簾與客廳布簾，重點不只在布料本身，也包含軌道長度、雙層配置、基本安裝費、安裝高度與是否需要窗簾盒修飾。相較於捲簾或百葉窗，布簾更能展現空間的溫馨氛圍與個人風格。若您在三重、板橋、內湖或樹林尋找窗簾訂製與遮光窗簾服務，建議先做線上估價，再安排到府丈量與樣本挑選。',
+    lsiParagraph: '窗簾訂製價格若想抓得準，通常要先釐清空間用途、遮光程度、布料手感、雙層需求與安裝條件。一般布簾（cloth curtains）是台灣居家最普及的窗簾選擇，適用於客廳落地窗、主臥室、書房及辦公室。若你正在比較做窗簾價格、訂製窗簾價格、窗簾訂做價格、遮光窗簾、布簾訂製與客廳布簾，重點不只在布料本身，也包含軌道長度、雙層配置、基本安裝費、安裝高度與是否需要窗簾盒修飾。相較於捲簾或百葉窗，布簾更能展現空間的溫馨氛圍與個人風格。若您在三重、板橋、內湖或樹林尋找窗簾訂製與遮光窗簾服務，建議先做線上估價，再安排到府丈量與樣本挑選。',
     relatedBlogIds: ['blog-001', 'blog-002'],
   },
   P002: {
@@ -268,8 +268,8 @@ const productV3Data: Record<string, {
 }> = {
   P001: {
     faqs: [
-      { q: '做窗簾價格怎麼先抓預算？', a: '先輸入窗戶寬高，再確認遮光需求與布料風格；用同一尺寸比較客廳布簾、臥室遮光布簾、雙層窗簾、軌道與基本安裝費，最後由到府丈量確認正式報價。' },
-      { q: '做窗簾價格和正式報價通常差在哪裡？', a: '線上試算會先抓布料、軌道、車工與基本安裝費，正式報價則會再看窗型、安裝高度、窗簾盒、是否拆舊與五金條件。先用同尺寸試算，再丈量確認最準。' },
+      { q: '窗簾訂製價格、做窗簾價格怎麼先抓預算？', a: '先量窗戶寬高，再用同一尺寸比較布簾訂製的布料、遮光等級、軌道與基本安裝費；客廳布簾或雙層搭配也納入估算，最後由到府丈量確認正式報價。' },
+      { q: '訂製窗簾價格和窗簾訂做價格會因哪些條件改變？', a: '線上試算先估布料、軌道、車工與基本安裝費；正式報價還會看窗型、安裝高度、窗簾盒、是否拆舊與五金條件。先用同尺寸比較，再由丈量確認。' },
       { q: '布簾可以做到完全遮光嗎？', a: '可以。選擇三層夾心的「三明治遮光布」或在布料背面加貼遮光塗層，即可達到接近 100% 的遮光效果，非常適合需要完全避光的臥室或視聽室。' },
       { q: '布簾和蛇形簾有什麼差異？', a: '一般布簾使用傳統打褶或2.5倍寬鬆比例製作，波浪較隨意自然。蛇形簾則使用專屬鉤夾讓每個波浪間距完全一致，展現高端精品感，但價格也較高。' },
       { q: '遮光窗簾價格怎麼抓比較準？', a: '建議先用同一尺寸比較一般布簾、遮光布簾與遮光捲簾，再依遮光等級、雙層需求、軌道與安裝條件判斷最適合的正式報價區間。' },
@@ -635,7 +635,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
   const productHeroTitleMap: Record<string, string> = {
-    P001: '做窗簾價格試算｜訂製布簾、遮光與安裝費',
+    P001: '窗簾訂製價格｜做窗簾價格、布簾與遮光線上估算',
     P002: '紗簾價格試算｜透光不透人紗簾、安裝費與到府看樣',
     P003: '蛇形窗簾｜客廳落地窗 S 型布簾、軌道與線上估價',
     P005: '捲簾價格試算｜遮光捲簾、捲簾安裝價格與線上估價',
@@ -649,7 +649,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   };
   const productInternalLinksMap: Record<string, Array<{ href: string; label: string }>> = {
     P001: [
-      { href: '/calculator/?product=P001', label: '做窗簾價格試算：輸入尺寸比較布簾、遮光與基本安裝費' },
+      { href: '/calculator/?product=P001', label: '窗簾訂製價格線上估價：輸入尺寸比較布簾、遮光與安裝費' },
       { href: '/curtain/blackout/', label: '遮光窗簾推薦：比較補眠、西曬與隔熱方案' },
       { href: '/products/roller-blinds/', label: '捲簾價格試算：比較遮光捲簾與布簾差異' },
       { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：比較隔熱與臥室控溫方案' },
@@ -657,8 +657,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/location/banqiao/', label: '板橋窗簾推薦：做窗簾價格與全室布簾比價' },
       { href: '/location/neihu/', label: '內湖窗簾推薦：商辦與住宅訂製窗簾丈量入口' },
       { href: '/location/shulin/', label: '樹林窗簾推薦：透天與社區窗簾訂製價格入口' },
-      { href: '/products/', label: '窗簾產品總覽：先比較窗簾訂製、捲簾與風琴簾' },
-      { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：窗簾訂製、安裝費與報價重點' },
+      { href: '/products/', label: '窗簾產品總覽：比較訂製布簾、捲簾與風琴簾' },
+      { href: '/blog/curtain-price-guide-2026/', label: '窗簾訂製價格指南：比較布料、遮光、軌道與安裝費' },
     ],
     P002: [
       { href: '/calculator/?product=P002', label: '紗簾價格試算：直接帶入無縫透光不透人紗簾與安裝費' },
@@ -754,13 +754,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/calculator/?product=P007', label: '實木百葉窗價格試算：直接帶入木百葉品項與基本安裝費' },
       { href: '/products/aluminum-blinds/', label: '高濕空間改看鋁百葉：浴室、廚房的防潮價格試算' },
       { href: '/calculator/?product=P007&area=taipei', label: '台北實木百葉窗價格試算：先抓安裝預算' },
-      { href: '/location/sanchong/', label: '三重窗簾價格試算入口：對照實木百葉窗價格' },
-      { href: '/location/taipei/', label: '台北窗簾價格試算入口：對照客廳木百葉窗價格' },
+      { href: '/location/sanchong/', label: '三重實木百葉窗價格：查看服務區與丈量安排' },
+      { href: '/location/taipei/', label: '台北實木百葉窗價格：查看服務區與丈量安排' },
       { href: '/', label: '宏森窗簾推薦：回首頁比較價格試算與產品入口' },
       { href: '/location/zhongzheng/', label: '中正區窗簾價格試算入口：書房、景觀窗與木百葉比價' },
       { href: '/curtain/living-room/', label: '客廳窗簾推薦：實木百葉與落地窗搭配重點' },
       { href: '/calculator/?product=P007&area=sanchong', label: '三重實木百葉窗價格試算：直接帶入木百葉品項' },
-      { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南：木百葉窗簾價格與基本安裝費' },
+      { href: '/blog/curtain-price-guide-2026/', label: '木百葉窗簾價格指南：比較材質、尺寸與基本安裝費' },
       { href: '/location/banqiao/', label: '板橋窗簾推薦：比較木百葉窗簾價格與丈量流程' },
     ],
   };

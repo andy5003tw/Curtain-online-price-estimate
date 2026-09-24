@@ -9,6 +9,13 @@
 
 ---
 
+## 當前執行狀態（2026-09-24）
+
+- Queue：`seo-geo-a4151d46f72664bd`；Cycle：`seo-geo-v2-a4151d46f72664bd43e3c935`；Round 1 已完成，目標為 `/products/wooden-blinds/`（P007）及 `/products/custom-curtains/`（P001）。
+- 本機驗證 receipt 通過；FTP 正式部署 selected=25、uploaded=5、skipped=20、failed=0；queue-target live verification 通過，兩頁 HTTP 200，legacy P001/P007 均 301 至 owner URL。
+- Lifecycle 為 `live_verified`，effective workflow consistency valid。下一步等部署後 7 天資料完整結算，且 decision-ready 7d manifest 的 end date 至少為 `2026-10-01`，再記錄 `observing_7d`。
+- 今天的內容變更、部署證據與自動部署協調器修復詳見 [`Weekly SOP/2026-09-24-change-log.md`](Weekly%20SOP/2026-09-24-change-log.md)。
+
 ## 一、 專案核心現狀與技術架構
 
 1. **技術架構**：

@@ -35,6 +35,18 @@ function Test-DeploymentManifest([string]$Path, [object]$Plan, [bool]$DryRun) {
   }
   return $manifest
 }
+function Invoke-PowerShellStep([string]$ScriptPath, [string[]]$Arguments, [string]$FailureMessage) {
+  $pwshPath = Join-Path $PSHOME 'pwsh.exe'
+  if (-not (Test-Path -LiteralPath $pwshPath -PathType Leaf)) { throw 'PowerShell 7 executable is unavailable for lifecycle/live verification steps.' }
+  $pwshArguments = @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath) + $Arguments
+  $output = @(& $pwshPath @pwshArguments 2>&1)
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    $detail = ($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ([string]::IsNullOrWhiteSpace($detail)) { throw "$FailureMessage (exit_code=$exitCode)." }
+    throw "$FailureMessage (exit_code=$exitCode).`n$detail"
+  }
+}
 
 $root = (Resolve-Path -LiteralPath $RuntimeRoot).Path
 $weeklyRoot = if (Test-Path -LiteralPath (Join-Path $root 'latest\seo-geo-action-queue-state.json')) { $root } elseif (Test-Path -LiteralPath (Join-Path $root 'Weekly SOP\latest\seo-geo-action-queue-state.json')) { Join-Path $root 'Weekly SOP' } else { throw "Queue state not found under RuntimeRoot: $root" }
@@ -90,15 +102,12 @@ try {
     & $deployScript -Mode paths -LocalRoot $plan.output_root -DeployPlanPath $planPath -HostName $plan.ftp_host -RemoteRoot $plan.remote_root -ManifestPath $deployPath -QueueId $plan.queue_id -CycleKey $plan.cycle_key -ActionId ($plan.action_ids -join '|')
     $null = Test-DeploymentManifest $deployPath $plan $false
     Complete-Stage 'ftp_deploy' $deployPath
-    & $lifecycleScript -RuntimeRoot $weeklyRoot -Mode Advance | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Failed to record deployed lifecycle receipt.' }
+    Invoke-PowerShellStep -ScriptPath $lifecycleScript -Arguments @('-RuntimeRoot', $weeklyRoot, '-Mode', 'Advance') -FailureMessage 'Failed to record deployed lifecycle receipt'
     Complete-Stage 'record_deployed' $deployPath
-    & $liveVerifyScript -RuntimeRoot $weeklyRoot -Scope queue_targets | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Live verification failed; deployed is retained and live_verified is not recorded.' }
+    Invoke-PowerShellStep -ScriptPath $liveVerifyScript -Arguments @('-RuntimeRoot', $weeklyRoot, '-Scope', 'queue_targets') -FailureMessage 'Live verification failed; deployed is retained and live_verified is not recorded'
     $livePath = Join-Path $latestRoot 'seo-geo-live-verification.json'
     Complete-Stage 'live_verify' $livePath
-    & $lifecycleScript -RuntimeRoot $weeklyRoot -Mode Advance | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Failed to record live_verified lifecycle receipt.' }
+    Invoke-PowerShellStep -ScriptPath $lifecycleScript -Arguments @('-RuntimeRoot', $weeklyRoot, '-Mode', 'Advance') -FailureMessage 'Failed to record live_verified lifecycle receipt'
     Complete-Stage 'record_live_verified' $livePath
     $journal.status = 'completed'; $journal.completed_at = (Get-Date).ToUniversalTime().ToString('o'); Write-JsonAtomic $journalPath $journal
     [ordered]@{ schema_version = 1; status = 'completed'; final_state = 'live_verified'; journal_path = $journalPath } | ConvertTo-Json -Compress

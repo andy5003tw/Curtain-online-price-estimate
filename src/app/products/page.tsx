@@ -1,6 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import {
+  BookOpen,
+  Calculator,
+  ChevronRight,
+  CircleDollarSign,
+  LayoutGrid,
+  MapPin,
+  Moon,
+  Ruler,
+  Search,
+  SlidersHorizontal,
+  SunMedium,
+  TreePine,
+} from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
 import { products } from '@/data/products';
@@ -17,22 +30,27 @@ const faqItems = [
   {
     q: '窗簾產品總覽和窗簾款式比較要先看什麼？',
     a: '若還沒有鎖定款式，先看窗簾產品總覽會更有效率。你可以把布簾、捲簾、百葉窗、風琴簾與調光簾放在同一頁比較，再挑 2 到 3 個品項進入產品頁或價格試算。',
+    icon: LayoutGrid,
   },
   {
     q: '窗簾款式比較時，先比哪三個條件最實用？',
     a: '先比空間用途、採光隱私與清潔難度最實用。客廳主窗常從訂製布簾與無縫紗簾開始，小窗或租屋可先看捲簾，浴室廚房適合鋁百葉，西曬房間可比較風琴簾。',
+    icon: SlidersHorizontal,
   },
   {
     q: '產品總覽看完後，怎麼最快接到窗簾價格試算？',
     a: '先在窗簾款式比較中選出 1 到 2 種候選方案，再用同一組寬高尺寸做窗簾價格試算。這樣能直接比較訂製窗簾、捲簾、風琴簾或百葉窗的預算差異。',
+    icon: Calculator,
   },
   {
     q: '產品總覽頁會和單一產品頁搶關鍵字嗎？',
     a: '不會。這頁負責窗簾產品總覽與窗簾款式比較；單一產品頁則承接窗簾訂製、捲簾、風琴簾、百葉窗或醫院隔簾等更明確的產品需求。',
+    icon: Search,
   },
   {
     q: '遮光窗簾需求，產品總覽後要先看哪一頁？',
     a: '若你是臥室補眠、西曬隔熱或租屋遮光需求，建議先看遮光窗簾推薦頁，再對照窗簾訂製、遮光捲簾與風琴簾三條路線做同尺寸試算。',
+    icon: Moon,
   },
 ];
 
@@ -57,13 +75,14 @@ const hardProducts = ['P005', 'P006', 'P007', 'P010'];
 const functionProducts = ['P009', 'P012', 'P013', 'P008'];
 
 const quickLinks = [
-  { href: '/calculator/', label: '窗簾款式比較後，帶尺寸做線上估價' },
-  { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南：先看材質、安裝費與預算區間' },
-  { href: '/products/custom-curtains/', label: '窗簾訂製價格試算：遮光布簾、客廳主窗與雙層搭配' },
-  { href: '/products/roller-blinds/', label: '捲簾價格試算：租屋、辦公室、廚房與遮光入口' },
-  { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬隔熱、臥室控溫與蜂巢簾比較' },
-  { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：先看鋁百葉與防潮方案' },
-  { href: '/location/shilin/', label: '士林窗簾丈量入口：有地區需求再接 GEO 頁' },
+  { href: '/calculator/', label: '窗簾款式比較後，帶尺寸做線上估價', icon: Calculator },
+  { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南：先看材質、安裝費與預算區間', icon: CircleDollarSign },
+  { href: '/products/custom-curtains/', label: '窗簾訂製價格試算：遮光布簾、客廳主窗與雙層搭配', icon: Ruler },
+  { href: '/products/roller-blinds/', label: '捲簾價格試算：租屋、辦公室、廚房與遮光入口', icon: LayoutGrid },
+  { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬隔熱、臥室控溫與蜂巢簾比較', icon: SunMedium },
+  { href: '/products/aluminum-blinds/', label: '百葉窗價格試算：先看鋁百葉與防潮方案', icon: BookOpen },
+  { href: '/location/shilin/', label: '士林窗簾丈量入口：有地區需求再接 GEO 頁', icon: MapPin },
+  { href: '/products/wooden-blinds/', label: '實木百葉窗價格試算：書房採光與木質感選擇', icon: TreePine },
 ];
 
 export const metadata: Metadata = {
@@ -154,15 +173,32 @@ export default function ProductsPage() {
         secondaryAction={{ href: '/calculator/', label: '帶尺寸線上估價' }}
       />
 
-      <section className="editorial-guide" aria-labelledby="products-guide-heading">
-        <div className="section-container editorial-guide__inner">
-          <div className="editorial-guide__copy">
+      <section className="editorial-guide products-guide" aria-labelledby="products-guide-heading">
+        <div className="section-container products-guide__inner">
+          <div className="editorial-guide__copy products-guide__copy">
             <h2 id="products-guide-heading">窗簾款式比較：先縮小候選，再進單一產品頁估價</h2>
             <p>先從布簾、捲簾、百葉與功能型產品挑出 2 到 3 種候選款式；已鎖定品項時，再確認材質與安裝條件。</p>
           </div>
-          <nav className="editorial-guide__links" aria-label="產品系列快速入口">
-            {quickLinks.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}
-          </nav>
+          <div className="products-guide__cards">
+            <div className="products-guide__card">
+              <h3 id="products-guide-pricing">估價與選款</h3>
+              <nav className="products-guide__links" aria-labelledby="products-guide-pricing">
+                {quickLinks.slice(0, 4).map(link => {
+                  const Icon = link.icon;
+                  return <Link key={link.href} href={link.href}><Icon className="products-guide__link-icon" aria-hidden="true" size={18} strokeWidth={1.8} /><span>{link.label}</span></Link>;
+                })}
+              </nav>
+            </div>
+            <div className="products-guide__card">
+              <h3 id="products-guide-materials">材質與服務</h3>
+              <nav className="products-guide__links" aria-labelledby="products-guide-materials">
+                {quickLinks.slice(4).map(link => {
+                  const Icon = link.icon;
+                  return <Link key={link.href} href={link.href}><Icon className="products-guide__link-icon" aria-hidden="true" size={18} strokeWidth={1.8} /><span>{link.label}</span></Link>;
+                })}
+              </nav>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -192,27 +228,26 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      <section className="py-section bg-white border-t border-stone-200">
+      <section className="py-section bg-white border-t border-stone-200 products-faq">
         <div className="section-container" style={{ maxWidth: '820px' }}>
           <div className="section-heading">
             <h2>窗簾產品總覽常見問題</h2>
             <p>先把窗簾款式比較邏輯釐清，再進估價頁會快很多。</p>
           </div>
-          {faqItems.map(item => (
-            <div
-              key={item.q}
-              style={{
-                marginBottom: '1rem',
-                padding: '1.25rem 1.4rem',
-                background: 'var(--stone-50)',
-                borderRadius: '0.85rem',
-                border: '1px solid var(--stone-100)',
-              }}
-            >
-              <h3 style={{ marginBottom: '0.65rem', fontSize: '1.05rem', color: 'var(--stone-900)' }}>{item.q}</h3>
-              <p style={{ margin: 0, color: 'var(--stone-700)', lineHeight: 1.75 }}>{item.a}</p>
-            </div>
-          ))}
+          {faqItems.map(item => {
+            const Icon = item.icon;
+            return (
+              <article className="products-faq__item" key={item.q}>
+                <div className="products-faq__icon" aria-hidden="true">
+                  <Icon size={40} strokeWidth={1.7} />
+                </div>
+                <div className="products-faq__content">
+                  <h3>{item.q}</h3>
+                  <p>{item.a}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -226,7 +261,7 @@ export default function ProductsPage() {
             <Link href={buildCalculatorUrl()} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '0.9rem 2.1rem' }}>
               前往窗簾價格試算 <ChevronRight size={18} />
             </Link>
-            <Link href="/blog/curtain-price-guide-2026/" className="btn-outline" style={{ padding: '0.9rem 2.1rem' }}>
+            <Link href="/blog/curtain-price-guide-2026/" className="btn-outline products-cta__guide" style={{ padding: '0.9rem 2.1rem' }}>
               先看價格指南
             </Link>
           </div>
@@ -251,7 +286,7 @@ function CategorySection({
 }) {
   return (
     <div style={{ marginBottom: compact ? '1rem' : '4.5rem' }}>
-      <div className="section-heading" style={{ textAlign: 'left', marginBottom: '2.2rem' }}>
+      <div className="section-heading products-category-heading" style={{ marginBottom: '2.2rem' }}>
         <div className="tag">{tag}</div>
         <h2 style={{ fontSize: '2rem' }}>{title}</h2>
         <p>{description}</p>

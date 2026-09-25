@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { withBasePath } from '@/lib/base-path';
 
@@ -9,9 +10,11 @@ type HeroAction = {
 
 type EditorialLandingHeroProps = {
   eyebrow: string;
+  eyebrowIcon?: ReactNode;
   title: string;
   description: string;
-  theme: 'about' | 'products' | 'cases' | 'blog' | 'calculator';
+  descriptionAiAnswer?: boolean;
+  theme: 'about' | 'products' | 'cases' | 'blog' | 'calculator' | 'location' | 'taipei' | 'new-taipei';
   desktopImage: string;
   mobileImage: string;
   imageAlt: string;
@@ -21,8 +24,10 @@ type EditorialLandingHeroProps = {
 
 export default function EditorialLandingHero({
   eyebrow,
+  eyebrowIcon,
   title,
   description,
+  descriptionAiAnswer = false,
   theme,
   desktopImage,
   mobileImage,
@@ -39,9 +44,9 @@ export default function EditorialLandingHero({
       <div className="section-container editorial-landing-hero__inner">
         <div className="editorial-landing-hero__copy">
           <div className="editorial-landing-hero__content">
-            <p className="editorial-landing-hero__eyebrow">{eyebrow}</p>
+            <p className="editorial-landing-hero__eyebrow">{eyebrowIcon}{eyebrow}</p>
             <h1 id={`${theme}-hero-title`}>{title}</h1>
-            <p className="editorial-landing-hero__description">{description}</p>
+            <p className="editorial-landing-hero__description" data-ai-answer={descriptionAiAnswer ? 'true' : undefined}>{description}</p>
           </div>
           <div className="editorial-landing-hero__actions">
             <Link href={primaryAction.href} className="editorial-landing-hero__primary">

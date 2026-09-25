@@ -5,7 +5,27 @@ import Link from 'next/link';
 import { constructionCases } from '@/data/constructionCases';
 import { absoluteUrl } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
-import { MapPin, Tag, Calendar, Image as ImageIcon, Search, Filter, X, ChevronRight, ChevronLeft, XCircle } from 'lucide-react';
+import {
+  Calculator,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  Factory,
+  Home,
+  Image as ImageIcon,
+  LayoutGrid,
+  MapPin,
+  Moon,
+  Ruler,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  SunMedium,
+  Tag,
+  X,
+  XCircle,
+} from 'lucide-react';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
 
 const ALL_DISTRICTS = '所有地區';
@@ -24,40 +44,60 @@ const QUICK_LINKS = [
   { label: '台北市南京西路', keyword: '南京西路' }
 ];
 
-const CASE_OWNER_LINKS = [
-  { href: '/calculator/', label: '窗簾價格試算：先帶尺寸做線上估價' },
-  { href: '/products/', label: '窗簾產品總覽：從施工案例回到窗簾款式比較' },
-  { href: '/products/custom-curtains/', label: '窗簾訂製推薦：先看客廳主窗與雙層布簾' },
-  { href: '/curtain/living-room/', label: '客廳窗簾推薦：先比落地窗、紗簾與雙層搭配' },
-  { href: '/curtain/blackout/', label: '遮光窗簾推薦：先比補眠、西曬與隔熱方案' },
-  { href: '/about/', label: '工廠直營窗簾服務：看完案例再安排免費丈量' },
-  { href: '/products/roller-blinds/', label: '捲簾價格試算：書房、租屋與小窗預算入口' },
-  { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬與隔熱窗面怎麼抓' },
-  { href: '/products/seamless-sheer-curtains/', label: '無縫紗簾推薦：客廳透光不透人方案' },
-  { href: '/blog/budget-allocation-for-curtains/', label: '窗簾預算分配：先看客廳主窗與功能窗怎麼抓' },
-  { href: '/location/shilin/', label: '士林窗簾價格試算入口' },
+const CASE_OWNER_GROUPS = [
+  {
+    title: '估價與預算',
+    links: [
+      { href: '/calculator/', label: '窗簾價格試算：先帶尺寸做線上估價', icon: Calculator, featured: true },
+      { href: '/curtain/living-room/', label: '客廳窗簾推薦：先比落地窗、紗簾與雙層搭配', icon: Home },
+      { href: '/products/roller-blinds/', label: '捲簾價格試算：書房、租屋與小窗預算入口', icon: SlidersHorizontal },
+      { href: '/blog/budget-allocation-for-curtains/', label: '窗簾預算分配：先看客廳主窗與功能窗怎麼抓', icon: CircleDollarSign },
+    ],
+  },
+  {
+    title: '產品與功能',
+    links: [
+      { href: '/products/', label: '窗簾產品總覽：從施工案例回到窗簾款式比較', icon: LayoutGrid },
+      { href: '/curtain/blackout/', label: '遮光窗簾推薦：先比補眠、西曬與隔熱方案', icon: Moon },
+      { href: '/products/honeycomb-blinds/', label: '風琴簾價格試算：西曬與隔熱窗面怎麼抓', icon: SunMedium },
+      { href: '/location/shilin/', label: '士林窗簾價格試算入口', icon: MapPin },
+    ],
+  },
+  {
+    title: '訂製與服務',
+    links: [
+      { href: '/products/custom-curtains/', label: '窗簾訂製推薦：先看客廳主窗與雙層布簾', icon: Ruler },
+      { href: '/about/', label: '工廠直營窗簾服務：看完案例再安排免費丈量', icon: Factory },
+      { href: '/products/seamless-sheer-curtains/', label: '無縫紗簾推薦：客廳透光不透人方案', icon: Sparkles },
+    ],
+  },
 ];
 
 const CASE_FAQS = [
   {
     q: '看窗簾施工案例時，先比哪三件事最有效率？',
     a: '建議先比窗型、款式和採光需求，再看是否需要遮光、透光不透人或雙層搭配。這樣回到窗簾產品總覽或線上估價工具時，比價會更接近正式報價。',
+    icon: SlidersHorizontal,
   },
   {
     q: '窗簾施工案例要怎麼判斷適合自己的款式？',
     a: '先找和自己窗型、採光方向、空間用途接近的窗簾施工案例，再回到窗簾款式比較頁確認材質與清潔方式。客廳可優先比無縫紗簾、雙層窗簾與調光簾；臥室則先看遮光需求。',
+    icon: LayoutGrid,
   },
   {
     q: '客廳窗簾實景看完後，怎麼接到價格試算？',
     a: '看完客廳窗簾實景後，先記下窗寬、窗高與想比較的 1 到 2 種款式，再把同尺寸帶進窗簾價格試算。若已確定施工方向，也可以接著看工廠直營窗簾服務並安排免費丈量。',
+    icon: Calculator,
   },
   {
     q: '三重、板橋、新莊、台北的施工案例可以對照同一種產品嗎？',
     a: '可以，案例頁很適合先看同款產品在不同窗型與空間中的呈現，再用同一組尺寸切到地區頁或產品頁做比價，避免只看單一照片就下決定。',
+    icon: MapPin,
   },
   {
     q: '看完施工案例後，可以順便判斷窗簾預算怎麼分配嗎？',
     a: '可以。先把客廳主窗、主臥遮光與西曬窗面列為優先，再把小窗交給捲簾或鋁百葉控制成本，接著用線上估價工具輸入同尺寸比較，就能快速抓出大概預算。',
+    icon: CircleDollarSign,
   },
 ];
 
@@ -403,22 +443,32 @@ export default function CasesPage() {
       <section className="py-section bg-stone-50">
         <div className="section-container">
           <div className="editorial-guide-card" style={{ marginBottom: '2rem', background: 'white', border: '1px solid var(--stone-200)', borderRadius: '1rem', padding: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.75rem' }}>
-              客廳窗簾實景、款式比較與估價流程
-            </h2>
-            <p style={{ margin: '0 0 1rem 0', color: 'var(--stone-600)', lineHeight: 1.8, fontSize: '0.95rem' }}>
-              先用窗簾施工案例確認想比的窗型、採光需求與款式，再把同一組尺寸帶進價格試算工具。若你已經鎖定客廳窗簾實景中的布簾、遮光窗簾、捲簾或風琴簾，可直接切到窗簾產品總覽、對應產品頁與預算分配文章，讓估價與丈量流程接得更順。
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-              {CASE_OWNER_LINKS.map((link, index) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={index === 0 ? 'btn-primary' : 'btn-outline'}
-                  style={{ fontSize: '0.9rem' }}
-                >
-                  {link.label}
-                </Link>
+            <div className="cases-guide__intro">
+              <h2>客廳窗簾實景、款式比較與估價流程</h2>
+              <p>
+                先用窗簾施工案例確認想比的窗型、採光需求與款式，再把同一組尺寸帶進價格試算工具。若你已經鎖定客廳窗簾實景中的布簾、遮光窗簾、捲簾或風琴簾，可直接切到窗簾產品總覽、對應產品頁與預算分配文章，讓估價與丈量流程接得更順。
+              </p>
+            </div>
+            <div className="cases-owner-link-cards">
+              {CASE_OWNER_GROUPS.map(group => (
+                <section className="cases-owner-link-card" key={group.title}>
+                  <h3>{group.title}</h3>
+                  <div className="cases-owner-link-card__links">
+                    {group.links.map(link => {
+                      const Icon = link.icon;
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className={`${link.featured ? 'btn-primary' : 'btn-outline'} cases-owner-link-card__link`}
+                        >
+                          <Icon className="cases-owner-link-card__icon" aria-hidden="true" size={17} strokeWidth={1.9} />
+                          <span>{link.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
               ))}
             </div>
           </div>
@@ -559,13 +609,19 @@ export default function CasesPage() {
             <h2>窗簾施工案例常見問題</h2>
             <p>先看客廳窗簾實景、再抓預算、再估價與丈量，流程會更容易收斂。</p>
           </div>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {CASE_FAQS.map((faq, index) => (
-              <details key={index} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
-                <summary style={{ padding: '1rem 1.25rem', fontWeight: 700, cursor: 'pointer', listStyle: 'none' }}>{faq.q}</summary>
-                <div style={{ padding: '0 1.25rem 1rem', color: 'var(--stone-600)', lineHeight: 1.75 }}>{faq.a}</div>
-              </details>
-            ))}
+          <div className="cases-faq__list">
+            {CASE_FAQS.map((faq, index) => {
+              const Icon = faq.icon;
+              return (
+                <details className="cases-faq__item" key={index}>
+                  <summary className="cases-faq__summary">
+                    <span className="cases-faq__icon" aria-hidden="true"><Icon size={20} strokeWidth={1.9} /></span>
+                    <span>{faq.q}</span>
+                  </summary>
+                  <div className="cases-faq__answer">{faq.a}</div>
+                </details>
+              );
+            })}
           </div>
         </div>
       </section>

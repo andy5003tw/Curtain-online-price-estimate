@@ -15,13 +15,14 @@
 - 本機驗證 receipt 通過；FTP 正式部署 selected=25、uploaded=5、skipped=20、failed=0；queue-target live verification 通過，兩頁 HTTP 200，legacy P001/P007 均 301 至 owner URL。
 - Lifecycle 為 `live_verified`，effective workflow consistency valid。下一步等部署後 7 天資料完整結算，且 decision-ready 7d manifest 的 end date 至少為 `2026-10-01`，再記錄 `observing_7d`。
 - 今天的內容變更、部署證據與自動部署協調器修復詳見 [`Weekly SOP/2026-09-24-change-log.md`](Weekly%20SOP/2026-09-24-change-log.md)。
+- 價格後台的逐產品公式設定、新增試算產品草稿／上架／下架及動態產品清單已於 2026-09-24 上線。同日依使用者回饋恢復原有價格卡的軌道最低尺數、每才最低計價、每才基本安裝費，保留 editor 編輯權限並與公式生效值雙向同步；正式站只補傳 `admin/pricing/index.php`，未覆蓋正式規則檔。權限、欄位對應、設計與驗證紀錄見 [`PRICING_FORMULA_ADMIN.md`](PRICING_FORMULA_ADMIN.md)。
 
 ## 一、 專案核心現狀與技術架構
 
 1. **技術架構**：
    - 前端：Next.js 16（Turbopack）、React 19、TypeScript、純 Vanilla CSS（`src/app/globals.css`）。
    - 輸出模式：`output: "export"` 純靜態匯出（81 個 HTML 靜態頁面生成於 `out/` 目錄）。
-   - 後台與 API：PHP 8.x（`/api/calc.php`、`/admin/pricing/`）。
+   - 後台與 API：正式站實測 PHP 7.1.33（2026-09-24；`/api/calc.php`、`/admin/pricing/`），程式須維持 PHP 7.1 相容。
    - 部署機制：PowerShell 自動化 FTP 腳本（`scripts/deploy-ftp.ps1`）強制同步覆蓋至遠端正式主機（`online.hong-sen.com`）。
 
 2. **核心設計規範**：
@@ -298,3 +299,92 @@ cmd.exe /c "npm.cmd run seo:preflight"
 - 已確認 `public/nav-hero/`、`public/location_img/city-hero/` 與 `public/location_img/location-hero-*.png` 的 16 張 PNG 均沒有頁面、CSS、程式或文件引用；現行網站僅引用已部署的 WebP。
 - 已移除 `public/` 的 16 張未使用 PNG：10 張主導航與 2 張城市桌機圖已比對 SHA-256 與既有 `download/` 備份一致後刪除；2 張城市舊手機圖及 2 張服務總覽圖則先以 `*-public-archive.png`／原檔名備份至 `download/` 再移除 public 副本。
 - 清理後 `public/` 此三個 Hero 位置的未使用 PNG 為 0；所有 WebP 與既有高品質備份均保留。
+
+---
+
+## 十、2026-09-25 `/location/` 城市服務卡片合併（已部署）
+
+### 使用者確認的目標
+
+`/location/` 的台北市與新北市區塊各有兩張重複卡片：上方「城市服務網絡」橫幅與下方右側「城市窗簾服務總覽」內容卡。使用者已選定 **圖左、整合資訊卡右** 的版型：保留城市實景圖片，將城市名稱、行政區數、服務特色、完整說明與行動按鈕合併到右側單一卡片；每個城市只顯示一次城市資訊與城市專頁入口。
+
+### 實作位置與做法
+
+- 修改 `src/app/location/page.tsx` 的 `renderedCityGroups` 區塊。保留 `id={cityGroup.anchorId}`、左側 `.metro-image-card`、群集生活圈內容與所有既有連結網址。
+- 移除 `.city-section-header` 與其「進入台北市／新北市全區專頁」按鈕 JSX；城市專頁入口只保留在右側整合卡的主要 CTA。
+- 右側 `.metro-content-card` 改為下列階層：
+  1. 城市識別小標籤（既有 `tagText`）。
+  2. `h2` 顯示既有 `badgeText`，即「台北市／新北市服務網絡｜涵蓋 X 個行政區」。
+  3. 服務特色短文顯示既有 `subText`。
+  4. 詳細服務說明顯示既有 `heroDesc`。
+  5. 保留「查看全區專頁」與「線上估價」兩個 CTA。
+- `heroTitle`、`heroFeature` 是被合併內容重複的舊資料，不再渲染；可從 `CityGroupDef` 與兩個城市資料物件移除，避免未使用欄位。
+- 修改 `src/app/globals.css`：移除不再使用的 `.city-section-header`、`.city-header-link-btn` 及相關 Hover 規則；以暖白／白色為整合內容卡底色，咖啡色只用於右側卡外框、標題重點與主要按鈕，禁止改為深咖啡整片底色。
+- 將原本新北市 `.city-section-header.new-taipei { margin-top: 3.5rem; }` 的段落距離改掛在新的城市區塊外層，確保台北與新北區塊仍有清楚分隔。
+- 維持既有桌機 4:6 圖文比例，以及 860px 以下圖片在上、內容在下的單欄排列。不可改動 `/location/taipei/`、`/location/new-taipei/` 市級專頁的內容、Schema、canonical、sitemap 或 keyword owner。
+
+### 驗收與限制
+
+1. 桌機與手機確認台北／新北各只出現一次城市名稱、行政區數、城市專頁 CTA；左側圖片、右側說明與估價入口均保留。
+2. 點擊 `#taipei-city`、`#new-taipei-city` 仍可正確定位；城市專頁與 `buildCalculatorUrl(undefined, hero.id)` 產生的估價連結必須維持原行為。
+3. 依序執行 `npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`；不可讓 SEO 檢查與 build 平行執行，避免讀到未完成的 `out/`。
+4. 本次已完成本機前端實作與驗證；2026-09-25 已依使用者授權部署。未建立 Git commit；FTP 只上傳建置產物，不上傳 Markdown、`download/` 或 `source/`。
+
+### 本次執行結果（2026-09-25）
+
+- 已移除雙北重複的 `.city-section-header` 與 `.city-header-link-btn`，並把城市標題、服務摘要、完整說明與城市專頁 CTA 合併至右側 `.metro-content-card`。
+- 已新增 `.city-overview` 與 `.metro-content-lead` 樣式；維持圖左文右、暖白底、咖啡色外框與 860px 以下單欄 RWD。
+- 依使用者後續回饋，雙北右側整合卡改用與 `/location/` Banner 左側相同的 banana 米色 `#f4eee5`，咖啡色仍只作外框與重點色。
+- 手機版服務區快速入口已改為水平置中，台北與新北兩顆按鈕在窄螢幕換行時仍各自置中；桌機排列維持不變。
+- `npm.cmd run build`：通過，81 頁靜態頁成功匯出。
+- `npm.cmd run seo:check`：通過。
+- `npm.cmd run seo:preflight`：通過。
+- `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`：通過，14 rows／87 unique normalized keywords。
+- `out/location/index.html` 抽查：舊標題條與舊標題條按鈕 class 為 0；`#taipei-city`、`#new-taipei-city` 兩個錨點仍存在。
+
+---
+
+## 十一、2026-09-25 市級 Banner 與 `/location/` 總覽對齊
+
+- `/location/taipei/` 與 `/location/new-taipei/` 已改直接使用 `EditorialLandingHero`，不再維護另一套 Banner 結構；桌機明確固定 31rem 高度、1280px 內容寬度、標題／說明字級與行距、CTA 3rem 高度與相同內距。
+- 市級頁與六個主導覽頁共用同一個 Banner 元件、固定 Banner 高度（桌機 31rem、手機 37rem）、圖片 `height: 100%` 裁切邏輯與兩顆 CTA；城市圖片、配色、文案、估價 URL 及 `data-ai-answer` 標記保留。
+- 手機版市級 Banner 改為 37rem 高度，使用與總覽相同的標題縮放、內容留白及可換行 CTA；台北／新北原有圖片與配色變數保留。
+- 本次只調整 `src/app/globals.css`，未改動市級頁的可見文字、Schema、canonical、sitemap 或連結行為。
+- 驗證結果：`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight` 與 keyword owner check 均通過；已於 2026-09-25 部署正式站，結果見第十三節。
+
+---
+
+## 十二、2026-09-25 六個主導覽頁共用 Banner 設定
+
+- `/about/`、`/products/`、`/cases/`、`/blog/`、`/calculator/`、`/location/`、`/location/taipei/`、`/location/new-taipei/` 均使用 `EditorialLandingHero`；只保留各頁圖片、文字與色彩主題差異，Banner 尺寸與 CTA 版型共用。
+- 桌機 Banner 與圖片容器固定為 31rem，手機版固定為 37rem；圖片維持絕對定位、`width: 100%`、`height: 100%`、`object-fit: cover`。
+- 兩顆 CTA 統一為固定 `height: 3rem`、`min-height: 3rem`、`box-sizing: border-box`、`line-height: 1.2`，並使用 stretch 對齊；手機版沿用相同按鈕高度並允許內容換行。
+- 主要與次要 CTA 均使用相同的向下陰影範圍，避免主要按鈕因陰影延伸而在視覺上比次要按鈕更高。
+- 主要 CTA 補上透明 1px 外框，與次要 CTA 的 1px 外框維持相同內容區高度，讓文字、箭頭與按鈕外框在同一條水平基線上。
+- 設計差異僅限各頁既有的背景、文字與主色變數；計算頁的深色遮罩與次要按鈕配色保留。
+- 本次僅調整 `src/app/globals.css` 與本交接紀錄，未改動頁面文字、Schema、canonical、sitemap 或連結行為；已於 2026-09-25 部署，結果見第十三節。
+
+---
+
+## 十三、2026-09-25 導覽頁 UX 補強與正式部署
+
+### 前端內容與版型
+
+- `/products/`：置中選款導讀；8 個快速連結拆為「估價與選款」及「材質與服務」兩張卡，各 4 項。連結及五個 FAQ 均加入符合既有琥珀／石色系的 Lucide 圖示；三個產品分類標題置中。頁尾「先看價格指南」在一般狀態改為較淺的可讀字色，Hover 時改為深色。
+- `/cases/`：導讀標題與內文置中並限制閱讀寬度；既有連結重組為 3 張卡，每個入口都有小圖示。五個施工案例 FAQ 改為可展開項目，問題前放置對應的大圖示。
+- `/blog/`：所有文章入口改為「挑選與材質指南」及「價格、保養與安裝指南」兩張卡；每篇連結依文章分類顯示小圖示。
+- `/calculator/`：相關閱讀連結整理為 3 張卡與一致的圖示；「試算前先看三個重點」卡片與 FAQ 補上圖示。FAQ 每題採一個主題圖示的版型，避免同時呈現 Q、A 兩個重複圖示。
+- `/location/`：雙北城市資訊合併為圖片加單一整合內容卡；整合卡使用 banana 米色 `#f4eee5`，咖啡色只作外框、重點文字與主要 CTA。手機的台北／新北快速入口按鈕可換行且各自置中。
+- `/location/taipei/`、`/location/new-taipei/`：改用共用 `EditorialLandingHero`，使 Banner 高度、圖片裁切、內容寬度與兩顆 CTA 的 3rem 高度，和 `/about/`、`/products/`、`/cases/`、`/blog/`、`/calculator/`、`/location/` 相同。
+
+### SEO 與行為邊界
+
+- 未變更 canonical、metadata、JSON-LD、sitemap、keyword owner 或公開計價 API 的請求／成功回應格式。
+- 前端試算器仍以靜態產品資料做首次渲染；正式站會再請求 `/api/products.php`，因此已上架的新試算產品可即時出現在選單，草稿與下架品項不會出現。
+
+### 驗證與部署紀錄
+
+- 本機通過：`npm.cmd run build`（81 個靜態頁）、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`、`node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`（14 rows／87 unique normalized keywords）。
+- 部署前 quick dry run 從 `out/` 選取 1,229 個網站產物；正式 FTP quick deploy 結果為 selected=1,229、uploaded=179、skipped=1,050、failed=0、uploadedMB=15.21。未上傳原始碼、Markdown、`download/`、`source/` 或 `private/`。
+- 部署 manifest：`Weekly SOP/latest/seo-geo-deployment-manifest.json`。
+- 正式站回讀確認 `/location/`、`/location/taipei/`、`/location/new-taipei/` 可正常開啟，雙北 Hero、主要／次要 CTA、城市專頁入口、估價 URL 與導覽連結皆存在；主導航頁的更新產物亦已由同一次部署上傳。

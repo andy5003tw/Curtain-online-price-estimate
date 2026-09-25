@@ -8,6 +8,7 @@ import {
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import { ChevronRight, MapPin, Calculator } from 'lucide-react';
+import EditorialLandingHero from '@/components/EditorialLandingHero';
 
 const locationCoverage = getLocationCoverageSummary();
 const HUB_TITLE = `服務區域總覽｜雙北 ${locationCoverage.administrativeAreaCount} 個行政區與 ${locationCoverage.cityOverviewCount} 個市級總覽`;
@@ -69,14 +70,11 @@ interface ClusterSection {
 
 interface CityGroupDef {
   cityId: string;
-  cityName: string;
   anchorId: string;
   badgeText: string;
   subText: string;
   themeClass: 'taipei' | 'new-taipei';
   tagText: string;
-  heroTitle: string;
-  heroFeature: string;
   heroDesc: string;
   sections: ClusterSection[];
 }
@@ -84,14 +82,11 @@ interface CityGroupDef {
 const cityGroups: CityGroupDef[] = [
   {
     cityId: 'taipei',
-    cityName: '台北市',
     anchorId: 'taipei-city',
     badgeText: `🏛️ 台北市服務網絡 ｜ 涵蓋 ${locationCoverage.taipeiAdministrativeAreaCount} 個行政區`,
     subText: '豪宅聚落・景觀高窗・文教學區，台北全區免費專人攜帶布樣到府丈量',
     themeClass: 'taipei',
     tagText: '✨ 台北都會核心 旗艦總覽',
-    heroTitle: '台北市窗簾服務總覽',
-    heroFeature: `${locationCoverage.taipeiAdministrativeAreaCount} 行政區免費到府丈量・同尺寸多材質透明比價`,
     heroDesc: '整合信義、大安、士林等全區豪宅、學區與商業空間。30 年工廠直營工班到府精準丈量，提供蛇形簾、調光簾與木百葉等全系列產品客製規劃。',
     sections: [
       {
@@ -110,14 +105,11 @@ const cityGroups: CityGroupDef[] = [
   },
   {
     cityId: 'new-taipei',
-    cityName: '新北市',
     anchorId: 'new-taipei-city',
     badgeText: `🏙️ 新北市服務網絡 ｜ 涵蓋 ${locationCoverage.newTaipeiAdministrativeAreaCount} 個行政區`,
     subText: '三重直營工班・捷運大城・景觀重劃區，快速到府丈量與廠辦合一透明價',
     themeClass: 'new-taipei',
     tagText: '🏭 三重在地工廠 在地直營',
-    heroTitle: '新北市窗簾服務總覽',
-    heroFeature: `${locationCoverage.newTaipeiAdministrativeAreaCount} 行政區在地工班直營・免仲介抽成廠辦合一價`,
     heroDesc: '宏森廠辦深耕新北，從板橋、三重核心捷運圈到林口、淡水海線景觀宅，皆享工班直營快速到府服務與遮光布簾、調光簾即時線上試算。',
     sections: [
       {
@@ -197,41 +189,26 @@ export default function LocationHubPage() {
         </div>
       </nav>
 
-      <section className="location-hero-section">
-        <div className="location-hero-banner">
-          <picture className="location-hero-visual">
-            <source media="(max-width: 640px)" srcSet={withBasePath('/location_img/location-hero-mobile.webp')} />
-            <img
-              src={withBasePath('/location_img/location-hero-desktop.webp')}
-              alt="雙北窗簾服務區域形象示意：自然採光客廳的窗簾搭配"
-              fetchPriority="high"
-            />
-          </picture>
-          <div className="location-hero-inner">
-            <span className="location-hero-badge">📍 大台北 GEO 樞紐</span>
-            <h1 className="location-hero-title">台北與新北 {locationCoverage.administrativeAreaCount} 區行政區服務入口</h1>
-            <p className="location-hero-desc">
-              宏森 30 年工廠直營工班，整合台北與新北 {locationCoverage.administrativeAreaCount} 個行政區及 {locationCoverage.cityOverviewCount} 個市級總覽，提供現場精準丈量、同尺寸多材質透明比價與正式報價。
-            </p>
+      <EditorialLandingHero
+        theme="location"
+        eyebrow="📍 大台北 GEO 樞紐"
+        title={`台北與新北 ${locationCoverage.administrativeAreaCount} 區行政區服務入口`}
+        description={`宏森 30 年工廠直營工班，整合台北與新北 ${locationCoverage.administrativeAreaCount} 個行政區及 ${locationCoverage.cityOverviewCount} 個市級總覽，提供現場精準丈量、同尺寸多材質透明比價與正式報價。`}
+        desktopImage="/location_img/location-hero-desktop.webp"
+        mobileImage="/location_img/location-hero-mobile.webp"
+        imageAlt="雙北窗簾服務區域形象示意：自然採光客廳的窗簾搭配"
+        primaryAction={{ href: '/products/', label: '先看全部產品' }}
+        secondaryAction={{ href: buildCalculatorUrl(), label: '前往線上估價' }}
+      />
 
-            <div className="city-jump-nav">
-              <a href="#taipei-city" className="city-jump-btn taipei">
-                🏛️ 台北市服務區（{locationCoverage.taipeiAdministrativeAreaCount} 行政區） 往下捲動 ↓
-              </a>
-              <a href="#new-taipei-city" className="city-jump-btn new-taipei">
-                🏙️ 新北市服務區（{locationCoverage.newTaipeiAdministrativeAreaCount} 行政區） 往下捲動 ↓
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="location-hero-cta-strip" aria-label="服務地點快速入口">
-        <div className="location-hero-actions">
-          <Link href="/products/" className="btn-outline">先看全部產品</Link>
-          <Link href={buildCalculatorUrl()} className="btn-primary">
-            前往線上估價 <ChevronRight size={16} />
-          </Link>
+      <section className="location-city-jump-strip" aria-label="服務地點快速入口">
+        <div className="city-jump-nav">
+          <a href="#taipei-city" className="city-jump-btn taipei">
+            🏛️ 台北市服務區 往下捲動 ↓
+          </a>
+          <a href="#new-taipei-city" className="city-jump-btn new-taipei">
+            🏙️ 新北市服務區 往下捲動 ↓
+          </a>
         </div>
       </section>
 
@@ -240,24 +217,13 @@ export default function LocationHubPage() {
           {renderedCityGroups.map((cityGroup) => {
             const hero = cityGroup.heroPage;
             return (
-              <div key={cityGroup.cityId} id={cityGroup.anchorId} style={{ scrollMarginTop: '90px' }}>
-                {/* 1. 城市級巨型分水嶺橫帶 */}
-                <div className={`city-section-header ${cityGroup.themeClass}`}>
-                  <div>
-                    <h2>{cityGroup.badgeText}</h2>
-                    <p>{cityGroup.subText}</p>
-                  </div>
-                  {hero && (
-                    <Link
-                      href={`/location/${hero.id}/`}
-                      className="city-header-link-btn"
-                    >
-                      進入{cityGroup.cityName}全區專頁 <span className="header-btn-arrow">→</span>
-                    </Link>
-                  )}
-                </div>
-
-                {/* 2. 雙卡平衡比例 Banner (左卡圖片、右卡精練文案與雙按鈕) */}
+              <div
+                key={cityGroup.cityId}
+                id={cityGroup.anchorId}
+                className={`city-overview ${cityGroup.themeClass}`}
+                style={{ scrollMarginTop: '90px' }}
+              >
+                {/* 城市服務整合卡：左側實景、右側城市資訊與行動入口 */}
                 {hero && (
                   <div className="metro-dual-card-container">
                     {/* 左卡：景觀情境圖片卡 */}
@@ -274,20 +240,11 @@ export default function LocationHubPage() {
                       </span>
                     </div>
 
-                    {/* 右卡：精練標題、副標特色與操作按鈕 */}
+                    {/* 右卡：城市標題、服務摘要與操作按鈕 */}
                     <div className="metro-content-card">
                       <span className="metro-content-tag">{cityGroup.tagText}</span>
-                      <h3 className="metro-content-title">{cityGroup.heroTitle}</h3>
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          color: 'var(--amber-700)',
-                          fontSize: '0.92rem',
-                          marginBottom: '0.35rem',
-                        }}
-                      >
-                        {cityGroup.heroFeature}
-                      </div>
+                      <h2 className="metro-content-title">{cityGroup.badgeText}</h2>
+                      <p className="metro-content-lead">{cityGroup.subText}</p>
                       <p className="metro-content-desc">{cityGroup.heroDesc}</p>
                       <div className="metro-content-actions">
                         <Link

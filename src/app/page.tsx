@@ -132,7 +132,7 @@ const flagshipGeoCards = [
 
 const trustNumbers = [
   { num: '30+', label: '年窗簾經驗' },
-  { num: String(products.length), label: '可估價產品品項' },
+  { num: String(products.length), label: '產品介紹頁' },
   { num: String(locationCoverage.indexableLocationPageCount), label: '可索引地區資訊頁' },
   { num: '1', label: '線上估價工具' },
 ];

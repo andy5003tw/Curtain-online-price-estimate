@@ -4,9 +4,19 @@ import { knowledgePosts, knowledgeCategories, knowledgeTags } from '@/data/knowl
 import BlogListClient from './BlogListClient';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
 import { absoluteUrl, buildOgTwitterMeta, COMPANY_NAME } from '@/lib/seo';
+import { BookOpen, CircleDollarSign, Home, LayoutGrid, Ruler, Sparkles } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const BLOG_TITLE = '窗簾知識與挑選指南 | 宏森開發窗簾';
 const BLOG_DESCRIPTION = '全台最完整的窗簾知識庫。包含13大類產品（捲簾、百葉、調光簾等）的挑選指南、材質分析、價格預算、尺寸測量與保養清洗。';
+
+const BLOG_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  'buying-guides': Home,
+  'product-deep-dives': LayoutGrid,
+  budgeting: CircleDollarSign,
+  maintenance: Sparkles,
+  installation: Ruler,
+};
 
 export const metadata: Metadata = {
   title: BLOG_TITLE,
@@ -51,6 +61,9 @@ const breadcrumbSchema = {
 };
 
 export default function BlogPage() {
+  const articleSplitIndex = Math.ceil(knowledgePosts.length / 2);
+  const articleGroups = [knowledgePosts.slice(0, articleSplitIndex), knowledgePosts.slice(articleSplitIndex)];
+
   return (
     <>
       <script
@@ -111,13 +124,26 @@ export default function BlogPage() {
             <h2 id="all-articles-heading">所有窗簾知識文章</h2>
             <p>此清單提供不依賴篩選器的文章入口，方便讀者與搜尋引擎完整瀏覽知識庫。</p>
           </div>
-          <ul style={{ display: 'grid', gap: '0.75rem', paddingLeft: '1.25rem' }}>
-            {knowledgePosts.map(post => (
-              <li key={post.id}>
-                <Link href={`/blog/${post.id}/`}>{post.title}</Link>
-              </li>
+          <div className="blog-article-link-cards">
+            {articleGroups.map((group, index) => (
+              <section className="blog-article-link-card" key={index}>
+                <h3>{index === 0 ? '挑選與材質指南' : '價格、保養與安裝指南'}</h3>
+                <ul className="blog-article-link-list">
+                  {group.map(post => {
+                    const Icon = BLOG_CATEGORY_ICONS[post.category] ?? BookOpen;
+                    return (
+                      <li key={post.id}>
+                        <Link href={`/blog/${post.id}/`}>
+                          <Icon className="blog-article-link-icon" aria-hidden="true" size={18} strokeWidth={1.9} />
+                          <span>{post.title}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         </div>
       </section>
 

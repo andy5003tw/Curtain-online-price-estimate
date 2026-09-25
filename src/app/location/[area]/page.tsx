@@ -5,6 +5,7 @@ import { getLocationPageById, isCityOverviewLocationPage, locationPages } from '
 import { products } from '@/data/products';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
+import EditorialLandingHero from '@/components/EditorialLandingHero';
 import { ChevronRight, MapPin, CheckCircle2, Calculator, BookOpen, Sparkles, ShieldCheck, ArrowUpRight } from 'lucide-react';
 
 const cityHeroVisuals = {
@@ -344,25 +345,19 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
       </nav>
 
       {cityHero ? (
-        <section className={`city-location-hero city-location-hero--${cityHero.theme}`}>
-          <picture className="city-location-hero__visual">
-            <source media="(max-width: 640px)" srcSet={withBasePath(cityHero.mobile)} />
-            <img src={withBasePath(cityHero.desktop)} alt={`${pageData.areaName}窗簾服務空間形象`} fetchPriority="high" />
-          </picture>
-          <div className="city-location-hero__inner">
-            <div className="city-location-hero__copy">
-              <span className="city-location-hero__eyebrow"><MapPin size={15} /> {cityHero.eyebrow}</span>
-              <h1>{cityHero.title}</h1>
-              <p data-ai-answer="true">{cityHero.description}</p>
-            </div>
-            <div className="city-location-hero__actions">
-              <Link href={buildCalculatorUrl(undefined, pageData.id)} className="city-location-hero__primary">
-                線上價格試算 <ChevronRight size={17} />
-              </Link>
-              <Link href="/location/" className="city-location-hero__secondary">查看雙北服務區域</Link>
-            </div>
-          </div>
-        </section>
+        <EditorialLandingHero
+          theme={cityHero.theme}
+          eyebrow={cityHero.eyebrow}
+          eyebrowIcon={<MapPin size={15} aria-hidden="true" />}
+          title={cityHero.title}
+          description={cityHero.description}
+          descriptionAiAnswer
+          desktopImage={cityHero.desktop}
+          mobileImage={cityHero.mobile}
+          imageAlt={`${pageData.areaName}窗簾服務空間形象`}
+          primaryAction={{ href: buildCalculatorUrl(undefined, pageData.id), label: '線上價格試算' }}
+          secondaryAction={{ href: '/location/', label: '查看雙北服務區域' }}
+        />
       ) : (
         <div className="page-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${withBasePath(pageData.heroImage)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div className="section-container">

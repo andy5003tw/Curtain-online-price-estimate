@@ -7,6 +7,9 @@ import { absoluteUrl, productPath } from '@/lib/seo';
 
 export const dynamic = 'force-static';
 
+const homepageLastModified = '2026-09-10';
+const locationHubLastModified = '2026-09-10';
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const dateCandidates = [
     ...products.map(product => product.updatedAt),
@@ -26,7 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/blog',
   ].map(route => ({
     url: absoluteUrl(route === '' ? '/' : `${route}/`),
-    lastModified: siteUpdatedAt,
+    lastModified: route === '' ? homepageLastModified : route === '/location' ? locationHubLastModified : siteUpdatedAt,
     changeFrequency: 'monthly' as const,
     priority: route === '' ? 1 : 0.8,
   }));

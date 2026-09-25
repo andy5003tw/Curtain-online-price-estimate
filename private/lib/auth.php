@@ -247,3 +247,9 @@ function hs_can_edit_pricing(): bool
     $user = hs_current_user();
     return is_array($user) && hs_user_has_role($user, ['owner', 'admin', 'editor']);
 }
+
+function hs_can_manage_formula(): bool
+{
+    $user = hs_current_user();
+    return is_array($user) && hs_user_has_role($user, ['owner', 'admin']);
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Calculator, ChevronRight, CheckCircle2, ChevronDown, MessageSquare, MessageCircle } from 'lucide-react';
+import { Calculator, ChevronRight, CheckCircle2, ChevronDown, CircleHelp, MessageSquare, MessageCircle, SwatchBook, Search, Ruler, Route } from 'lucide-react';
 import FloatingCta from '@/components/FloatingCta';
 import { products } from '@/data/products';
 import { getGeoWaveGroups, getLocationCoverageSummary, locationPages, type LocationPage } from '@/data/locationPages';
@@ -183,6 +183,8 @@ const homepageFaq = [
     a: '常規案件約 5-7 個工作天，特殊客製案約 7-14 個工作天。',
   },
 ];
+
+const homepageFaqIcons = [SwatchBook, Search, Ruler, Calculator, Route];
 
 // Keep the visible FAQ and FAQPage schema on the same focused 3–5 question set.
 const homepageSeoFaq = homepageFaq.slice(0, 5);
@@ -594,17 +596,24 @@ export default function HomePage() {
           <div className="faq-layout-grid">
             {/* 左欄：5 大常見問題 Accordion */}
             <div className="faq-accordion-col">
-              {homepageSeoFaq.map((item) => (
-                <details key={item.q} className="faq-details-item">
-                  <summary className="faq-summary-btn">
-                    <span>{item.q}</span>
-                    <ChevronDown size={18} className="faq-arrow-icon" />
-                  </summary>
-                  <div className="faq-answer-content">
-                    {item.a}
-                  </div>
-                </details>
-              ))}
+              {homepageSeoFaq.map((item, index) => {
+                const FaqIcon = homepageFaqIcons[index] ?? CircleHelp;
+
+                return (
+                  <details key={item.q} className="faq-details-item">
+                    <summary className="faq-summary-btn">
+                      <span className="faq-question-text">
+                        <FaqIcon size={17} strokeWidth={2.25} aria-hidden="true" />
+                        <span>{item.q}</span>
+                      </span>
+                      <ChevronDown size={18} className="faq-arrow-icon" />
+                    </summary>
+                    <div className="faq-answer-content">
+                      {item.a}
+                    </div>
+                  </details>
+                );
+              })}
             </div>
 
             {/* 右欄：填補空洞的核心：貼心諮詢與行動卡片 */}

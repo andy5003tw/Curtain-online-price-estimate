@@ -6,7 +6,7 @@ import { products } from '@/data/products';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
-import { ChevronRight, MapPin, CheckCircle2, Calculator, BookOpen, Sparkles, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { ChevronRight, MapPin, CheckCircle2, Calculator, BookOpen, Sparkles, ShieldCheck, ArrowUpRight, ReceiptText, Store, SwatchBook, Sofa, TreePine, Moon, Ruler } from 'lucide-react';
 
 const cityHeroVisuals = {
   taipei: {
@@ -212,6 +212,13 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
     ],
   };
   const ownerBoostLinks = ownerBoostLinksByArea[pageData.id] ?? [];
+  const ownerBoostCards = pageData.id === 'taipei'
+    ? [
+        { title: '價格試算入口', icon: Calculator, links: ownerBoostLinks.slice(0, 4) },
+        { title: '熱門窗型推薦', icon: Sofa, links: ownerBoostLinks.slice(4, 8) },
+        { title: '指南與延伸服務', icon: BookOpen, links: ownerBoostLinks.slice(8) },
+      ]
+    : [];
 
   const serviceSchema = {
     '@context': 'https://schema.org',
@@ -256,6 +263,24 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
       },
     })),
   };
+
+  function getOwnerBoostLinkIcon(label: string) {
+    if (label.includes('實木百葉')) return TreePine;
+    if (label.includes('客廳')) return Sofa;
+    if (label.includes('遮光')) return Moon;
+    if (label.includes('價格指南')) return BookOpen;
+    if (label.includes('無縫紗')) return Sparkles;
+    if (label.includes('區') && label.includes('入口')) return MapPin;
+    if (label.includes('訂製')) return Ruler;
+    return Calculator;
+  }
+
+  function getLocationFaqIcon(question: string) {
+    if (question.includes('線上估價')) return Calculator;
+    if (question.includes('正式報價')) return ReceiptText;
+    if (question.includes('獨立分店')) return Store;
+    return SwatchBook;
+  }
 
   // 建立行政區名稱與代碼快速映射（用於市級總覽標籤可點擊跳轉）
   const districtLinkMap = new Map<string, string>();
@@ -509,14 +534,44 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
                 <div className="seo-boost-group-title">
                   <span>熱門窗型價格試算與深入推薦</span>
                 </div>
-                <div className="seo-boost-chips-grid">
-                  {ownerBoostLinks.map((link) => (
-                    <Link key={link.href} href={link.href} className="seo-quick-chip-link" title={link.label}>
-                      <span>{link.label}</span>
-                      <ArrowUpRight size={14} />
-                    </Link>
-                  ))}
-                </div>
+                {ownerBoostCards.length > 0 ? (
+                  <div className="location-recommendation-cards">
+                    {ownerBoostCards.map((card) => {
+                      const CardIcon = card.icon;
+
+                      return (
+                        <article key={card.title} className="location-recommendation-card">
+                          <h4 className="location-recommendation-card__title">
+                            <CardIcon size={19} aria-hidden="true" />
+                            <span>{card.title}</span>
+                          </h4>
+                          <div className="location-recommendation-card__links">
+                            {card.links.map((link) => {
+                              const LinkIcon = getOwnerBoostLinkIcon(link.label);
+
+                              return (
+                                <Link key={link.href} href={link.href} className="location-recommendation-link" title={link.label}>
+                                  <LinkIcon className="location-recommendation-link__icon" size={16} aria-hidden="true" />
+                                  <span>{link.label}</span>
+                                  <ArrowUpRight className="location-recommendation-link__arrow" size={14} aria-hidden="true" />
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="seo-boost-chips-grid">
+                    {ownerBoostLinks.map((link) => (
+                      <Link key={link.href} href={link.href} className="seo-quick-chip-link" title={link.label}>
+                        <span>{link.label}</span>
+                        <ArrowUpRight size={14} />
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -558,13 +613,20 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
           <div className="section-heading">
             <h2>{pageData.areaName}常見問題</h2>
           </div>
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {pageFaqs.map((faq, index) => (
-              <details key={index} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
-                <summary style={{ padding: '1rem 1.25rem', fontWeight: 700, cursor: 'pointer', listStyle: 'none' }}>{faq.q}</summary>
-                <div style={{ padding: '0 1.25rem 1rem', color: 'var(--stone-600)', lineHeight: 1.7 }}>{faq.a}</div>
-              </details>
-            ))}
+          <div className="location-faq-list">
+            {pageFaqs.map((faq, index) => {
+              const FaqIcon = getLocationFaqIcon(faq.q);
+
+              return (
+                <details key={index} className="location-faq__item">
+                  <summary className="location-faq__summary">
+                    <FaqIcon className="location-faq__icon" size={19} aria-hidden="true" />
+                    <span>{faq.q}</span>
+                  </summary>
+                  <div className="location-faq__answer">{faq.a}</div>
+                </details>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -576,25 +638,18 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
               <h2>鄰近服務區域</h2>
               <p>也可查看附近地區的窗簾規劃與到府丈量服務</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div className="location-nearby-grid">
               {relatedAreas.map(related => (
                 <Link
                   key={related.id}
                   href={`/location/${related.id}/`}
-                  style={{
-                    background: 'white',
-                    border: '1px solid var(--stone-200)',
-                    borderRadius: '0.85rem',
-                    padding: '1rem 1.1rem',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    display: 'block',
-                  }}
+                  className="location-nearby-card"
                 >
-                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--stone-900)' }}>
-                    {related.areaName}窗簾服務
+                  <h3 className="location-nearby-card__title">
+                    <MapPin size={20} aria-hidden="true" />
+                    <span>{related.areaName}窗簾服務</span>
                   </h3>
-                  <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.86rem', color: 'var(--stone-600)', lineHeight: 1.6 }}>
+                  <p className="location-nearby-card__description">
                     {related.title}
                   </p>
                 </Link>

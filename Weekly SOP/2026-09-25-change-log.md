@@ -40,3 +40,35 @@
 
 - 價格後台公式設定與新增試算產品功能的權限、資料欄位、測試及 2026-09-24 上線紀錄，維護於根目錄 `PRICING_FORMULA_ADMIN.md`；本次未重複記載。
 - 完整交接狀態與後續維護注意事項，維護於根目錄 `HANDOVER.md` 第十三節。
+
+## 2026-09-25 FAQ 與服務區導覽主題 icon 強化（已部署並完成正式站驗收）
+
+### 變更範圍
+
+- `/` 首頁 FAQ 五個問題：加入依問題主題選擇的 Lucide icon，包含材質、挑選、丈量、估價與服務流程等意象。
+- `/about/` 關於我們 FAQ 七組問答：加入大型主題 icon，桌機與手機版皆保留清楚的圖示辨識度。
+- `/location/taipei/`：將「熱門窗型價格試算與深入推薦」連結整理為三張卡片，並在推薦連結、FAQ 問題與鄰近服務區域前加入對應 icon。
+- `/location/new-taipei/`：沿用地區頁共用模板，在 FAQ 問題與三張鄰近服務區域卡片前加入對應 icon。
+- `/location/`：四個生活圈標題加入主題 icon，並使用不同顏色區分生活圈：
+  - 台北都會核心圈：`Building2`，`#b45309`
+  - 台北景觀與文教生活圈：`GraduationCap`，`#4f46e5`
+  - 新北核心大城與捷運生活圈：`TrainFront`，`#0f766e`
+  - 新北延伸與景觀生活圈：`Mountain`，`#0284c7`
+- `/location/` 生活圈標題 icon 已由 23px 放大至 30px，並調整與標題文字的間距；既有 icon 配色維持不變。
+
+### 實作檔案與 SEO 邊界
+
+- 修改 `src/app/page.tsx`、`src/app/about/page.tsx`、`src/app/location/page.tsx`、`src/app/location/[area]/page.tsx` 與 `src/app/globals.css`。
+- 保留既有 FAQ 文案、連結 URL、canonical、metadata、JSON-LD、sitemap、keyword owner 與 SEO/GEO lifecycle receipt；本輪未新增或修改結構化資料。
+
+### 本機驗證與部署狀態
+
+- `npm.cmd run build -- --webpack`：通過，81 個靜態頁成功匯出；預設 Turbopack 建置曾因 Windows `.next` 快取檔存取被拒而中止，改用 Webpack 建置完成驗證。
+- `npm.cmd run seo:check`：通過。
+- `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`：通過，14 rows／87 unique normalized keywords。
+- 目標頁 ESLint：0 errors；保留既有 2 個 `<img>` 效能 warning。
+- FTP quick deploy：selected=1,248、uploaded=426、skipped=822、failed=0、uploadedMB=24.85；部署 manifest 為 `Weekly SOP/latest/seo-geo-deployment-manifest.json`。
+- 部署範圍僅為 `out/` 靜態網站產物，未上傳 Markdown、原始碼、`download/`、`source/` 或其他本機工作文件。
+- 正式站回讀通過：`/`、`/about/`、`/location/`、`/location/taipei/`、`/location/new-taipei/` 均 HTTP 200，canonical 正確；首頁 FAQ、About FAQ、生活圈標題 icon、台北推薦卡與雙北地區 FAQ／鄰近服務 icon 均確認存在。
+- `https://online.hong-sen.com/sitemap.xml` HTTP 200，包含 `/location/`、`/location/taipei/` 與 `/location/new-taipei/`；五個驗收頁的 JSON-LD 均可解析。
+- 預設 Turbopack 建置因 Windows `.next` 快取檔存取被拒而中止，本次以同版本 Webpack fallback 完成 81 頁建置後部署；Git commit 尚未建立。

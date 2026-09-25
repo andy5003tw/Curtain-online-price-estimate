@@ -7,7 +7,7 @@ import {
 } from '@/data/locationPages';
 import { absoluteUrl, buildCalculatorUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
-import { ChevronRight, MapPin, Calculator } from 'lucide-react';
+import { ChevronRight, MapPin, Calculator, Building2, GraduationCap, TrainFront, Mountain, type LucideIcon } from 'lucide-react';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
 
 const locationCoverage = getLocationCoverageSummary();
@@ -66,6 +66,8 @@ interface ClusterSection {
   title: string;
   desc: string;
   ids: readonly string[];
+  icon: LucideIcon;
+  iconColor: string;
 }
 
 interface CityGroupDef {
@@ -94,12 +96,16 @@ const cityGroups: CityGroupDef[] = [
         title: '台北都會核心圈｜旗艦生活圈（4 區）',
         desc: '台北主要商業、行政與豪宅精華區，提供雙層蛇形簾、大面採光高窗與精品調光簾方案。',
         ids: ['daan', 'xinyi', 'songshan', 'zhongshan'],
+        icon: Building2,
+        iconColor: '#b45309',
       },
       {
         key: 'taipei-scenic-edu',
         title: '台北景觀與文教生活圈｜8 區到府丈量',
         desc: '涵蓋天母豪宅、學區公寓、山景別墅與文創街區，兼顧通風防潮、採光柔化與夜間隱私。',
         ids: ['zhongzheng', 'shilin', 'beitou', 'neihu', 'nangang', 'wenshan', 'wanhua', 'datong'],
+        icon: GraduationCap,
+        iconColor: '#4f46e5',
       },
     ],
   },
@@ -117,12 +123,16 @@ const cityGroups: CityGroupDef[] = [
         title: '新北核心大城與捷運生活圈｜8 區快速估價',
         desc: '高密度住宅生活圈，廠辦合一快速到府，客廳落地窗簾、遮光捲簾與百葉窗熱門比價。',
         ids: ['sanchong', 'banqiao', 'xinzhuang', 'zhonghe', 'yonghe', 'luzhou', 'tucheng', 'xindian'],
+        icon: TrainFront,
+        iconColor: '#0f766e',
       },
       {
         key: 'newtaipei-extended-scenic',
         title: '新北延伸與景觀生活圈｜9 區到府丈量',
         desc: '涵蓋林口高樓住宅、海線河岸景觀宅、山城透天與廠辦園區，強化隔熱、抗西曬與耐用度。',
         ids: ['linkou', 'xizhi', 'taishan', 'wugu', 'shulin', 'yingge', 'sanxia', 'danshui', 'bali'],
+        icon: Mountain,
+        iconColor: '#0284c7',
       },
     ],
   },
@@ -275,18 +285,24 @@ export default function LocationHubPage() {
                 )}
 
                 {/* 3. 該城市底下的生活圈與行政區小卡網格 */}
-                {cityGroup.sections.map(section => (
-                  <div key={section.key} className="location-cluster" style={{ marginBottom: '2rem' }}>
-                    <div className="location-cluster-header">
-                      <h2>{section.title}</h2>
-                      <p>{section.desc}</p>
-                    </div>
+                {cityGroup.sections.map(section => {
+                  const SectionIcon = section.icon;
 
-                    <div className="location-cluster-grid">
-                      {section.pages.map(page => {
-                        const thumb = locationThumbMap[page.id] || page.heroImage || '/banner_img/banner_01.webp';
-                        return (
-                          <article key={page.id} className="location-hub-card">
+                  return (
+                    <div key={section.key} className="location-cluster" style={{ marginBottom: '2rem' }}>
+                      <div className="location-cluster-header">
+                        <h2>
+                          <SectionIcon size={30} aria-hidden="true" style={{ color: section.iconColor }} />
+                          <span>{section.title}</span>
+                        </h2>
+                        <p>{section.desc}</p>
+                      </div>
+
+                      <div className="location-cluster-grid">
+                        {section.pages.map(page => {
+                          const thumb = locationThumbMap[page.id] || page.heroImage || '/banner_img/banner_01.webp';
+                          return (
+                            <article key={page.id} className="location-hub-card">
                             <div className="location-hub-thumb">
                               <img
                                 src={withBasePath(thumb)}
@@ -323,12 +339,13 @@ export default function LocationHubPage() {
                                 </Link>
                               </div>
                             </div>
-                          </article>
-                        );
-                      })}
+                            </article>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })}

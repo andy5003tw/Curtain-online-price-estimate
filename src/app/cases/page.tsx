@@ -101,7 +101,9 @@ const CASE_FAQS = [
   },
 ];
 
-function CaseCard({ c, onOpenLightbox }: { c: any, onOpenLightbox: (images: string[], index: number) => void }) {
+type ConstructionCase = (typeof constructionCases)[number];
+
+function CaseCard({ c, onOpenLightbox }: { c: ConstructionCase, onOpenLightbox: (images: string[], index: number) => void }) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const caseImages = useMemo(() => c.images.map((img: string) => withBasePath(img)), [c.images]);
@@ -284,10 +286,27 @@ export default function CasesPage() {
 
   const displayedCases = useMemo(() => filteredCases.slice(0, visibleCount), [filteredCases, visibleCount]);
 
-  // Reset count when filters change
-  useEffect(() => {
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
     setVisibleCount(12);
-  }, [selectedDistrict, selectedType, searchQuery]);
+  };
+
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    setVisibleCount(12);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setVisibleCount(12);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedDistrict(ALL_DISTRICTS);
+    setSelectedType(ALL_TYPES);
+    setSearchQuery('');
+    setVisibleCount(12);
+  };
 
   // Body scroll lock for lightbox
   useEffect(() => {
@@ -482,7 +501,7 @@ export default function CasesPage() {
                   <MapPin size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--amber-600)' }} />
                   <select 
                     value={selectedDistrict} 
-                    onChange={(e) => setSelectedDistrict(e.target.value)}
+                    onChange={(e) => handleDistrictChange(e.target.value)}
                     style={{ width: '100%', padding: '0.65rem 1rem 0.65rem 2.25rem', borderRadius: '0.75rem', border: '1px solid var(--stone-200)', outline: 'none', background: 'var(--stone-50)', fontSize: '0.9rem', cursor: 'pointer' }}
                   >
                     {districts.map(d => <option key={d} value={d}>{d}</option>)}
@@ -495,7 +514,7 @@ export default function CasesPage() {
                   <Tag size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--amber-600)' }} />
                   <select 
                     value={selectedType} 
-                    onChange={(e) => setSelectedType(e.target.value)}
+                    onChange={(e) => handleTypeChange(e.target.value)}
                     style={{ width: '100%', padding: '0.65rem 1rem 0.65rem 2.25rem', borderRadius: '0.75rem', border: '1px solid var(--stone-200)', outline: 'none', background: 'var(--stone-50)', fontSize: '0.9rem', cursor: 'pointer' }}
                   >
                     {types.map(t => <option key={t} value={t}>{t}</option>)}
@@ -510,11 +529,11 @@ export default function CasesPage() {
                     type="text" 
                     placeholder="如：台北市、中山區..." 
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     style={{ width: '100%', padding: '0.65rem 1rem 0.65rem 2.25rem', borderRadius: '0.75rem', border: '1px solid var(--stone-200)', outline: 'none', fontSize: '0.9rem' }}
                   />
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: 'var(--stone-400)', cursor: 'pointer' }}>
+                    <button onClick={() => handleSearchChange('')} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: 'var(--stone-400)', cursor: 'pointer' }}>
                       <X size={14} />
                     </button>
                   )}
@@ -524,7 +543,7 @@ export default function CasesPage() {
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--stone-100)', fontSize: '0.825rem', color: 'var(--stone-500)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>在此條件下共有 <strong style={{ color: 'var(--stone-800)', fontSize: '1rem' }}>{filteredCases.length}</strong> 個案例</span>
               {(selectedDistrict !== ALL_DISTRICTS || selectedType !== ALL_TYPES || searchQuery !== '') && (
-                <button onClick={() => { setSelectedDistrict(ALL_DISTRICTS); setSelectedType(ALL_TYPES); setSearchQuery(''); }} style={{ background: 'var(--stone-100)', border: 'none', color: 'var(--stone-700)', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.825rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <button onClick={handleResetFilters} style={{ background: 'var(--stone-100)', border: 'none', color: 'var(--stone-700)', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.825rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <X size={12} /> 清除篩選
                 </button>
               )}
@@ -559,7 +578,7 @@ export default function CasesPage() {
               <h3 style={{ color: 'var(--stone-800)' }}>找不到對應的案例</h3>
               <p style={{ color: 'var(--stone-500)', maxWidth: '300px', margin: '0.5rem auto 1.5rem' }}>請嘗試調整篩選條件，或是輸入更簡單的關鍵字搜尋（例如：台北市、板橋）。</p>
               <button 
-                onClick={() => { setSelectedDistrict(ALL_DISTRICTS); setSelectedType(ALL_TYPES); setSearchQuery(''); }}
+                onClick={handleResetFilters}
                 style={{ background: 'var(--stone-900)', color: 'white', padding: '0.75rem 2rem', borderRadius: '0.75rem', border: 'none', fontWeight: 600, cursor: 'pointer' }}
               >
                 重設篩選條件
@@ -582,8 +601,8 @@ export default function CasesPage() {
               <button 
                 key={i} 
                 onClick={() => {
-                  setSearchQuery(link.keyword);
-                  setSelectedDistrict(ALL_DISTRICTS); // Optional: clear district strict filter
+                  handleSearchChange(link.keyword);
+                  handleDistrictChange(ALL_DISTRICTS); // Optional: clear district strict filter
                   const filterEl = document.getElementById('cases-filter-section');
                   if (filterEl) {
                     const y = filterEl.getBoundingClientRect().top + window.scrollY - 100;

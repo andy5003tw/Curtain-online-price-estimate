@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Calculator, ChevronRight, CheckCircle2, ChevronDown, CircleHelp, MessageSquare, MessageCircle, SwatchBook, Search, Ruler, Route } from 'lucide-react';
 import FloatingCta from '@/components/FloatingCta';
 import { products } from '@/data/products';
-import { getGeoWaveGroups, getLocationCoverageSummary, locationPages, type LocationPage } from '@/data/locationPages';
+import { getLocationCoverageSummary, locationPages } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 
@@ -189,62 +189,7 @@ const homepageFaqIcons = [SwatchBook, Search, Ruler, Calculator, Route];
 // Keep the visible FAQ and FAQPage schema on the same focused 3–5 question set.
 const homepageSeoFaq = homepageFaq.slice(0, 5);
 
-function mapAreaCards(areas: LocationPage[], linkLabel: string) {
-  return areas.map(item => ({
-    href: `/location/${item.id}/`,
-    title: `${item.areaName}窗簾服務頁`,
-    desc: item.shortDescription,
-    linkLabel,
-  }));
-}
-
 export default function HomePage() {
-  const { waveA, waveB, phase5WaveA, phase5WaveB, phase6WaveA, phase6WaveB } = getGeoWaveGroups();
-  const geoGroups = [
-    {
-      key: 'wave-a',
-      title: '台北核心服務區｜4 區到府丈量',
-      desc: '台北市詢問度高的重點服務區，可先線上估價再安排丈量。',
-      linkLabel: '查看台北服務',
-      areas: waveA,
-    },
-    {
-      key: 'wave-b',
-      title: '新北熱門服務區｜4 區快速估價',
-      desc: '新北主要住宅與商辦服務區，適合先比較價格再預約丈量。',
-      linkLabel: '查看新北服務',
-      areas: waveB,
-    },
-    {
-      key: 'phase5-wave-a',
-      title: '台北延伸服務區｜4 區價格試算',
-      desc: '台北延伸生活圈入口，可依地區查看窗簾推薦與丈量流程。',
-      linkLabel: '查看台北服務',
-      areas: phase5WaveA,
-    },
-    {
-      key: 'phase5-wave-b',
-      title: '新北延伸服務區｜4 區到府丈量',
-      desc: '新北延伸生活圈入口，適合比較窗簾價格、安裝費與產品搭配。',
-      linkLabel: '查看新北服務',
-      areas: phase5WaveB,
-    },
-    {
-      key: 'phase6-wave-a',
-      title: '新北核心服務區｜4 區窗簾推薦',
-      desc: '新北核心住宅區入口，可快速進入地區頁與線上估價。',
-      linkLabel: '查看新北服務',
-      areas: phase6WaveA,
-    },
-    {
-      key: 'phase6-wave-b',
-      title: '新北外圍服務區｜4 區價格試算',
-      desc: '新北外圍與延伸服務區，可先抓預算再安排到府丈量。',
-      linkLabel: '查看新北服務',
-      areas: phase6WaveB,
-    },
-  ];
-
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',

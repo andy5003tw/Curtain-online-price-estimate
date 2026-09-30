@@ -447,8 +447,8 @@ function checkGeoFlow(geoRoutes) {
 }
 
 function checkProductAreaFlow() {
-  const sampleProductRoutes = ['/products/custom-curtains/', '/products/roller-blinds/'];
-  for (const route of sampleProductRoutes) {
+  const productRoutes = [...new Set(Object.values(legacyMap))];
+  for (const route of productRoutes) {
     const htmlPath = routeToOutHtml(route);
     const html = readFileSafe(htmlPath);
     if (!html) continue;

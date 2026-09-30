@@ -5,7 +5,7 @@ import { findProductBySlugOrId, products } from '@/data/products';
 import { getServiceAreasForProduct } from '@/data/locationPages';
 import { absoluteUrl, buildCalculatorUrl, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
-import { ChevronRight, CheckCircle2, Calculator, Star, BookOpen } from 'lucide-react';
+import { ChevronRight, CheckCircle2, Calculator, BookOpen } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 import ProductImageGallery from '@/components/ProductImageGallery';
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const product = findProductBySlugOrId(slug);
   if (!product) return { title: '找不到產品' };
 
-  const seo = (product as any).seo;
+  const seo = product.seo;
   return {
     title: seo?.meta_title || `${product.name} 訂製 | 宏森開發`,
     description: seo?.meta_description || product.description,
@@ -611,7 +611,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     fullDesc: product.description,
   };
 
-  const seo = (product as any).seo;
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',

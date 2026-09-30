@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { createContext, useContext, useEffect, useState, Suspense, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Calculator, CheckCircle2, ChevronRight } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 import { buildCalculatorUrl } from '@/lib/seo';
@@ -16,6 +17,39 @@ type CalculatorProduct = {
 
 interface CalculatorClientProps {
   products: CalculatorProduct[];
+}
+
+type CatalogState = { products: CalculatorProduct[]; error: boolean };
+const CatalogContext = createContext<CatalogState | null>(null);
+
+export function CalculatorCatalogProvider({ bootstrapProducts, children }: { bootstrapProducts: CalculatorProduct[]; children: ReactNode }) {
+  const [products, setProducts] = useState(bootstrapProducts);
+  const [catalogError, setCatalogError] = useState(false);
+
+  useEffect(() => {
+    if (window.location.hostname.endsWith('github.io')) return;
+    const controller = new AbortController();
+    fetch('/api/products.php', { cache: 'no-store', signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('無法載入產品清單');
+        const payload = await response.json() as { ok: boolean; data?: CalculatorProduct[] };
+        if (!payload.ok || !Array.isArray(payload.data)) throw new Error('產品清單格式無效');
+        return payload.data.filter(item => item && typeof item.id === 'string' && /^P\d{3,}$/.test(item.id) && typeof item.name === 'string' && typeof item.requires_track === 'boolean');
+      })
+      .then(setProducts)
+      .catch(error => {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        // Existing static products remain usable when only the catalog endpoint is unavailable.
+        setCatalogError(true);
+      });
+    return () => controller.abort();
+  }, []);
+
+  return <CatalogContext.Provider value={{ products, error: catalogError }}>{children}</CatalogContext.Provider>;
+}
+
+function useCatalog(fallback: CalculatorProduct[]): CatalogState {
+  return useContext(CatalogContext) ?? { products: fallback, error: false };
 }
 
 interface CalcResult {
@@ -36,40 +70,68 @@ interface CalcApiError {
 }
 
 type CalcApiResponse = CalcApiSuccess | CalcApiError;
+type QuoteResponse = { key: string; data: CalcResult | null; error: string | null };
+type ProductOverride = { urlProduct: string; selectedProduct: string };
 
-export function CalculatorForm({ products }: CalculatorClientProps) {
-  const router = useRouter();
+const CALCULATOR_PRODUCT_CHANGE_EVENT = 'calculator-product-change';
+
+function updateCalculatorProductUrl(productId: string, area?: string) {
+  const nextUrl = buildCalculatorUrl(productId, area);
+  window.history.pushState(null, '', nextUrl);
+  window.dispatchEvent(new CustomEvent(CALCULATOR_PRODUCT_CHANGE_EVENT, { detail: productId }));
+}
+
+export function CalculatorForm({ products: bootstrapProducts }: CalculatorClientProps) {
+  const catalog = useCatalog(bootstrapProducts);
+  const products = catalog.products;
   const searchParams = useSearchParams();
   const isGitHubPages =
     typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
-  const selectedProduct = searchParams.get('product') || products[0].id;
+  const productFromUrl = searchParams.get('product') || products[0]?.id || '';
   const selectedArea = searchParams.get('area') || undefined;
+  const [productOverride, setProductOverride] = useState<ProductOverride | null>(null);
+  const selectedProduct = productOverride?.urlProduct === productFromUrl ? productOverride.selectedProduct : productFromUrl;
   const [width, setWidth] = useState<number | ''>('');
   const [height, setHeight] = useState<number | ''>('');
-  const [result, setResult] = useState<CalcResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [quoteResponse, setQuoteResponse] = useState<QuoteResponse | null>(null);
+  const widthValue = Number(width);
+  const heightValue = Number(height);
+  const validRequest = !!selectedProduct && products.some(product => product.id === selectedProduct) && widthValue > 0 && heightValue > 0;
+  const quoteKey = `${selectedProduct}|${widthValue}|${heightValue}|${selectedArea || ''}`;
+  const currentResponse = quoteResponse?.key === quoteKey ? quoteResponse : null;
+  const result = validRequest ? currentResponse?.data ?? null : null;
+  const apiError = isGitHubPages && validRequest
+    ? '此 GitHub Pages 展示站未啟用 PHP API，估價功能請到正式站使用。'
+    : currentResponse?.error ?? null;
+  const isLoading = validRequest && !isGitHubPages && currentResponse === null;
 
   useEffect(() => {
-    const widthValue = Number(width);
-    const heightValue = Number(height);
-    if (!selectedProduct || !widthValue || !heightValue) {
-      setResult(null);
-      setApiError(null);
-      setIsLoading(false);
-      return;
-    }
+    const handleProductChange = (event: Event) => {
+      const productId = (event as CustomEvent<string>).detail;
+      if (products.some((product) => product.id === productId)) setProductOverride({ urlProduct: productFromUrl, selectedProduct: productId });
+    };
+    const handleHistoryNavigation = () => {
+      setProductOverride(null);
+    };
 
-    if (isGitHubPages) {
-      setResult(null);
-      setApiError('此 GitHub Pages 展示站未啟用 PHP API，估價功能請到正式站使用。');
-      setIsLoading(false);
-      return;
-    }
+    window.addEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+    window.addEventListener('popstate', handleHistoryNavigation);
+    return () => {
+      window.removeEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+      window.removeEventListener('popstate', handleHistoryNavigation);
+    };
+  }, [products, productFromUrl]);
+
+  const changeProduct = (productId: string) => {
+    if (productId === selectedProduct) return;
+    setProductOverride({ urlProduct: productFromUrl, selectedProduct: productId });
+    updateCalculatorProductUrl(productId, selectedArea);
+  };
+
+  useEffect(() => {
+    if (!validRequest || isGitHubPages) return;
 
     const controller = new AbortController();
-    setIsLoading(true);
-    setApiError(null);
 
     fetch('/api/calc.php', {
       method: 'POST',
@@ -92,21 +154,20 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
           const message = payload && !payload.ok ? payload.message : '目前無法計算，請稍後再試。';
           throw new Error(message);
         }
-        setResult(payload.data);
+        setQuoteResponse({ key: quoteKey, data: payload.data, error: null });
       })
       .catch((error: unknown) => {
         if (error instanceof Error && error.name === 'AbortError') {
           return;
         }
-        setResult(null);
-        setApiError(error instanceof Error ? error.message : '目前無法計算，請稍後再試。');
-      })
-      .finally(() => setIsLoading(false));
+        setQuoteResponse({ key: quoteKey, data: null, error: error instanceof Error ? error.message : '目前無法計算，請稍後再試。' });
+      });
 
     return () => controller.abort();
-  }, [width, height, selectedProduct, selectedArea, isGitHubPages]);
+  }, [widthValue, heightValue, selectedProduct, selectedArea, isGitHubPages, validRequest, quoteKey]);
 
   const activeProduct = products.find((product) => product.id === selectedProduct);
+  const selectedProductExists = !!activeProduct;
 
   return (
     <div className="calculator-box">
@@ -118,16 +179,19 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
               <h3>選擇產品</h3>
             </div>
             <select
-              value={selectedProduct}
-              onChange={(e) => router.push(buildCalculatorUrl(e.target.value, selectedArea), { scroll: false })}
+              value={selectedProductExists ? selectedProduct : ''}
+              onChange={(e) => changeProduct(e.target.value)}
               className="form-select"
             >
+              <option value="" disabled>請選擇產品</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
                 </option>
               ))}
             </select>
+            {!selectedProductExists && <p className="form-hint">此產品目前未上架或不存在，請重新選擇。</p>}
+            {catalog.error && <p className="form-hint">目前無法更新產品清單，新增品項暫時不會顯示，請稍後重試。</p>}
             {activeProduct?.requires_track && (
               <p className="form-hint" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--amber-600)' }}>
                 <CheckCircle2 size={14} />
@@ -207,7 +271,7 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
                 <span>NT$ {result.total_price.toLocaleString()}</span>
               </div>
               <p className="form-hint" style={{ marginTop: '0.75rem' }}>
-                此為線上估價，現場若有特殊窗型、配件、施工條件會再微調。
+                此為線上估價，現場若有特殊窗型、配件、施工條件會再微調。(總安裝費最低以1300計算)
               </p>
               <a href="#contact" className="btn-primary" style={{ marginTop: '1.25rem', width: '100%' }}>
                 預約現場丈量 <ChevronRight size={16} />
@@ -244,15 +308,61 @@ export function CalculatorForm({ products }: CalculatorClientProps) {
   );
 }
 
-export function CalculatorProductMenu({ products }: CalculatorClientProps) {
+export function CalculatorProductMenu({ products: bootstrapProducts }: CalculatorClientProps) {
+  const products = useCatalog(bootstrapProducts).products;
   const searchParams = useSearchParams();
-  const selectedProduct = searchParams.get('product') || products[0].id;
+  const productFromUrl = searchParams.get('product') || products[0]?.id || '';
   const selectedArea = searchParams.get('area') || undefined;
+  const [productOverride, setProductOverride] = useState<ProductOverride | null>(null);
+  const selectedProduct = productOverride?.urlProduct === productFromUrl ? productOverride.selectedProduct : productFromUrl;
   const menuBasePath = selectedArea
     ? `/calculator/?product={productId}&area=${encodeURIComponent(selectedArea)}`
     : '/calculator/?product={productId}';
 
-  return <ProductScrollMenu products={products} currentProductId={selectedProduct} basePath={menuBasePath} />;
+  useEffect(() => {
+    const handleProductChange = (event: Event) => {
+      const productId = (event as CustomEvent<string>).detail;
+      if (products.some((product) => product.id === productId)) setProductOverride({ urlProduct: productFromUrl, selectedProduct: productId });
+    };
+    const handleHistoryNavigation = () => {
+      setProductOverride(null);
+    };
+
+    window.addEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+    window.addEventListener('popstate', handleHistoryNavigation);
+    return () => {
+      window.removeEventListener(CALCULATOR_PRODUCT_CHANGE_EVENT, handleProductChange);
+      window.removeEventListener('popstate', handleHistoryNavigation);
+    };
+  }, [products, productFromUrl]);
+
+  const changeProduct = (productId: string) => {
+    if (productId === selectedProduct) return;
+    setProductOverride({ urlProduct: productFromUrl, selectedProduct: productId });
+    updateCalculatorProductUrl(productId, selectedArea);
+  };
+
+  return (
+    <ProductScrollMenu
+      products={products}
+      currentProductId={selectedProduct}
+      basePath={menuBasePath}
+      onProductSelect={(product) => changeProduct(product.id)}
+    />
+  );
+}
+
+export function CalculatorProductsList({ products: bootstrapProducts }: CalculatorClientProps) {
+  const products = useCatalog(bootstrapProducts).products;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
+      {products.map(product => (
+        <Link key={product.id} href={buildCalculatorUrl(product.id)} style={{ padding: '1rem', background: 'var(--stone-50)', borderRadius: '0.75rem', border: '1px solid var(--stone-200)', textAlign: 'center', fontWeight: 600, fontSize: '0.925rem', color: 'var(--stone-700)', textDecoration: 'none' }}>
+          {product.name}
+        </Link>
+      ))}
+    </div>
+  );
 }
 
 export default function CalculatorClient({ products }: CalculatorClientProps) {

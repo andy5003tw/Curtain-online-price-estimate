@@ -5,9 +5,65 @@ import { findProductBySlugOrId, products } from '@/data/products';
 import { getServiceAreasForProduct } from '@/data/locationPages';
 import { absoluteUrl, buildCalculatorUrl, COMPANY_NAME, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
-import { ChevronRight, CheckCircle2, Calculator, BookOpen } from 'lucide-react';
+import { Blinds, BookOpen, Brush, Calculator, CalendarClock, CheckCircle2, ChevronRight, CircleQuestionMark, ClipboardCheck, Clock3, Columns3, Droplets, Factory, FileCheck2, FileSearch, GitCompareArrows, House, Layers, LayoutGrid, Leaf, Lightbulb, Link2, MapPin, Moon, Palette, PanelTop, PanelsTopLeft, Ruler, SlidersHorizontal, Sofa, SunMoon, ThermometerSun, TreePine, Waves, Wrench } from 'lucide-react';
 import ProductScrollMenu from '@/components/ProductScrollMenu';
 import ProductImageGallery from '@/components/ProductImageGallery';
+
+function getProductFaqIcon(question: string) {
+  if (/網站.*判定|直接從網站|網站判定/.test(question)) return FileSearch;
+  if (/防焰|抗菌|規格|標準|證明|材料文件/.test(question)) return FileCheck2;
+  if (/多久.*更換|更換.*多久|更換年限/.test(question)) return Clock3;
+  if (/損壞|維修|修理|壞了/.test(question)) return Wrench;
+  if (/清潔|清洗|保養|維護|耐洗/.test(question)) return Brush;
+  if (/潮濕|防潮|防水|浴室|高濕|淋水/.test(question)) return Droplets;
+  if (/隔熱|溫控|節能|保溫|降溫|西曬/.test(question)) return ThermometerSun;
+  if (/遮光|漏光|避光/.test(question)) return Moon;
+  if (/透光|採光|光線/.test(question)) return SunMoon;
+  if (/操作|控制|調整|收合|電動|日夜|葉片.*調/.test(question)) return SlidersHorizontal;
+  if (/單獨|搭配|空間|客廳|臥室|書房|辦公室|主窗|窗型|和室/.test(question)) return PanelsTopLeft;
+  if (/差別|差異|比較|哪個|先比|比.*適合/.test(question)) return GitCompareArrows;
+  if (/安排|下一步|看樣|預約/.test(question)) return CalendarClock;
+  if (/安裝|丈量|軌道|尺寸|寬高|窗高|施工/.test(question)) return Ruler;
+  if (/變數|條件/.test(question)) return SlidersHorizontal;
+  if (/推薦|怎麼選|哪三件|重點/.test(question)) return Lightbulb;
+  if (/價格|試算|預算|估價|報價|費用|單價/.test(question)) return Calculator;
+  return CircleQuestionMark;
+}
+
+function getInternalLinkIcon(href: string, label: string) {
+  const pathname = href.split('?')[0];
+
+  if (href.includes('area=')) return MapPin;
+  if (pathname === '/calculator/' || pathname === '/calculator') return Calculator;
+  if (pathname.startsWith('/location/')) return MapPin;
+  if (pathname === '/blog/' || pathname === '/blog') {
+    if (/比較|差異/.test(label)) return GitCompareArrows;
+    if (/挑選|怎麼選|適合/.test(label)) return Lightbulb;
+    return BookOpen;
+  }
+  if (pathname.startsWith('/blog/')) return /比較|差異/.test(label) ? GitCompareArrows : BookOpen;
+  if (pathname === '/curtain/blackout/') return Moon;
+  if (pathname === '/curtain/living-room/') return Sofa;
+  if (pathname === '/about/') return Factory;
+  if (pathname === '/') return House;
+
+  const productIcons: Record<string, typeof Link2> = {
+    '/products/custom-curtains/': PanelsTopLeft,
+    '/products/seamless-sheer-curtains/': Waves,
+    '/products/roller-blinds/': PanelTop,
+    '/products/aluminum-blinds/': Blinds,
+    '/products/wooden-blinds/': TreePine,
+    '/products/bamboo-blinds/': Leaf,
+    '/products/honeycomb-blinds/': Layers,
+    '/products/zebra-blinds/': SlidersHorizontal,
+    '/products/soft-sheer-blinds/': Waves,
+    '/products/vertical-blinds/': Columns3,
+  };
+
+  if (productIcons[pathname]) return productIcons[pathname];
+  if (pathname === '/products/' || pathname === '/products') return LayoutGrid;
+  return Link2;
+}
 
 // SSG: generate paths for all products
 export async function generateStaticParams() {
@@ -857,28 +913,48 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--stone-400)', textAlign: 'center' }}>✦ 線上價格為預算參考；正式報價依材料、窗型、配件與施工條件確認</p>
         {product.id === 'P006' && (
           <dl style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'var(--stone-50)', borderRadius: '1rem', color: 'var(--stone-600)', fontSize: '0.95rem', lineHeight: 1.8 }}>
-            <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>材質與葉片規格</dt>
+            <dt style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, color: 'var(--stone-800)' }}>
+              <Blinds size={17} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
+              材質與葉片規格
+            </dt>
             <dd style={{ margin: '0.25rem 0 1rem' }}>鋁百葉採鋁合金葉片；同一組尺寸仍會因葉片寬度、表面處理與窗型影響價格，實際規格需由丈量確認。</dd>
-            <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>材料費、單窗安裝費與工程施工費</dt>
+            <dt style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, color: 'var(--stone-800)' }}>
+              <Calculator size={17} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
+              材料費、單窗安裝費與工程施工費
+            </dt>
             <dd style={{ margin: '0.25rem 0 1rem' }}>線上試算分列材料費與單窗安裝費，單窗安裝費依尺寸初估。整筆工程最低總施工費為 NT$1,300，工程費用以正式報價確認。</dd>
-            <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>哪些項目需丈量確認或另計？</dt>
+            <dt style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, color: 'var(--stone-800)' }}>
+              <Ruler size={17} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
+              哪些項目需丈量確認或另計？
+            </dt>
             <dd style={{ margin: '0.25rem 0 0' }}>安裝高度、五金與拆舊等需求會影響施工條件，是否另計及金額須於現場丈量後確認。</dd>
           </dl>
         )}
         {product.id === 'P002' && (
           <div style={{ marginTop: '1.5rem', color: 'var(--stone-600)', fontSize: '0.95rem', lineHeight: 1.8 }}>
             <dl style={{ padding: '1.25rem', background: 'var(--stone-50)', borderRadius: '1rem' }}>
-              <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>線上初估包含什麼？</dt>
+              <dt style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, color: 'var(--stone-800)' }}>
+                <ClipboardCheck size={17} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
+                線上初估包含什麼？
+              </dt>
               <dd style={{ margin: '0.25rem 0 1rem' }}>材料、軌道與基本安裝費會納入估價區間；上表仍為市場參考，並非固定報價。</dd>
-              <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>哪些條件需確認或另計？</dt>
+              <dt style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, color: 'var(--stone-800)' }}>
+                <Ruler size={17} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
+                哪些條件需確認或另計？
+              </dt>
               <dd style={{ margin: '0.25rem 0 0' }}>雙層搭配、窗高、軌道長度與現場施工條件會影響正式報價。增加遮光層或調整施工時，是否另計及金額須由丈量後確認。</dd>
             </dl>
-            <h3 style={{ margin: '1.25rem 0 0.5rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--stone-800)' }}>無縫紗簾與柔紗簾怎麼選？</h3>
-            <p style={{ margin: 0 }}>
-              無縫紗簾採整幅紗布，適合保留白天採光；夜間需要完整隱私時，建議搭配遮光布簾。
-              {softSheerProduct ? <Link href={productPath(softSheerProduct)} style={{ color: 'var(--amber-700)', textDecoration: 'underline' }}>柔紗簾</Link> : '柔紗簾'}
-              則以兩層紗布之間的葉片調整光線，是不同的產品。先依採光與隱私需求選款，再用同一組尺寸、各自規格試算預算。
-            </p>
+            <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'var(--stone-50)', borderRadius: '1rem' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', margin: '0 0 0.5rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--stone-800)' }}>
+                <Lightbulb size={17} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
+                無縫紗簾與柔紗簾怎麼選？
+              </h3>
+              <p style={{ margin: 0 }}>
+                無縫紗簾採整幅紗布，適合保留白天採光；夜間需要完整隱私時，建議搭配遮光布簾。
+                {softSheerProduct ? <Link href={productPath(softSheerProduct)} style={{ color: 'var(--amber-700)', textDecoration: 'underline' }}>柔紗簾</Link> : '柔紗簾'}
+                則以兩層紗布之間的葉片調整光線，是不同的產品。先依採光與隱私需求選款，再用同一組尺寸、各自規格試算預算。
+              </p>
+            </div>
           </div>
         )}
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
@@ -1020,15 +1096,24 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </div>
           <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr', marginBottom: '0' }} className="spec-grid">
             <div style={{ background: 'var(--stone-50)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid var(--stone-100)' }}>
-              <h3 style={{ fontSize: '0.85rem', color: 'var(--stone-500)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>主要材質</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: '#92400E', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Layers size={16} aria-hidden="true" style={{ color: '#D97706', flexShrink: 0 }} />
+                主要材質
+              </h3>
               <p style={{ fontWeight: 600, color: 'var(--stone-800)', fontSize: '0.95rem', margin: 0 }}>{v3.material}</p>
             </div>
             <div style={{ background: 'var(--stone-50)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid var(--stone-100)' }}>
-              <h3 style={{ fontSize: '0.85rem', color: 'var(--stone-500)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>顏色選擇</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: '#92400E', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Palette size={16} aria-hidden="true" style={{ color: '#D97706', flexShrink: 0 }} />
+                顏色選擇
+              </h3>
               <p style={{ fontWeight: 600, color: 'var(--stone-800)', fontSize: '0.95rem', margin: 0 }}>{v3.colorOptions}</p>
             </div>
             <div style={{ background: 'var(--amber-50)', borderRadius: '1rem', padding: '1.5rem', border: '1px solid var(--amber-100)' }}>
-              <h3 style={{ fontSize: '0.85rem', color: '#92400E', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>生產方式</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: '#92400E', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Ruler size={16} aria-hidden="true" style={{ color: '#D97706', flexShrink: 0 }} />
+                生產方式
+              </h3>
               <p style={{ fontWeight: 600, color: 'var(--stone-800)', fontSize: '0.95rem', margin: 0 }}>依丈量尺寸、選用材料與確認規格進行製作</p>
             </div>
           </div>
@@ -1076,17 +1161,23 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               <h2>{product.name}常見問題 FAQ</h2>
             </div>
             <div style={{ display: 'grid', gap: '1rem' }}>
-              {pageFaqs.map((faq, i) => (
-                <details key={i} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
-                  <summary style={{ padding: '1.1rem 1.5rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--stone-800)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', listStyle: 'none' }}>
-                    <span style={{ background: '#D97706', color: 'white', borderRadius: '50%', width: '1.5rem', height: '1.5rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0 }}>Q</span>
-                    {faq.q}
-                  </summary>
-                  <div style={{ padding: '0 1.5rem 1.25rem 1.5rem', borderTop: '1px solid var(--stone-200)', paddingTop: '1rem' }}>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--stone-600)', lineHeight: 1.8, margin: 0 }}>{faq.a}</p>
-                  </div>
-                </details>
-              ))}
+              {pageFaqs.map((faq, i) => {
+                const FaqIcon = getProductFaqIcon(faq.q);
+
+                return (
+                  <details key={i} style={{ background: 'var(--stone-50)', border: '1px solid var(--stone-200)', borderRadius: '0.75rem', overflow: 'hidden' }}>
+                    <summary style={{ padding: '1.1rem 1.5rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--stone-800)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', listStyle: 'none' }}>
+                      <span aria-hidden="true" style={{ background: '#D97706', color: 'white', borderRadius: '50%', width: '1.5rem', height: '1.5rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <FaqIcon size={16} strokeWidth={2.5} />
+                      </span>
+                      {faq.q}
+                    </summary>
+                    <div style={{ padding: '0 1.5rem 1.25rem 1.5rem', borderTop: '1px solid var(--stone-200)', paddingTop: '1rem' }}>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--stone-600)', lineHeight: 1.8, margin: 0 }}>{faq.a}</p>
+                    </div>
+                  </details>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -1095,7 +1186,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       {/* 4. LSI Keyword Paragraph */}
       <section style={{ background: 'white', padding: '3rem 0', borderTop: '1px solid var(--stone-100)' }}>
         <div className="section-container" style={{ maxWidth: '860px' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--stone-800)' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.3rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--stone-800)' }}>
+            <Wrench size={20} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
             更多關於宏森{product.name}的訂製服務
           </h2>
           <p style={{ color: 'var(--stone-600)', lineHeight: 1.9, fontSize: '0.95rem' }}>{extras.lsiParagraph}</p>
@@ -1109,16 +1201,20 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             <BookOpen size={20} style={{ color: '#D97706' }} /> 延伸閱讀：窗簾知識庫
           </h2>
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {internalLinks.map((entry, index) => (
-              <Link
-                key={`${entry.href}-${index}`}
-                href={entry.href}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', borderRadius: '0.75rem', padding: '1rem 1.25rem', textDecoration: 'none', color: 'var(--stone-700)', border: '1px solid var(--amber-200)', transition: 'all 0.2s' }}
-              >
-                <ChevronRight size={16} style={{ color: '#D97706', flexShrink: 0 }} />
-                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{entry.label}</span>
-              </Link>
-            ))}
+            {internalLinks.map((entry, index) => {
+              const InternalLinkIcon = getInternalLinkIcon(entry.href, entry.label);
+
+              return (
+                <Link
+                  key={`${entry.href}-${index}`}
+                  href={entry.href}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'white', borderRadius: '0.75rem', padding: '1rem 1.25rem', textDecoration: 'none', color: 'var(--stone-700)', border: '1px solid var(--amber-200)', transition: 'all 0.2s' }}
+                >
+                  <InternalLinkIcon size={16} aria-hidden="true" style={{ color: '#D97706', flexShrink: 0 }} />
+                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{entry.label}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1126,7 +1222,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       {serviceAreas.length > 0 && (
         <section className="py-section bg-white" style={{ borderTop: '1px solid var(--stone-100)' }}>
           <div className="section-container" style={{ maxWidth: '860px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '1.25rem' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.3rem', fontWeight: 700, marginBottom: '1.25rem' }}>
+              <MapPin size={20} aria-hidden="true" style={{ color: 'var(--amber-600)', flexShrink: 0 }} />
               可服務區域快速入口
             </h2>
             <p style={{ color: 'var(--stone-600)', fontSize: '0.92rem', lineHeight: 1.75, marginBottom: '1rem' }}>

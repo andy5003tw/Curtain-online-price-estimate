@@ -215,7 +215,7 @@ export default function HomePage() {
       <FloatingCta />
 
       <section className="hero-section">
-        <img src={withBasePath('/banner_img/banner_01.webp')} alt="宏森窗簾展示" className="hero-bg-img" fetchPriority="high" />
+        <img src={withBasePath('/banner_img/home-hero-ai-v1.webp')} alt="現代精品客廳的雙層訂製窗簾" className="hero-bg-img" fetchPriority="high" />
         <div className="hero-content">
           <h1>窗簾訂製與免費到府丈量：先比價格，再選合適方案</h1>
           <div className="hero-btns">

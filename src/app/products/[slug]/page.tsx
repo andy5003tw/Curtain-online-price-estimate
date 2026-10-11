@@ -481,7 +481,7 @@ const productV3Data: Record<string, {
     comparisons: [
       { feature: '防焰規格', thisProduct: '依選用材料文件核對', vs1: '需另行核對', vs1Name: '一般布簾' },
       { feature: '抗菌／耐洗規格', thisProduct: '依選用材料文件核對', vs1: '需另行核對', vs1Name: '一般窗簾' },
-      { feature: '耐工業洗滌', thisProduct: '★★★★★', vs1: '★★', vs1Name: '一般布簾' },
+      { feature: '耐洗／洗滌條件', thisProduct: '依選用材料文件核對', vs1: '依選用材料文件核對', vs1Name: '一般布簾' },
       { feature: '居家美觀度', thisProduct: '★★★', vs1: '★★★★★', vs1Name: '柔紗簾' },
     ],
     galleryDesc: '醫院病房、診所隔簾專業施工案例',
@@ -631,6 +631,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     src: withBasePath(item.src),
   }));
   const relatedProducts = products.filter(p => p.id !== product.id).slice(0, 4);
+  const softSheerProduct = products.find(p => p.id === 'P011');
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
   const productHeroTitleMap: Record<string, string> = {
@@ -747,7 +748,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/location/shilin/', label: '士林窗簾推薦：醫院隔簾、診所窗簾與天母丈量入口' },
       { href: '/location/zhonghe/', label: '中和窗簾價格試算：診所、店面與商辦施工入口' },
       { href: '/products/', label: '窗簾產品總覽：比較醫療隔簾、直立簾與特殊材料規格' },
-      { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：醫院隔簾價格、軌道與安裝費重點' },
+      { href: '/blog/curtain-price-guide-2026/', label: '窗簾價格指南：一般窗簾預算、試算與施工費比較' },
     ],
     P007: [
       { href: '/calculator/?product=P007', label: '實木百葉窗價格試算：直接帶入木百葉品項與基本安裝費' },
@@ -821,6 +822,74 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     ]
   };
 
+  // Reuse one price table; only P002 presents it before the gallery and service flow.
+  const priceSection = (
+    <section className="py-section bg-white">
+      <div className="section-container" style={{ maxWidth: '860px' }}>
+        <div className="section-heading">
+          <h2>{product.id === 'P002' ? '紗簾價格：參考區間與估價條件' : `${product.name}參考價格一覽`}</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--stone-500)' }}>
+            {product.id === 'P006'
+              ? '以下為鋁百葉市場行情參考區間，實際依鋁合金葉片規格、窗型與施工條件報價；請用同一組尺寸試算，再由丈量確認正式報價。'
+              : product.id === 'P012'
+                ? '以下為醫院隔簾初步預算區間。防焰、抗菌、耐洗與洗滌條件須依本案實際選用布料的標示及供應商文件核對；網站分類、圖片與一般比較不能替代材料證明。'
+                : '以下為市場行情參考區間，實際依布料材質、窗幅等因素報價，詳情請使用線上估價或致電洽詢。'}
+          </p>
+        </div>
+        <div style={{ borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--stone-100)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#D97706', color: 'white' }}>
+                <th style={{ padding: '0.9rem 1.5rem', textAlign: 'left', fontSize: '0.95rem', fontWeight: 700 }}>規格說明</th>
+                <th style={{ padding: '0.9rem 1.5rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 700 }}>參考價格</th>
+              </tr>
+            </thead>
+            <tbody>
+              {extras.priceTable.map((row, i) => (
+                <tr key={i} style={{ borderTop: '1px solid var(--stone-100)', background: i % 2 === 0 ? 'white' : 'var(--stone-50)' }}>
+                  <td style={{ padding: '0.8rem 1.5rem', fontSize: '0.9rem', color: 'var(--stone-700)' }}>{row.label}</td>
+                  <td style={{ padding: '0.8rem 1.5rem', fontSize: '0.9rem', color: '#B45309', fontWeight: 700, textAlign: 'right' }}>{row.range}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--stone-400)', textAlign: 'center' }}>✦ 線上價格為預算參考；正式報價依材料、窗型、配件與施工條件確認</p>
+        {product.id === 'P006' && (
+          <dl style={{ marginTop: '1.5rem', padding: '1.25rem', background: 'var(--stone-50)', borderRadius: '1rem', color: 'var(--stone-600)', fontSize: '0.95rem', lineHeight: 1.8 }}>
+            <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>材質與葉片規格</dt>
+            <dd style={{ margin: '0.25rem 0 1rem' }}>鋁百葉採鋁合金葉片；同一組尺寸仍會因葉片寬度、表面處理與窗型影響價格，實際規格需由丈量確認。</dd>
+            <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>材料費、單窗安裝費與工程施工費</dt>
+            <dd style={{ margin: '0.25rem 0 1rem' }}>線上試算分列材料費與單窗安裝費，單窗安裝費依尺寸初估。整筆工程最低總施工費為 NT$1,300，工程費用以正式報價確認。</dd>
+            <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>哪些項目需丈量確認或另計？</dt>
+            <dd style={{ margin: '0.25rem 0 0' }}>安裝高度、五金與拆舊等需求會影響施工條件，是否另計及金額須於現場丈量後確認。</dd>
+          </dl>
+        )}
+        {product.id === 'P002' && (
+          <div style={{ marginTop: '1.5rem', color: 'var(--stone-600)', fontSize: '0.95rem', lineHeight: 1.8 }}>
+            <dl style={{ padding: '1.25rem', background: 'var(--stone-50)', borderRadius: '1rem' }}>
+              <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>線上初估包含什麼？</dt>
+              <dd style={{ margin: '0.25rem 0 1rem' }}>材料、軌道與基本安裝費會納入估價區間；上表仍為市場參考，並非固定報價。</dd>
+              <dt style={{ fontWeight: 700, color: 'var(--stone-800)' }}>哪些條件需確認或另計？</dt>
+              <dd style={{ margin: '0.25rem 0 0' }}>雙層搭配、窗高、軌道長度與現場施工條件會影響正式報價。增加遮光層或調整施工時，是否另計及金額須由丈量後確認。</dd>
+            </dl>
+            <h3 style={{ margin: '1.25rem 0 0.5rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--stone-800)' }}>無縫紗簾與柔紗簾怎麼選？</h3>
+            <p style={{ margin: 0 }}>
+              無縫紗簾採整幅紗布，適合保留白天採光；夜間需要完整隱私時，建議搭配遮光布簾。
+              {softSheerProduct ? <Link href={productPath(softSheerProduct)} style={{ color: 'var(--amber-700)', textDecoration: 'underline' }}>柔紗簾</Link> : '柔紗簾'}
+              則以兩層紗布之間的葉片調整光線，是不同的產品。先依採光與隱私需求選款，再用同一組尺寸、各自規格試算預算。
+            </p>
+          </div>
+        )}
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
+            <Calculator size={16} /> {product.id === 'P007' ? '直接做實木百葉窗價格試算' : product.id === 'P002' ? '用我的尺寸試算無縫紗簾' : product.id === 'P006' ? '用我的尺寸試算鋁百葉' : '直接線上估算我的費用'}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(unifiedSchema) }} />
@@ -892,7 +961,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
                   <Calculator size={16} />
-                  {product.id === 'P007' ? '立即做實木百葉窗價格試算' : '立即估價'}
+                  {product.id === 'P007' ? '立即做實木百葉窗價格試算' : product.id === 'P002' ? '試算無縫紗簾價格' : product.id === 'P006' ? '試算鋁百葉價格' : '立即估價'}
                 </Link>
                 <a href="tel:0289727322" className="btn-outline">
                   致電諮詢
@@ -902,6 +971,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </section>
+
+      {product.id === 'P002' && priceSection}
 
       {/* Image Gallery */}
       {gallery.length > 0 && (
@@ -939,38 +1010,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* 2. Price Transparency Table */}
-      <section className="py-section bg-white">
-        <div className="section-container" style={{ maxWidth: '860px' }}>
-          <div className="section-heading">
-            <h2>{product.name}參考價格一覽</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--stone-500)' }}>以下為市場行情參考區間，實際依布料材質、窗幅等因素報價，詳情請使用線上估價或致電洽詢。</p>
-          </div>
-          <div style={{ borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--stone-100)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#D97706', color: 'white' }}>
-                  <th style={{ padding: '0.9rem 1.5rem', textAlign: 'left', fontSize: '0.95rem', fontWeight: 700 }}>規格說明</th>
-                  <th style={{ padding: '0.9rem 1.5rem', textAlign: 'right', fontSize: '0.95rem', fontWeight: 700 }}>參考價格</th>
-                </tr>
-              </thead>
-              <tbody>
-                {extras.priceTable.map((row, i) => (
-                  <tr key={i} style={{ borderTop: '1px solid var(--stone-100)', background: i % 2 === 0 ? 'white' : 'var(--stone-50)' }}>
-                    <td style={{ padding: '0.8rem 1.5rem', fontSize: '0.9rem', color: 'var(--stone-700)' }}>{row.label}</td>
-                    <td style={{ padding: '0.8rem 1.5rem', fontSize: '0.9rem', color: '#B45309', fontWeight: 700, textAlign: 'right' }}>{row.range}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--stone-400)', textAlign: 'center' }}>✦ 線上價格為預算參考；正式報價依材料、窗型、配件與施工條件確認</p>
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-            <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
-              <Calculator size={16} /> {product.id === 'P007' ? '直接做實木百葉窗價格試算' : '直接線上估算我的費用'}
-            </Link>
-          </div>
-        </div>
-      </section>
+      {product.id !== 'P002' && priceSection}
 
       {/* V3: Specification Panel */}
       <section className="py-section bg-white" style={{ borderTop: '1px solid var(--stone-100)' }}>

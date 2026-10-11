@@ -2,6 +2,7 @@ param(
   [ValidateSet('both', '7d', '28d')]
   [string]$Window = 'both',
   [switch]$PlanOnly,
+  [string]$ObservationClusterId = '',
   [string]$ClientSecretPath = (Join-Path $PSScriptRoot 'credentials\gsc-oauth-client.json'),
   [string]$TokenPath = (Join-Path $PSScriptRoot 'credentials\gsc-oauth-token.json')
 )
@@ -135,17 +136,102 @@ function Get-AccessToken {
 }
 
 function Get-SearchAnalyticsRows {
-  param([string]$AccessToken, [PSCustomObject]$Range, [string[]]$Dimensions)
+  param(
+    [string]$AccessToken, [PSCustomObject]$Range, [string[]]$Dimensions,
+    [ValidateSet('final', 'all')][string]$DataState = 'final',
+    [string]$Page = '', [ref]$Metadata
+  )
   $uri = 'https://www.googleapis.com/webmasters/v3/sites/' + [uri]::EscapeDataString($property) + '/searchAnalytics/query'
   $rows = @()
   for ($startRow = 0; ; $startRow += 25000) {
-    $body = @{ startDate = $Range.start_date; endDate = $Range.end_date; dimensions = $Dimensions; type = 'web'; rowLimit = 25000; startRow = $startRow; dataState = 'final' } | ConvertTo-Json -Depth 4
+    $request = @{ startDate = $Range.start_date; endDate = $Range.end_date; dimensions = $Dimensions; type = 'web'; rowLimit = 25000; startRow = $startRow; dataState = $DataState }
+    if ($Page) { $request.dimensionFilterGroups = @(@{ groupType = 'and'; filters = @(@{ dimension = 'page'; operator = 'equals'; expression = $Page }) }) }
+    $body = $request | ConvertTo-Json -Depth 6
     $result = Invoke-RestMethod -Method Post -Uri $uri -Headers @{ Authorization = "Bearer $AccessToken" } -ContentType 'application/json' -Body $body
-    $batch = @($result.rows)
+    if ($Metadata -and $result.metadata) { $Metadata.Value = $result.metadata }
+    $batch = @($result.rows | Where-Object { $null -ne $_ })
     $rows += $batch
     if ($batch.Count -lt 25000) { break }
   }
   return $rows
+}
+
+function Get-ObservationTotals {
+  param([object[]]$Rows)
+  $Rows = @($Rows | Where-Object { $null -ne $_ })
+  if ($Rows.Count -eq 0) {
+    return [PSCustomObject]@{ scope = 'page_all_queries'; status = 'not_returned'; row_found = $false; returned_row_count = 0; clicks = $null; impressions = $null; ctr = $null; position = $null }
+  }
+  $clicks = [int](($Rows | Measure-Object -Property clicks -Sum).Sum)
+  $impressions = [int](($Rows | Measure-Object -Property impressions -Sum).Sum)
+  $weightedPosition = ($Rows | ForEach-Object { [double]$_.position * [double]$_.impressions } | Measure-Object -Sum).Sum
+  return [PSCustomObject]@{
+    scope = 'page_all_queries'; status = 'available'; row_found = $true
+    returned_row_count = @($Rows).Count
+    clicks = $clicks; impressions = $impressions
+    ctr = if ($impressions -gt 0) { $clicks * 100.0 / $impressions } else { $null }
+    position = if ($impressions -gt 0) { $weightedPosition / $impressions } else { $null }
+  }
+}
+
+function Save-GscObservation {
+  param([string]$AccessToken, [string]$ClusterId, [string]$LatestFinalDate)
+  $planPath = Join-Path $latestDir 'seo-geo-action-plan.json'
+  $plan = Get-Content -LiteralPath $planPath -Raw -Encoding UTF8 | ConvertFrom-Json
+  $review = @($plan.review_windows | Where-Object { $_.cluster_id -eq $ClusterId })
+  if ($review.Count -ne 1) { throw "Expected one observation window for $ClusterId." }
+  $review = $review[0]
+  $ownerUri = [uri]$review.page
+  $propertyUri = [uri]$property
+  if (-not $ownerUri.IsAbsoluteUri -or $ownerUri.Scheme -ne 'https' -or $ownerUri.Authority -ne $propertyUri.Authority -or $ownerUri.Host -ne [string]$siteConfig.expectedHost -or -not $ownerUri.AbsolutePath.StartsWith($propertyUri.AbsolutePath, [StringComparison]::Ordinal)) { throw 'Observation owner URL does not match the configured HTTPS GSC property scope.' }
+  $period = ([string]$review.post_28d).Split('~')
+  if ($period.Count -ne 2) { throw 'Observation window has no valid post_28d range.' }
+  $start = [datetime]::ParseExact($period[0], 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+  $end = [datetime]::ParseExact($period[1], 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+  if (($end - $start).Days -ne 27) { throw 'Observation requires exactly 28 calendar days.' }
+  $range = [PSCustomObject]@{ start_date = $period[0]; end_date = $period[1] }
+  $expectedDates = @(0..27 | ForEach-Object { $start.AddDays($_).ToString('yyyy-MM-dd') })
+  $finalDates = @(Get-SearchAnalyticsRows -AccessToken $AccessToken -Range $range -Dimensions @('date'))
+  $finalPageRows = @(Get-SearchAnalyticsRows -AccessToken $AccessToken -Range $range -Dimensions @('date','page') -Page ([string]$review.page))
+  $metadata = $null
+  $allDates = @(Get-SearchAnalyticsRows -AccessToken $AccessToken -Range $range -Dimensions @('date') -DataState all -Metadata ([ref]$metadata))
+  $allPageRows = @(Get-SearchAnalyticsRows -AccessToken $AccessToken -Range $range -Dimensions @('date','page') -DataState all -Page ([string]$review.page))
+  $returnedFinalDates = @($finalDates | ForEach-Object { [string]$_.keys[0] } | Where-Object { $_ -in $expectedDates } | Sort-Object -Unique)
+  $missingFinalDates = @($expectedDates | Where-Object { $_ -notin $returnedFinalDates })
+  $firstIncompleteDate = if ($metadata.firstIncompleteDate) { [string]$metadata.firstIncompleteDate } elseif ($metadata.first_incomplete_date) { [string]$metadata.first_incomplete_date } else { $null }
+  $pendingSiteRows = @($allDates | Where-Object { [string]$_.keys[0] -in $missingFinalDates } | ForEach-Object { Convert-Row -Row $_ -FirstKey date })
+  $pendingPageRows = @($allPageRows | Where-Object { [string]$_.keys[0] -in $missingFinalDates } | ForEach-Object { Convert-Row -Row $_ -FirstKey date -SecondKey page })
+  $observation = [ordered]@{
+    schema_version = 1
+    generated_at = (Get-Date).ToUniversalTime().ToString('o')
+    property = $property; api_date_timezone = 'America/Los_Angeles'
+    cluster_id = $ClusterId; page = [string]$review.page
+    change_date = [string]$review.change_date; date_source = [string]$review.date_source
+    period = [ordered]@{ start_date = $period[0]; end_date = $period[1]; days = 28 }
+    latest_api_final_date = $LatestFinalDate
+    status = if ($missingFinalDates.Count -eq 0) { 'complete' } else { 'awaiting_final_data' }
+    final_window_complete = ($missingFinalDates.Count -eq 0)
+    finalized_day_count = $returnedFinalDates.Count
+    missing_final_dates = $missingFinalDates
+    first_incomplete_date = $firstIncompleteDate
+    metric_scopes = [ordered]@{
+      finalized_page_totals = 'Returned dataState=final page/date rows within the requested window; partial when final dates are missing.'
+      preview_page_totals = 'Full requested 28-day window, dataState=all; includes finalized and preliminary dates and may change.'
+      preview_page_day_rows = 'Only dates absent from the final Date cut; exact Owner URL, all queries.'
+      preview_site_day_rows = 'Only dates absent from the final Date cut; whole property, all queries. Different scope from Owner page.'
+      missing_final_dates = 'Dates with no final Date row. Use first_incomplete_date and latest_api_final_date to distinguish preliminary data from an unreturned day.'
+    }
+    finalized_page_totals = Get-ObservationTotals -Rows $finalPageRows
+    preview_page_totals = Get-ObservationTotals -Rows $allPageRows
+    preview_site_day_rows = $pendingSiteRows
+    preview_page_day_rows = $pendingPageRows
+    preliminary_promoted_to_baseline = $false
+    interpretation = 'Preview uses dataState=all and may change. Missing rows do not imply zero impressions. Final baselines, decision readiness and lifecycle eligibility use dataState=final only.'
+  }
+  [IO.Directory]::CreateDirectory($latestDir) | Out-Null
+  $observationPath = Join-Path $latestDir 'gsc-observation-backfill.json'
+  [IO.File]::WriteAllText($observationPath, ($observation | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+  Write-Host "Observation ${ClusterId}: $($observation.status); finalized $($returnedFinalDates.Count)/28 days; missing final $($missingFinalDates -join ', '); preview saved separately."
 }
 
 function Convert-Row {
@@ -203,7 +289,10 @@ function New-GscWindowZip {
     @([PSCustomObject]@{ Filter = 'Date'; Value = "$($Range.start_date)~$($Range.end_date)" }) | Export-Csv -LiteralPath (Join-Path $tempDir 'filters.csv') -NoTypeInformation -Encoding UTF8
     Compress-Archive -Path (Join-Path $tempDir '*') -DestinationPath $outputZip -CompressionLevel Optimal
   } finally {
-    if (Test-Path -LiteralPath $tempDir) { Remove-Item -LiteralPath $tempDir -Recurse -Force }
+    $tempParent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    $resolvedTempDir = [IO.Path]::GetFullPath($tempDir)
+    if (-not $resolvedTempDir.StartsWith($tempParent, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolvedTempDir) -notmatch '^gsc-api-[a-f0-9]{32}$') { throw 'Refusing cleanup outside the GSC temporary directory.' }
+    if (Test-Path -LiteralPath $resolvedTempDir) { Remove-Item -LiteralPath $resolvedTempDir -Recurse -Force }
   }
   return [PSCustomObject]@{ path = $outputZip; query_rows = $queryRows.Count; page_rows = $pageRows.Count; query_page_rows = $queryPageRows.Count; date_rows = $dateRows.Count; date_page_rows = $datePageRows.Count; device_page_rows = $devicePageRows.Count; country_page_rows = $countryPageRows.Count; device_query_rows = $deviceQueryRows.Count }
 }
@@ -232,6 +321,9 @@ if ($apiFinalizedDate -lt $latestFinalizedDate) {
   $latestFinalizedDate = $apiFinalizedDate
   $ranges = @($selectedWindows | ForEach-Object { Get-WindowRange -Name $_ -EndDate $latestFinalizedDate })
 }
+if ($ObservationClusterId) {
+  Save-GscObservation -AccessToken $accessToken -ClusterId $ObservationClusterId -LatestFinalDate $latestFinalizedDate.ToString('yyyy-MM-dd')
+}
 $status = @()
 foreach ($range in $ranges) {
   $currentEnd = Get-CurrentEndDate -Name $range.window
@@ -242,7 +334,11 @@ foreach ($range in $ranges) {
 }
 if (@($status | Where-Object { -not $_.new_data_available -and -not $_.repair_incomplete_end_date }).Count -gt 0) {
   $status | ForEach-Object { Write-Host "$($_.window): API final $($_.end_date); current baseline $($_.current_end_date); diagnostic end $($_.current_diagnostic_end_date); new data $($_.new_data_available); repair $($_.repair_incomplete_end_date)" }
-  Write-Host 'No new finalized GSC period is available for every requested window. Nothing was changed.'
+  Write-Host 'No new finalized GSC period is available for every requested window. Baselines were not updated.'
+  if ($ObservationClusterId -and $Window -eq 'both') {
+    & pwsh -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'run-seo-geo-cycle.ps1') -Mode auto
+    if ($LASTEXITCODE -ne 0) { throw 'Observation was saved, but SEO/GEO report generation failed.' }
+  }
   exit 0
 }
 $generated = @()
@@ -254,7 +350,7 @@ foreach ($range in $ranges) {
   if ($LASTEXITCODE -ne 0) { throw "Weekly SOP import failed for $($range.window)." }
 }
 if ($Window -eq 'both') {
-  & (Join-Path $PSScriptRoot 'run-seo-geo-cycle.ps1') -Mode auto
+  & pwsh -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'run-seo-geo-cycle.ps1') -Mode auto
   if ($LASTEXITCODE -ne 0) { throw 'SEO/GEO action-plan generation failed.' }
 }
 $generated | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $latestDir 'gsc-latest-fetch.json') -Encoding UTF8

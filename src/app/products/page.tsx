@@ -43,8 +43,8 @@ const faqItems = [
     icon: Calculator,
   },
   {
-    q: '產品總覽頁會和單一產品頁搶關鍵字嗎？',
-    a: '不會。這頁負責窗簾產品總覽與窗簾款式比較；單一產品頁則承接窗簾訂製、捲簾、風琴簾、百葉窗或醫院隔簾等更明確的產品需求。',
+    q: '已選好窗簾款式，下一步怎麼確認規格與預算？',
+    a: '進入該產品頁確認材質、控光、適用空間與安裝條件，再用同一組尺寸試算預算；正式規格與報價仍需丈量確認。',
     icon: Search,
   },
   {
@@ -178,6 +178,12 @@ export default function ProductsPage() {
           <div className="editorial-guide__copy products-guide__copy">
             <h2 id="products-guide-heading">窗簾款式比較：先縮小候選，再進單一產品頁估價</h2>
             <p>先從布簾、捲簾、百葉與功能型產品挑出 2 到 3 種候選款式；已鎖定品項時，再確認材質與安裝條件。</p>
+            <p>
+              需要雙北到府丈量與配置建議？回首頁了解
+              <Link href="/" style={{ color: 'var(--amber-700)', textDecoration: 'underline', textUnderlineOffset: '0.2em' }}>
+                宏森窗簾選簾與丈量服務
+              </Link>。
+            </p>
           </div>
           <div className="products-guide__cards">
             <div className="products-guide__card">

@@ -92,7 +92,7 @@ export const knowledgePosts: KnowledgePost[] = [
       <p>值得一提的是被譽為「節能神器」的<strong><a href="/products/honeycomb-blinds/">風琴簾</a></strong>（蜂巢簾）。其獨特的六角形蜂巢結構，不僅美觀，更能在中空層留住靜止空氣，有效阻絕室外高溫或冷空氣，具備極佳的恆溫與隔斷噪音效果。</p>
 
       <h2>特殊環境專用：醫院窗簾的嚴格標準</h2>
-      <p>除了居家窗簾，醫療、長照或部分商業空間有更嚴格的安全法規。宏森提供的<strong><a href="/products/hospital-curtains/">醫院窗簾</a></strong>具備醫療等級的防燃與抗菌處理，且頂部多採用網狀通風設計，確保冷氣與光源能無礙流通，符合最高規格的安全需求。</p>
+      <p>除了居家窗簾，醫療、長照或部分商業空間通常需要先確認安全、維護與施工條件。規劃<strong><a href="/products/hospital-curtains/">醫院隔簾</a></strong>時，防焰、抗菌與耐洗條件應依本案實際選用布料的標示及供應商文件核對；頂部通風網與施工方式則依場域需求確認。</p>
     `
   },
   {
@@ -360,6 +360,9 @@ export const knowledgePosts: KnowledgePost[] = [
             </tr>
           </tbody>
         </table>
+
+      <h2>醫院、診所與護理之家隔簾：先確認施工與材料條件</h2>
+      <p>本篇價格區間供一般窗簾預算比較。醫院、診所或護理之家若要規劃隔簾，應另看尺寸、軌道長度、頂部通風網、施工時段與本案選用材料的標示及供應商文件；線上試算是初步預算，正式報價仍以丈量確認。可先查看<strong><a href="/products/hospital-curtains/">醫院隔簾產品與條件</a></strong>，再用<strong><a href="/calculator/?product=P012">醫院隔簾價格試算</a></strong>帶入尺寸。</p>
 
       <h2>窗簾價格、百葉窗價格與訂製窗簾價格比較</h2>
       <p>如果你只想先抓預算，建議先記住這個順序：<strong>捲簾 / 鋁百葉（入門） → 一般布簾 / 調光簾（中段） → 風琴簾 / 實木百葉（進階）</strong>。百葉窗價格試算通常要特別看葉片材質、寬度與安裝位置；訂製窗簾價格則要看布料等級、軌道五金與車工方式。先用<strong><a href="/calculator/">窗簾計算機輸入同一組尺寸</a></strong>比較，再回看<strong><a href="/products/aluminum-blinds/">百葉窗產品頁</a></strong>或<strong><a href="/products/custom-curtains/">訂製窗簾產品頁</a></strong>，會比只看單價更準。</p>

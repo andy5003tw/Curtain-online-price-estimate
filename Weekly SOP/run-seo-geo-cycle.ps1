@@ -842,6 +842,239 @@ function Get-QueryTerms {
     Select-Object -Unique)
 }
 
+function Get-ReturnedMetrics {
+  param([object[]]$Rows, [string]$Scope, [bool]$Available = $true)
+  $returnedRows = @($Rows | Where-Object { $null -ne $_ })
+  $found = $Available -and $returnedRows.Count -gt 0
+  $clicks = $null; $impressions = $null; $ctr = $null; $position = $null
+  if ($found) {
+    $clicks = [int](($returnedRows | Measure-Object -Property clicks -Sum).Sum)
+    $impressions = [int](($returnedRows | Measure-Object -Property impressions -Sum).Sum)
+    if ($impressions -gt 0) {
+      $ctr = [double]($clicks * 100.0 / $impressions)
+      $weightedPosition = ($returnedRows | ForEach-Object { [double]$_.position * [int]$_.impressions } | Measure-Object -Sum).Sum
+      $position = [double]($weightedPosition / $impressions)
+    }
+  }
+  return [PSCustomObject]@{
+    scope = $Scope
+    status = if (-not $Available) { 'unavailable' } elseif ($found) { 'available' } else { 'not_returned' }
+    row_found = [bool]$found
+    clicks = $clicks; impressions = $impressions; ctr = $ctr; position = $position
+  }
+}
+
+function Get-ExactPrimaryKeywordMetrics {
+  param([object]$Owner, [hashtable]$QueryMap, [object[]]$QueryPageRows, [bool]$QueryAvailable, [bool]$QueryPageAvailable)
+  $query = ([string]$Owner.primaryKeyword).Trim()
+  $siteRows = if ($QueryMap.ContainsKey($query)) { @($QueryMap[$query]) } else { @() }
+  $ownerRows = @($QueryPageRows | Where-Object { ([string]$_.query).Trim() -eq $query -and $_.page -eq $Owner.ownerPage })
+  return [PSCustomObject]@{
+    site = Get-ReturnedMetrics -Rows $siteRows -Scope 'exact_primary_keyword_all_site' -Available $QueryAvailable
+    owner = Get-ReturnedMetrics -Rows $ownerRows -Scope 'exact_primary_keyword_owner_page' -Available $QueryPageAvailable
+  }
+}
+
+function Format-ReturnedMetric {
+  param([object]$Metric, [ValidateSet('clicks', 'impressions', 'ctr', 'position')][string]$Name)
+  if ($Metric.status -eq 'unavailable') { return '資料不可用' }
+  if ($Metric.status -eq 'not_returned') { return 'GSC 未列出' }
+  if ($null -eq $Metric.$Name) { return 'n/a' }
+  if ($Name -eq 'ctr') { return Format-Ctr -Value ([double]$Metric.$Name) }
+  if ($Name -eq 'position') { return Format-Decimal -Value ([double]$Metric.$Name) }
+  return [string]$Metric.$Name
+}
+
+function Get-MetricReportHeaders {
+  param([ValidateSet('page', 'primary', 'cluster')][string]$Scope)
+  switch ($Scope) {
+    'page' { return @('主攻詞（識別用）','Owner','7d 點擊','7d 曝光','7d CTR','7d 平均排名','28d 點擊','28d 曝光','28d CTR','28d 平均排名','目前狀態') }
+    'primary' { return @('精確主攻詞','Owner','期間','全站點擊','全站曝光','全站 CTR','全站平均排名','Owner 點擊','Owner 曝光','Owner CTR','Owner 平均排名') }
+    'cluster' { return @('主攻詞','Owner','期間','Owner 詞群曝光','詞群 URL 曝光合計','詞群 Owner share','其他曝光頁') }
+  }
+}
+
+function Get-MetricScopeNotes {
+  return @(
+    '- 整頁（page_all_queries）是 URL 所有查詢合計，不可當成精確主攻詞的排名或 CTR。',
+    '- 精確主攻詞只取 registry.primaryKeyword；全站 Query 與 Owner Query × Page 分開計算。GSC 未列出 ≠ 0；缺列指標保留 null。',
+    '- 相容欄位 query / query impressions / query position 是主詞與變體中曝光最高的 query-best，不能取代精確主詞。',
+    '- 詞群 Owner share = Owner 詞群 URL 曝光 ÷ 詞群 URL 曝光合計；多個 URL 可同時曝光，不是獨立搜尋次數。低占比不代表已確認同詞互搶，須逐詞核對搜尋意圖。',
+    '- 首頁固定 post-28d 與 rolling 28d 是不同日期區間；初步 dataState=all 預覽不更新正式 baseline，也不解鎖下一次修改。',
+    '- 各期間分別判讀；重複附件與重疊視窗不加總，不把重疊期間當作獨立趨勢樣本。'
+  )
+}
+
+function New-ReportPeriods {
+  param([object]$Fresh7d, [object]$Fresh28d, [object[]]$ReviewWindows, [object]$Backfill)
+  $periods = @()
+  foreach ($fresh in @($Fresh7d, $Fresh28d)) {
+    $periods += [PSCustomObject]@{
+      id = "rolling_$($fresh.window)"
+      label = "近 $($fresh.window)（rolling）"
+      start_date = [string]$fresh.start_date
+      end_date = [string]$fresh.end_date
+      status = [string]$fresh.data_confidence
+      decision_ready = [bool]$fresh.decision_ready
+      metric_scopes = @('page_all_queries', 'exact_primary_keyword', 'cluster_owner_share')
+    }
+  }
+  $homepagePeriods = @($ReviewWindows | Where-Object { ([uri]$_.page).AbsolutePath -eq '/' } | Select-Object -First 1)
+  if ($homepagePeriods.Count -eq 1) {
+    $range = ([string]$homepagePeriods[0].post_28d).Split('~')
+    $periods += [PSCustomObject]@{
+      id = 'homepage_fixed_post_28d'
+      label = '首頁上一輪（固定 post-28d）'
+      start_date = $range[0]
+      end_date = $range[1]
+      status = [string]$homepagePeriods[0].review_28d_status
+      data_state = 'final'
+      finalized_day_count = if ($Backfill) { [int]$Backfill.finalized_day_count } else { $null }
+      final_window_complete = if ($Backfill) { [bool]$Backfill.final_window_complete } else { $null }
+      metric_scopes = @('page_all_queries')
+    }
+  }
+  return $periods
+}
+
+function Get-ReportPeriodRows {
+  param([object[]]$Periods)
+  return @($Periods | ForEach-Object {
+    $isFixed = $_.id -eq 'homepage_fixed_post_28d'
+    $status = if ($isFixed -and $null -ne $_.finalized_day_count) {
+      "正式已回傳（$($_.finalized_day_count)/28 天）；審查狀態：$($_.status)"
+    } elseif ($_.decision_ready) { '可正式判斷（decision-ready）' } else { [string]$_.status }
+    [PSCustomObject]@{
+      '資料範圍' = $_.label
+      '日期區間' = if ($_.start_date -and $_.end_date) { "$($_.start_date)~$($_.end_date)" } else { '日期未提供' }
+      '資料狀態' = $status
+      '適用指標' = if ($isFixed) { '首頁整頁；與 rolling 分開' } else { '整頁／精確主攻詞／詞群 Owner share' }
+    }
+  })
+}
+
+function Convert-ReportPeriodsToMarkdown {
+  param([object[]]$Periods)
+  $lines = @('## 資料期間與合併規則', '')
+  $lines += Convert-ObjectRowsToMarkdownTable -Rows (Get-ReportPeriodRows -Periods $Periods) -Headers @('資料範圍','日期區間','資料狀態','適用指標')
+  $lines += @('', '各期間分別判讀；重複附件與重疊視窗不加總，不把重疊期間當作獨立趨勢樣本。正式資料與 dataState=all 初步預覽分開；預覽不更新正式 baseline。', '')
+  return ($lines -join "`n")
+}
+
+function Get-MatchingObservationBackfill {
+  param([object]$Document, [object[]]$ReviewWindows, [string]$Property, [string]$LatestFinalizedDate)
+  if (-not $Document -or [string]$Document.property -cne $Property -or [string]$Document.latest_api_final_date -ne $LatestFinalizedDate -or $Document.preliminary_promoted_to_baseline -ne $false -or [int]$Document.period.days -ne 28) { return $null }
+  $matches = @($ReviewWindows | Where-Object {
+    [string]$_.cluster_id -ceq [string]$Document.cluster_id -and
+    [string]$_.page -ceq [string]$Document.page -and
+    [string]$_.change_date -eq [string]$Document.change_date -and
+    [string]$_.date_source -ceq [string]$Document.date_source -and
+    [string]$_.post_28d -eq "$($Document.period.start_date)~$($Document.period.end_date)"
+  })
+  if ($matches.Count -ne 1) { return $null }
+  return $Document
+}
+
+function Get-HomepageReviewReport {
+  param([object[]]$ReviewWindows, [object]$Backfill)
+  $review = @($ReviewWindows | Where-Object { ([uri]$_.page).AbsolutePath -eq '/' } | Select-Object -First 1)
+  if ($review.Count -eq 0) { return [PSCustomObject]@{ note = '目前沒有首頁的上一輪變更日期；請以各 Owner 的 review windows 為準。'; rows = @() } }
+  $review = $review[0]
+  $note = "固定觀察期：$($review.post_28d)；日期依據：$($review.date_source)。最新正式 GSC 日期：$($review.latest_finalized_date)；首頁 28 天判斷狀態：$($review.review_28d_status)。這與上方 rolling 28d 資料完整性分開判斷。"
+  $rows = @()
+  if ($review.pre_change_28d_result.available) {
+    $metric = $review.pre_change_28d_result
+    $rows += [PSCustomObject]@{ '範圍' = $review.pre_change_28d; '資料狀態' = '變更前正式整頁'; '點擊' = $metric.clicks; '曝光' = $metric.impressions; 'CTR' = Format-Ctr -Value $metric.ctr; '平均排名' = Format-Decimal -Value $metric.position }
+  }
+  if ($Backfill -and [string]$Backfill.page -ceq [string]$review.page) {
+    $finalEnd = @([string]$Backfill.latest_api_final_date, [string]$Backfill.period.end_date | Sort-Object)[0]
+    $metric = $Backfill.finalized_page_totals
+    $rows += [PSCustomObject]@{ '範圍' = "$($Backfill.period.start_date)~$finalEnd"; '資料狀態' = "正式已回傳（$($Backfill.finalized_day_count)/28 天）"; '點擊' = Format-ReturnedMetric -Metric $metric -Name clicks; '曝光' = Format-ReturnedMetric -Metric $metric -Name impressions; 'CTR' = Format-ReturnedMetric -Metric $metric -Name ctr; '平均排名' = Format-ReturnedMetric -Metric $metric -Name position }
+    if (-not $Backfill.final_window_complete) {
+      $metric = $Backfill.preview_page_totals
+      $rows += [PSCustomObject]@{ '範圍' = $review.post_28d; '資料狀態' = '包含初步資料，僅預覽'; '點擊' = Format-ReturnedMetric -Metric $metric -Name clicks; '曝光' = Format-ReturnedMetric -Metric $metric -Name impressions; 'CTR' = Format-ReturnedMetric -Metric $metric -Name ctr; '平均排名' = Format-ReturnedMetric -Metric $metric -Name position }
+    }
+    foreach ($day in @($Backfill.preview_page_day_rows)) {
+      $rows += [PSCustomObject]@{ '範圍' = [string]$day.date; '資料狀態' = '待正式資料的首頁單日初步值'; '點擊' = $day.clicks; '曝光' = $day.impressions; 'CTR' = if ([int]$day.impressions -gt 0) { Format-Ctr -Value (100.0 * [int]$day.clicks / [int]$day.impressions) } else { 'n/a' }; '平均排名' = if ([int]$day.impressions -gt 0) { Format-Decimal -Value $day.position } else { 'n/a' } }
+    }
+    if ($Backfill.final_window_complete) {
+      $note += " 正式日期已回傳 $($Backfill.finalized_day_count)/28 天；固定觀察期已完整，以下採用 dataState=final 的整頁指標。"
+    } else {
+      $note += " 正式日期已回傳 $($Backfill.finalized_day_count)/28 天；缺正式日期：$(@($Backfill.missing_final_dates) -join '、')；API firstIncompleteDate=$($Backfill.first_incomplete_date)。預覽取整個固定 28 天的整頁資料，包含已完成及仍在處理的日期，數字可能改變。"
+    }
+  } elseif ($review.post_28d_result.available) {
+    $metric = $review.post_28d_result
+    $rows += [PSCustomObject]@{ '範圍' = $review.post_28d; '資料狀態' = '變更後正式整頁 28 天'; '點擊' = $metric.clicks; '曝光' = $metric.impressions; 'CTR' = Format-Ctr -Value $metric.ctr; '平均排名' = Format-Decimal -Value $metric.position }
+  } else {
+    $note += " $($review.post_28d_result.reason)。下一步以 GSC final 補齊後再決定首頁調整。"
+  }
+  return [PSCustomObject]@{ note = $note; rows = $rows }
+}
+
+function Get-PageMetricReportRows {
+  param([object[]]$Rows)
+  return @($Rows | ForEach-Object {
+    $row = $_
+    [PSCustomObject]@{
+      '主攻詞（識別用）' = $row.primary_keyword
+      'Owner' = ([uri]$row.page).AbsolutePath
+      '7d 點擊' = Format-ReturnedMetric -Metric $row.page_metrics.'7d' -Name clicks
+      '7d 曝光' = Format-ReturnedMetric -Metric $row.page_metrics.'7d' -Name impressions
+      '7d CTR' = Format-ReturnedMetric -Metric $row.page_metrics.'7d' -Name ctr
+      '7d 平均排名' = Format-ReturnedMetric -Metric $row.page_metrics.'7d' -Name position
+      '28d 點擊' = Format-ReturnedMetric -Metric $row.page_metrics.'28d' -Name clicks
+      '28d 曝光' = Format-ReturnedMetric -Metric $row.page_metrics.'28d' -Name impressions
+      '28d CTR' = Format-ReturnedMetric -Metric $row.page_metrics.'28d' -Name ctr
+      '28d 平均排名' = Format-ReturnedMetric -Metric $row.page_metrics.'28d' -Name position
+      '目前狀態' = $row.disposition
+    }
+  })
+}
+
+function Get-PrimaryKeywordReportRows {
+  param([object[]]$Rows)
+  $result = @()
+  foreach ($row in $Rows) {
+    foreach ($window in @('7d', '28d')) {
+      $metrics = $row.primary_keyword_metrics.$window
+      $result += [PSCustomObject]@{
+        '精確主攻詞' = $row.primary_keyword
+        'Owner' = ([uri]$row.page).AbsolutePath
+        '期間' = $window
+        '全站點擊' = Format-ReturnedMetric -Metric $metrics.site -Name clicks
+        '全站曝光' = Format-ReturnedMetric -Metric $metrics.site -Name impressions
+        '全站 CTR' = Format-ReturnedMetric -Metric $metrics.site -Name ctr
+        '全站平均排名' = Format-ReturnedMetric -Metric $metrics.site -Name position
+        'Owner 點擊' = Format-ReturnedMetric -Metric $metrics.owner -Name clicks
+        'Owner 曝光' = Format-ReturnedMetric -Metric $metrics.owner -Name impressions
+        'Owner CTR' = Format-ReturnedMetric -Metric $metrics.owner -Name ctr
+        'Owner 平均排名' = Format-ReturnedMetric -Metric $metrics.owner -Name position
+      }
+    }
+  }
+  return $result
+}
+
+function Get-ClusterShareReportRows {
+  param([object[]]$Rows)
+  $result = @()
+  foreach ($row in $Rows) {
+    foreach ($window in @('7d', '28d')) {
+      $hasRows = [int]$row."$window cluster impressions" -gt 0
+      $result += [PSCustomObject]@{
+        '主攻詞' = $row.primary_keyword
+        'Owner' = ([uri]$row.page).AbsolutePath
+        '期間' = $window
+        'Owner 詞群曝光' = if ($hasRows) { [string]$row."$window owner impressions" } else { 'GSC 未列出' }
+        '詞群 URL 曝光合計' = if ($hasRows) { [string]$row."$window cluster impressions" } else { 'GSC 未列出' }
+        '詞群 Owner share' = if ($hasRows) { [string]$row."$window owner share" } else { 'n/a' }
+        '其他曝光頁' = [string]$row."$window competing pages"
+      }
+    }
+  }
+  return $result
+}
+
 function Get-BestQueryMetric {
   param(
     [string[]]$Terms,
@@ -1771,6 +2004,10 @@ function New-ObservationRow {
     [object]$ActionHistoryCooldown,
     [object]$QueryPageAnalysis7d,
     [object]$QueryPageAnalysis28d,
+    [object]$PrimaryKeywordMetrics7d,
+    [object]$PrimaryKeywordMetrics28d,
+    [bool]$PageAvailable7d = $true,
+    [bool]$PageAvailable28d = $true,
     [string]$ActionFingerprint,
     [string]$Disposition,
     [string]$Reason
@@ -1785,6 +2022,15 @@ function New-ObservationRow {
     page = [string]$Owner.ownerPage
     primary_keyword = [string]$Owner.primaryKeyword
     variants = (@($Owner.variants) -join ' / ')
+    page_metrics = [PSCustomObject]@{
+      '7d' = Get-ReturnedMetrics -Rows @($PageMetric7d) -Scope 'page_all_queries' -Available $PageAvailable7d
+      '28d' = Get-ReturnedMetrics -Rows @($PageMetric28d) -Scope 'page_all_queries' -Available $PageAvailable28d
+    }
+    primary_keyword_metrics = [PSCustomObject]@{
+      query = [string]$Owner.primaryKeyword
+      '7d' = $PrimaryKeywordMetrics7d
+      '28d' = $PrimaryKeywordMetrics28d
+    }
     '7d clicks' = [int]$p7.clicks
     '7d impressions' = [int]$p7.impressions
     '7d CTR' = (Format-Ctr -Value ([double]$p7.ctr))
@@ -1804,6 +2050,9 @@ function New-ObservationRow {
     '28d query CTR' = (Format-Ctr -Value ([double]$q28.ctr))
     '28d query position' = (Format-Decimal -Value ([double]$q28.position))
     '7d owner share' = if ($QueryPageAnalysis7d.available) { ((Format-Decimal -Value ([double]$QueryPageAnalysis7d.owner_share)) + '%') } else { 'n/a' }
+    '7d owner impressions' = [int]$QueryPageAnalysis7d.owner_impressions
+    '7d cluster impressions' = [int]$QueryPageAnalysis7d.total_impressions
+    '7d competing pages' = (@($QueryPageAnalysis7d.competing_pages | ForEach-Object { "$($_.page) ($($_.share)%)" }) -join ' / ')
     '28d owner share' = if ($QueryPageAnalysis28d.available) { ((Format-Decimal -Value ([double]$QueryPageAnalysis28d.owner_share)) + '%') } else { 'n/a' }
     '28d owner impressions' = [int]$QueryPageAnalysis28d.owner_impressions
     '28d cluster impressions' = [int]$QueryPageAnalysis28d.total_impressions
@@ -1879,7 +2128,8 @@ function Convert-MonitoringAssetsToHtmlTable {
 function Convert-ObjectRowsToMarkdownTable {
   param([object[]]$Rows, [string[]]$Headers)
   if (@($Rows).Count -eq 0) { return '- data unavailable / no matching anomalies。' }
-  $lines=@('| '+($Headers -join ' | ')+' |','| '+(($Headers|ForEach-Object{'---'}) -join ' | ')+' |')
+  $lines = @('| ' + ($Headers -join ' | ') + ' |')
+  $lines += '| ' + (($Headers | ForEach-Object { '---' }) -join ' | ') + ' |'
   foreach($row in $Rows){$lines += '| '+(($Headers|ForEach-Object{Escape-MdCell -Value ([string]$row.$_)}) -join ' | ')+' |'}
   return ($lines -join "`n")
 }
@@ -1981,29 +2231,25 @@ function Convert-ComplianceToHtmlTable {
 
 function Convert-ObservationsToMarkdownTable {
   param([object[]]$Rows)
-  $headers = @('order', 'page', 'primary_keyword', '7d clicks', '7d impressions', '7d CTR', '7d position', '7d owner share', '28d clicks', '28d impressions', '28d CTR', '28d position', '28d owner share', '28d owner impressions', '28d cluster impressions', '28d competing pages', 'cannibalization', 'output_compliant', 'cooldown_source', 'cooldown_until', 'disposition', 'reason')
-  $lines = @()
-  $lines += '| ' + ($headers -join ' | ') + ' |'
-  $lines += '| ---: | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |'
-  foreach ($row in $Rows) {
-    $cells = foreach ($header in $headers) { Escape-MdCell -Value ([string]$row.$header) }
-    $lines += '| ' + ($cells -join ' | ') + ' |'
-  }
+  $lines = @('### 整頁指標', '', 'URL 的所有查詢合計；主攻詞欄只識別 Owner。整頁平均排名不能當成主攻詞排名。', '')
+  $lines += Convert-ObjectRowsToMarkdownTable -Rows (Get-PageMetricReportRows -Rows $Rows) -Headers (Get-MetricReportHeaders -Scope page)
+  $lines += @('', '### 精確主攻詞', '', '只取登記主攻詞的精確查詢，不以高曝光變體或整頁值代替主詞排名。全站來自 Query，Owner 來自同詞 × 指定 URL。GSC 未列出 ≠ 0；缺列指標保留 null。兩種聚合口徑不同，曝光合計可能不同，不能互相當分母。', '')
+  $lines += Convert-ObjectRowsToMarkdownTable -Rows (Get-PrimaryKeywordReportRows -Rows $Rows) -Headers (Get-MetricReportHeaders -Scope primary)
+  $lines += @('', '### 詞群 Owner share', '', '主詞＋登記變體的 Query × Page URL 曝光分布。多個 URL 可同時曝光，合計不能當成獨立搜尋次數；低占比不代表已確認同詞互搶，須逐詞核對意圖。', '')
+  $lines += Convert-ObjectRowsToMarkdownTable -Rows (Get-ClusterShareReportRows -Rows $Rows) -Headers (Get-MetricReportHeaders -Scope cluster)
+  $lines += @('', '### 觀察狀態', '')
+  $lines += Convert-ObjectRowsToMarkdownTable -Rows $Rows -Headers @('primary_keyword','page','cannibalization','output_compliant','cooldown_until','disposition','reason')
   return ($lines -join "`n")
 }
 
 function Convert-ObservationsToHtmlTable {
   param([object[]]$Rows)
-  $headers = @('order', 'page', 'primary_keyword', '7d clicks', '7d impressions', '7d CTR', '7d position', '7d owner share', '28d clicks', '28d impressions', '28d CTR', '28d position', '28d owner share', '28d owner impressions', '28d cluster impressions', '28d competing pages', 'cannibalization', 'output_compliant', 'cooldown_source', 'cooldown_until', 'disposition', 'reason')
-  $html = @('<table><thead><tr>')
-  foreach ($header in $headers) { $html += '<th>' + (Escape-Html -Value $header) + '</th>' }
-  $html += '</tr></thead><tbody>'
-  foreach ($row in $Rows) {
-    $html += '<tr>'
-    foreach ($header in $headers) { $html += '<td>' + (Escape-Html -Value ([string]$row.$header)) + '</td>' }
-    $html += '</tr>'
-  }
-  $html += '</tbody></table>'
+  $html = @('<h3>整頁指標</h3>')
+  $html += Convert-ObjectRowsToHtmlTable -Rows (Get-PageMetricReportRows -Rows $Rows) -Headers (Get-MetricReportHeaders -Scope page)
+  $html += '<h3>精確主攻詞</h3>'
+  $html += Convert-ObjectRowsToHtmlTable -Rows (Get-PrimaryKeywordReportRows -Rows $Rows) -Headers (Get-MetricReportHeaders -Scope primary)
+  $html += '<h3>詞群 Owner share</h3>'
+  $html += Convert-ObjectRowsToHtmlTable -Rows (Get-ClusterShareReportRows -Rows $Rows) -Headers (Get-MetricReportHeaders -Scope cluster)
   return ($html -join '')
 }
 
@@ -2147,7 +2393,8 @@ function New-RoundSlimPrompt {
     [string]$ModeLabel,
     [string]$QueueId,
     [string]$CycleKey,
-    [string]$ReceiptPath
+    [string]$ReceiptPath,
+    [object[]]$ReportPeriods
   )
 
   $lines = @()
@@ -2164,9 +2411,11 @@ function New-RoundSlimPrompt {
   $lines += '- 不要讀 raw 7d/28d CSV、`Weekly SOP/reports/`、`Weekly SOP/history/`、`All_plan/` 或 Phase 歷史。'
   $lines += '- 只讀本指令、`plan.md`、Required Source 內列出的檔案，以及目標頁必要 source truth。'
   $lines += '- 不直接修改 `out/`，不改公開 API、型別、後台邏輯或計價邏輯。'
+  $lines += Get-MetricScopeNotes
   $lines += ''
   $lines += ('Mode: {0} -> {1}（{2}）' -f $RequestedMode, $EffectiveMode, $ModeLabel)
   $lines += ''
+  $lines += Convert-ReportPeriodsToMarkdown -Periods $ReportPeriods
   $lines += ('## Round {0}' -f $Round.round)
   $lines += ''
   $lines += (Convert-ActionsToMarkdownTable -Rows $Round.actions)
@@ -2202,7 +2451,9 @@ function New-MonitoringPrompt {
     [object[]]$Rows,
     [string]$RequestedMode,
     [string]$EffectiveMode,
-    [string]$Reason
+    [string]$Reason,
+    [object]$HomepageReviewReport,
+    [object[]]$ReportPeriods
   )
   $lines = @()
   $lines += 'PLEASE REVIEW THIS MONITORING LIST:'
@@ -2217,13 +2468,19 @@ function New-MonitoringPrompt {
   $lines += '- 不要讀 raw CSV、reports/history、All_plan 或 Phase 歷史。'
   $lines += '- 不要修改 source、不要跑 build、不要部署、不要建立 validation receipt。'
   $lines += ('- 只根據 {0} 個 active owner 的 7d/28d 完整 baseline metrics 回報異常或下一次應觀察項目。' -f @($Rows).Count)
+  $lines += Get-MetricScopeNotes
   $lines += ''
   $lines += "Mode: $RequestedMode -> $EffectiveMode"
   $lines += "Reason: $Reason"
   $lines += ''
+  $lines += Convert-ReportPeriodsToMarkdown -Periods $ReportPeriods
   $lines += '## Monitoring List'
   $lines += ''
   $lines += (Convert-ObservationsToMarkdownTable -Rows $Rows)
+  if ($HomepageReviewReport) {
+    $lines += @('', '## 首頁上一輪 28 天觀察', '', $HomepageReviewReport.note, '')
+    $lines += Convert-ObjectRowsToMarkdownTable -Rows $HomepageReviewReport.rows -Headers @('範圍','資料狀態','點擊','曝光','CTR','平均排名')
+  }
   $lines += ''
   $lines += '## Report Back'
   $lines += ''
@@ -2237,7 +2494,8 @@ function New-OptionalOpportunitiesPrompt {
     [object[]]$Rows,
     [string]$RequestedMode,
     [string]$EffectiveMode,
-    [string]$ModeLabel
+    [string]$ModeLabel,
+    [object[]]$ReportPeriods
   )
 
   $sources = @()
@@ -2260,12 +2518,14 @@ function New-OptionalOpportunitiesPrompt {
   $lines += '- 若建議加做，最多挑 1-3 頁，並說明原因；不要自行擴大成新的完整 ranking cycle。'
   $lines += '- 省 token 回覆：不要重述整份表格；只列建議頁面、原因、建議修改類型。'
   $lines += '- 如果使用者決定要做，等待使用者另外下短指令，例如：`請依剛剛建議，實作 A 頁和 B 頁的小幅 SEO/GEO 優化。`'
+  $lines += Get-MetricScopeNotes
   if (@($Rows | Where-Object { $_.review_type -in @('single_page_p0_review','single_page_alignment_review') }).Count -gt 0) {
     $lines += '- `single_page_*_review` 是核准前審查：先請使用者明確批准指定頁面；批准前不得修改 source、跑 build、部署或建立 validation receipt。'
   }
   $lines += ''
   $lines += ('Mode: {0} -> {1}（{2}）' -f $RequestedMode, $EffectiveMode, $ModeLabel)
   $lines += ''
+  $lines += Convert-ReportPeriodsToMarkdown -Periods $ReportPeriods
   $lines += '## Optional Opportunities'
   $lines += ''
   if (@($Rows).Count -gt 0) {
@@ -2372,6 +2632,19 @@ $sitewideDaily = New-SitewideDailyAnalysis -Rows $dateRows28d
 $devicePageDifferences = @(Get-DevicePageDifferences -Rows $devicePageRows28d)
 $countryPageAnomalies = @(Get-CountryPageAnomalies -Rows $countryPageRows28d)
 $reviewWindows = @(Get-NonOverlappingReviewWindows -Owners $owners -LatestFinalizedDate $fresh28d.end_date -LifecycleDates $lifecycleReviewDates -DateRows $dateRows28d -DatePageRows $datePageRows28d)
+$gscProperty = if ($siteConfig.gscProperty) { [string]$siteConfig.gscProperty } else { "https://$expectedHost/" }
+$observationBackfill = Get-MatchingObservationBackfill -Document (Read-JsonIfExists -Path (Join-Path $latestRoot 'gsc-observation-backfill.json')) -ReviewWindows $reviewWindows -Property $gscProperty -LatestFinalizedDate ([string]$fresh28d.end_date)
+$homepageReviewReport = Get-HomepageReviewReport -ReviewWindows $reviewWindows -Backfill $observationBackfill
+$homepageReviewHeaders = @('範圍','資料狀態','點擊','曝光','CTR','平均排名')
+$reportPeriods = @(New-ReportPeriods -Fresh7d $fresh7d -Fresh28d $fresh28d -ReviewWindows $reviewWindows -Backfill $observationBackfill)
+$metricScopes = [ordered]@{
+  page_all_queries = 'page_metrics and legacy 7d/28d clicks/impressions/CTR/position are Owner URL totals over all queries, not exact primary keyword metrics.'
+  exact_primary_keyword = 'primary_keyword_metrics uses registry.primaryKeyword only: site from Query and owner from exact Query × Page. Separate aggregation scopes; not_returned metrics are null, not zero.'
+  legacy_query_best = 'Legacy query/query impressions/query position selects the highest-impression query-best among the primary keyword and registered variants; never substitute it for the exact primary.'
+  cluster_owner_share = 'Owner Query × Page impressions / sum of URL impressions for primary+variants. Multiple URLs may appear for one query; not unique searches and low share is an alignment warning, not proof of same-query cannibalization.'
+  homepage_fixed_window = 'review_windows uses finalized daily history only. observation_backfill.finalized_page_totals is dataState=final; preview_page_totals is separately identified dataState=all and does not change readiness or eligibility. A complete fixed post-28d window uses final metrics and remains separate from rolling 28d.'
+  period_aggregation = 'Read each report_periods range separately. Duplicate attachments and overlapping windows are not added together or treated as independent trend samples; preliminary data does not update final baselines.'
+}
 $diagnostics = [ordered]@{
   status = if ($fresh28d.diagnostics_complete) { 'complete' } else { 'incomplete' }
   required_dimensions = @('date','date_page','device_page','country_page','device_query')
@@ -2424,6 +2697,8 @@ foreach ($owner in $owners) {
   $pageMetric28d = if ($pageMap28d.ContainsKey($page)) { $pageMap28d[$page] } else { $null }
   $queryPageAnalysis7d = Get-OwnerQueryPageAnalysis -Owner $owner -Rows $queryPageRows7d
   $queryPageAnalysis28d = Get-OwnerQueryPageAnalysis -Owner $owner -Rows $queryPageRows28d
+  $primaryKeywordMetrics7d = Get-ExactPrimaryKeywordMetrics -Owner $owner -QueryMap $queryMap7d -QueryPageRows $queryPageRows7d -QueryAvailable ($queryRows7d.Count -gt 0) -QueryPageAvailable ($queryPageRows7d.Count -gt 0)
+  $primaryKeywordMetrics28d = Get-ExactPrimaryKeywordMetrics -Owner $owner -QueryMap $queryMap28d -QueryPageRows $queryPageRows28d -QueryAvailable ($queryRows28d.Count -gt 0) -QueryPageAvailable ($queryPageRows28d.Count -gt 0)
   $compliance = Get-OwnerOutputCompliance -Owner $owner -RepoRoot $repoRoot -OutputIndex $outputHtmlIndex
   $registryCooldown = Get-CooldownStatus -LastChangedAt ([string]$owner.lastChangedAt)
   $row = New-ActionRow -Priority 0 -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance -Benchmark $ctrBenchmark
@@ -2480,7 +2755,7 @@ foreach ($owner in $owners) {
   } elseif ($queryPageAnalysis28d.available -and $queryPageAnalysis28d.owner_share -lt 80 -and $queryPageAnalysis28d.total_impressions -gt 0) {
     $reason += " Query × Page owner share：$($queryPageAnalysis28d.reason)"
   }
-  $observation = New-ObservationRow -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance -RegistryCooldown $registryCooldown -ActionHistoryCooldown $actionHistoryCooldown -QueryPageAnalysis7d $queryPageAnalysis7d -QueryPageAnalysis28d $queryPageAnalysis28d -ActionFingerprint ([string]$row.fingerprint) -Disposition $disposition -Reason $reason
+  $observation = New-ObservationRow -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance -RegistryCooldown $registryCooldown -ActionHistoryCooldown $actionHistoryCooldown -QueryPageAnalysis7d $queryPageAnalysis7d -QueryPageAnalysis28d $queryPageAnalysis28d -PrimaryKeywordMetrics7d $primaryKeywordMetrics7d -PrimaryKeywordMetrics28d $primaryKeywordMetrics28d -PageAvailable7d ($pageRows7d.Count -gt 0) -PageAvailable28d ($pageRows28d.Count -gt 0) -ActionFingerprint ([string]$row.fingerprint) -Disposition $disposition -Reason $reason
   $observations += $observation
   $analysis = [PSCustomObject]@{
     owner = $owner
@@ -2685,13 +2960,13 @@ Get-ChildItem -LiteralPath $latestRoot -Filter 'seo-geo-action-plan.round-*.slim
 
 $roundPromptFiles = @()
 if ($isObservationOnly) {
-  $monitorPrompt = New-MonitoringPrompt -Rows $observations -RequestedMode $requestedMode -EffectiveMode $effectiveMode -Reason $monitorReason
+  $monitorPrompt = New-MonitoringPrompt -Rows $observations -RequestedMode $requestedMode -EffectiveMode $effectiveMode -Reason $monitorReason -HomepageReviewReport $homepageReviewReport -ReportPeriods $reportPeriods
   Write-Utf8NoBom -Path $outputSlimAi -Text ($monitorPrompt -join $lineFeed)
   Write-Utf8NoBom -Path $outputAi -Text ($monitorPrompt -join $lineFeed)
 } else {
   foreach ($round in $actionQueue) {
     $roundPromptPath = Join-Path $latestRoot ('seo-geo-action-plan.round-{0}.slim.ai.md' -f $round.round)
-    $roundPrompt = New-RoundSlimPrompt -Round $round -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel -QueueId $queueId -CycleKey $cycleKey -ReceiptPath $receiptRelativePath
+    $roundPrompt = New-RoundSlimPrompt -Round $round -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel -QueueId $queueId -CycleKey $cycleKey -ReceiptPath $receiptRelativePath -ReportPeriods $reportPeriods
     Write-Utf8NoBom -Path $roundPromptPath -Text ($roundPrompt -join $lineFeed)
     $roundPromptFiles += [PSCustomObject]@{
       round = [int]$round.round
@@ -2709,7 +2984,7 @@ if ($isObservationOnly) {
   }
 }
 
-$optionalPrompt = New-OptionalOpportunitiesPrompt -Rows $minorOpportunities -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel
+$optionalPrompt = New-OptionalOpportunitiesPrompt -Rows $minorOpportunities -RequestedMode $requestedMode -EffectiveMode $effectiveMode -ModeLabel $modeLabel -ReportPeriods $reportPeriods
 Write-Utf8NoBom -Path $outputOptionalAi -Text ($optionalPrompt -join $lineFeed)
 
 $queueMd = @()
@@ -2720,6 +2995,7 @@ $queueMd += "- 狀態：$(if ($isObservationOnly) { 'observation_only' } else { 
 $queueMd += "- Cycle key：$cycleKey"
 $queueMd += "- Registry：$registryRelativePath (v$registryVersion)"
 $queueMd += ''
+$queueMd += Convert-ReportPeriodsToMarkdown -Periods $reportPeriods
 if ($isObservationOnly) {
   $queueMd += '## Observation Only'
   $queueMd += ''
@@ -2788,6 +3064,9 @@ $queuePayload = [ordered]@{
   page_batch_size = $pageBatchSize
   rounds = $actionQueue
   observations = $observations
+  report_periods = $reportPeriods
+  metric_scopes = $metricScopes
+  observation_backfill = $observationBackfill
   compliance = $complianceReport
   monitoring_assets = $monitoringAssets
   canonical_aliases = $canonicalAliasMap
@@ -2885,6 +3164,7 @@ $md += "- Registry：$registryRelativePath (v$registryVersion)"
 $md += "- 7d manifest：$($snapshot['7d'].manifest_path)"
 if ($snapshot['28d']) { $md += "- 28d manifest：$($snapshot['28d'].manifest_path)" }
 $md += ''
+$md += Convert-ReportPeriodsToMarkdown -Periods $reportPeriods
 if ($isObservationOnly) {
   $md += '## Observation Only / 0 Rounds'
   $md += ''
@@ -2949,6 +3229,12 @@ $md += '- 變更日不納入前／後比較；優先使用 lifecycle `live_verif
 $md += ''
 if ($reviewWindows.Count -gt 0) { $md += (Convert-ReviewWindowsToMarkdownTable -Rows $reviewWindows) } else { $md += '- 尚無需要 review 的 source 變更日期。' }
 $md += ''
+$md += '## 首頁上一輪 28 天觀察'
+$md += ''
+$md += $homepageReviewReport.note
+$md += ''
+$md += (Convert-ObjectRowsToMarkdownTable -Rows $homepageReviewReport.rows -Headers $homepageReviewHeaders)
+$md += ''
 $md += '## Diagnostic Analysis'
 $md += ''
 $md += "- history：$($sitewideDaily.start_date)~$($sitewideDaily.end_date)，days=$($sitewideDaily.day_count)；五維 status=$($diagnostics.status)。"
@@ -2967,7 +3253,9 @@ $md += (Convert-ObjectRowsToMarkdownTable -Rows (Get-CountryAnomalyReportRows -R
 Write-Utf8NoBom -Path $outputMd -Text ($md -join $lineFeed)
 
 $dashboardKeywordRows = @()
+$dashboardObservationRows = @()
 $dashboardAttentionRows = @()
+$homepageReviewWindow = @($reviewWindows | Where-Object { ([uri]$_.page).AbsolutePath -eq '/' } | Select-Object -First 1)
 $decisionReadyLabel = if ($snapshotDecisionReady) { '是（資料完整，可作正式判斷）' } else { '否（資料尚不足，只能觀察）' }
 $strategyLabel = switch ([string]$baselineLabel) {
   'observation_only' { '僅觀察（本輪不修改網站）' }
@@ -2990,19 +3278,11 @@ foreach ($analysis in @($ownerAnalyses | Where-Object {
   }
   if ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus -eq 'live_verified') { $statusLabel = '已上線觀察' }
   elseif ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus) { $statusLabel = $previousLifecycleStatus }
-  $dashboardKeywordRows += [PSCustomObject]@{
-    '優先級（P0 最高）' = [string]$analysis.owner.priority
-    '關鍵字' = [string]$analysis.owner.primaryKeyword
-    '對應主頁' = [string]$analysis.owner.ownerPath
-    '7d 曝光' = [string]$observation.'7d impressions'
-    '7d CTR' = [string]$observation.'7d CTR'
-    '7d 排名' = [string]$observation.'7d position'
-    '28d 曝光' = [string]$observation.'28d impressions'
-    '28d CTR' = [string]$observation.'28d CTR'
-    '28d 排名' = [string]$observation.'28d position'
-    '主頁流量占比（Owner share）' = [string]$observation.'28d owner share'
-    '目前狀態' = $statusLabel
-  }
+  $pageReportRow = @(Get-PageMetricReportRows -Rows @($observation))[0]
+  $pageReportRow.'目前狀態' = $statusLabel
+  $pageReportRow | Add-Member -NotePropertyName '優先級（P0 最高）' -NotePropertyValue ([string]$analysis.owner.priority)
+  $dashboardKeywordRows += $pageReportRow
+  $dashboardObservationRows += $observation
   if ($observation.disposition -in @('queued', 'single_page_review') -or [bool]$observation.cannibalization -or $analysis.owner.ownerPage -in $previousExecutionPages) {
     $signal = if ($observation.disposition -eq 'single_page_review') {
       '需要人工核准後才能建立執行 Round'
@@ -3011,7 +3291,7 @@ foreach ($analysis in @($ownerAnalyses | Where-Object {
     } elseif ($observation.disposition -eq 'queued') {
       '已排入本輪執行'
     } else {
-      '查詢與對應主頁（Query × Page）互搶，需要持續觀察'
+      '詞群 Query × Page 曝光分散警示，需逐詞核對意圖'
     }
     $nextStep = if ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus -eq 'live_verified') {
       '等待部署後完整近 7 天／28 天（7d／28d）GSC 資料'
@@ -3021,6 +3301,10 @@ foreach ($analysis in @($ownerAnalyses | Where-Object {
       '確認是否核准單頁調整'
     } else {
       '依本輪 Round 執行或等待下次 7d／28d 資料'
+    }
+    if ($analysis.owner.ownerPath -eq '/' -and $homepageReviewWindow.Count -gt 0 -and $homepageReviewWindow[0].review_28d_status -ne 'eligible') {
+      $signal = '首頁上一輪固定 28 天正式資料尚未完整'
+      $nextStep = "先補齊 $($homepageReviewWindow[0].post_28d) 的正式資料，再決定首頁調整"
     }
     $dashboardAttentionRows += [PSCustomObject]@{
       '關鍵字' = [string]$analysis.owner.primaryKeyword
@@ -3037,13 +3321,22 @@ $html += '<style>body{font-family:"Microsoft JhengHei",Arial,sans-serif;margin:0
 $html += '</head><body><main><h1>SEO/GEO 重點報告</h1>'
 $html += '<p class="sub">給網站管理者閱讀的精簡版。完整明細保留於 JSON（系統資料檔）；請 AI 執行時使用 <code>*.ai.md</code>（AI 工作指令檔）。</p>'
 $html += '<div class="grid">'
-$html += '<div class="card ok"><strong>資料狀態</strong>近 7 天（7d）：' + (Escape-Html -Value ([string]$fresh7d.start_date)) + '~' + (Escape-Html -Value ([string]$fresh7d.end_date)) + '<br>近 28 天（28d）：' + (Escape-Html -Value ([string]$fresh28d.start_date)) + '~' + (Escape-Html -Value ([string]$fresh28d.end_date)) + '<br>可正式判斷（decision-ready）：' + (Escape-Html -Value $decisionReadyLabel) + '</div>'
+$html += '<div class="card ok"><strong>資料狀態</strong>近 7 天（7d）：' + (Escape-Html -Value ([string]$fresh7d.start_date)) + '~' + (Escape-Html -Value ([string]$fresh7d.end_date)) + '<br>近 28 天（28d）：' + (Escape-Html -Value ([string]$fresh28d.start_date)) + '~' + (Escape-Html -Value ([string]$fresh28d.end_date)) + '<br>此 rolling 視窗可正式判斷（decision-ready）：' + (Escape-Html -Value $decisionReadyLabel) + '<br><span class="small">首頁上一輪固定 28 天另見下方，須獨立驗證。</span></div>'
 $html += '<div class="card action"><strong>本輪策略</strong>' + (Escape-Html -Value $strategyLabel) + '<br>自動執行工作批次（Round）：' + (Escape-Html -Value ([string]$actionQueue.Count)) + '</div>'
 $html += '<div class="card"><strong>技術驗收</strong>關鍵字對應主頁（Owner）通過：' + (Escape-Html -Value ([string](@($complianceReport | Where-Object { $_.compliant }).Count))) + '/' + (Escape-Html -Value ([string]$complianceReport.Count)) + '<br>資料診斷：' + (Escape-Html -Value $diagnosticLabel) + '</div>'
 $html += '<div class="card"><strong>查詢變化</strong>已確認變化（signal）：' + (Escape-Html -Value ([string]$queryDelta.signal_count)) + '<br>待確認／雜訊：' + (Escape-Html -Value ([string]$queryDelta.pending_confirmation_count)) + '／' + (Escape-Html -Value ([string]$queryDelta.noise_count)) + '（雜訊為資料量過少，暫不採取動作）</div>'
 $html += '</div>'
-$html += '<h2>核心關鍵字表現</h2><p class="small">固定顯示 P0 主攻詞，並自動加入本輪需決策的關鍵字。數字為關鍵字對應主頁（Owner）的 GSC 指標；主頁流量占比（Owner share）用來檢查主攻詞流量是否集中在正確頁面。</p>'
-$html += '<div class="table-wrap">' + (Convert-ObjectRowsToHtmlTable -Rows $dashboardKeywordRows -Headers @('優先級（P0 最高）','關鍵字','對應主頁','7d 曝光','7d CTR','7d 排名','28d 曝光','28d CTR','28d 排名','主頁流量占比（Owner share）','目前狀態')) + '</div>'
+$html += '<h2>資料期間與合併規則</h2><p class="small">各期間分別判讀；重複附件與重疊視窗不加總，不把重疊期間當作獨立趨勢樣本。正式資料與 dataState=all 初步預覽分開；預覽不更新正式 baseline。</p>'
+$html += '<div class="table-wrap">' + (Convert-ObjectRowsToHtmlTable -Rows (Get-ReportPeriodRows -Periods $reportPeriods) -Headers @('資料範圍','日期區間','資料狀態','適用指標')) + '</div>'
+$html += '<h2>首頁上一輪 28 天觀察</h2><div class="note warn">' + (Escape-Html -Value $homepageReviewReport.note) + '</div>'
+$html += '<div class="table-wrap">' + (Convert-ObjectRowsToHtmlTable -Rows $homepageReviewReport.rows -Headers $homepageReviewHeaders) + '</div>'
+$html += '<h2>核心關鍵字表現</h2><p class="small">固定顯示 P0 主攻詞，並加入本輪需決策的 Owner；以下三種口徑各自呈現。期間沿用上方 rolling 7d／28d。</p>'
+$html += '<h2>整頁指標</h2><p class="small">Owner URL 的所有查詢合計；主攻詞欄只識別頁面。整頁平均排名不能當成該主攻詞排名。</p>'
+$html += '<div class="table-wrap">' + (Convert-ObjectRowsToHtmlTable -Rows $dashboardKeywordRows -Headers (@('優先級（P0 最高）') + (Get-MetricReportHeaders -Scope page))) + '</div>'
+$html += '<h2>精確主攻詞</h2><p class="small">只取登記主攻詞，分開顯示全站 Query 與指定 Owner 的 Query × Page。GSC 未列出 ≠ 0；不以整頁值或高曝光變體取代主詞。兩種聚合口徑不同，曝光合計可能不同，不能互相當分母。少量曝光的平均排名只供觀察。</p>'
+$html += '<div class="table-wrap">' + (Convert-ObjectRowsToHtmlTable -Rows (Get-PrimaryKeywordReportRows -Rows $dashboardObservationRows) -Headers (Get-MetricReportHeaders -Scope primary)) + '</div>'
+$html += '<h2>詞群 Owner share</h2><p class="small">主頁流量占比（Owner share）在此指登記主詞＋變體的 Query × Page URL 曝光占比：Owner 詞群曝光 ÷ 詞群 URL 曝光合計。多個 URL 可同時曝光；不是獨立搜尋次數。低占比不代表已確認同詞互搶，需逐詞核對意圖。</p>'
+$html += '<div class="table-wrap">' + (Convert-ObjectRowsToHtmlTable -Rows (Get-ClusterShareReportRows -Rows $dashboardObservationRows) -Headers (Get-MetricReportHeaders -Scope cluster)) + '</div>'
 $html += '<h2>現在要做什麼</h2>'
 if ($isObservationOnly) {
   $html += '<div class="note warn"><strong>目前不需修改網站。</strong><br>' + (Escape-Html -Value $monitorReason) + '</div>'
@@ -3063,7 +3356,7 @@ if ($dashboardAttentionRows.Count -gt 0) {
 $html += '<h2>候選優化</h2>'
 if ($minorOpportunities.Count -gt 0) {
   $html += '<div class="note"><strong>' + (Escape-Html -Value ([string]$minorOpportunities.Count)) + ' 項候選待人工確認</strong><ul>'
-  foreach ($item in @($minorOpportunities | Select-Object -First 3)) {
+  foreach ($item in $minorOpportunities) {
     $html += '<li>' + (Escape-Html -Value ([string]$item.ownerKeywords)) + '：' + (Escape-Html -Value ([string]$item.actionType)) + '；需明確核准後才可建立執行 Round。</li>'
   }
   $html += '</ul></div>'
@@ -3115,6 +3408,9 @@ $json = [ordered]@{
   current_round = $currentRound
   queue = $actionQueue
   observations = $observations
+  report_periods = $reportPeriods
+  metric_scopes = $metricScopes
+  observation_backfill = $observationBackfill
   compliance = $complianceReport
   monitoring_assets = $monitoringAssets
   canonical_aliases = $canonicalAliasMap

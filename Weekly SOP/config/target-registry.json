@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "siteId": "curtain-online",
   "generatedFrom": "src/data/products.ts",
-  "updatedAt": "2026-09-24",
+  "updatedAt": "2026-10-11",
   "targets": [
     {
       "clusterId": "core-curtain",
@@ -18,7 +18,7 @@
       "priority": "P0",
       "schemaProfile": "home",
       "businessValue": "critical",
-      "lastChangedAt": "2026-09-09",
+      "lastChangedAt": "2026-10-11",
       "status": "active"
     },
     {
@@ -60,7 +60,7 @@
       "priority": "P1",
       "schemaProfile": "product",
       "businessValue": "high",
-      "lastChangedAt": "2026-09-03",
+      "lastChangedAt": "2026-10-11",
       "status": "active"
     },
     {
@@ -161,7 +161,7 @@
       "priority": "P1",
       "schemaProfile": "product",
       "businessValue": "high",
-      "lastChangedAt": "2026-09-03",
+      "lastChangedAt": "2026-10-11",
       "status": "active"
     },
     {

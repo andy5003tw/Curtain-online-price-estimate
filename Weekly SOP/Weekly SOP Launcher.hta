@@ -323,12 +323,6 @@
       border-color: #075e54;
     }
 
-    .advanced-seo-geo-actions .btn-ai-luna {
-      color: #ffffff;
-      background: #6554a8;
-      border-color: #56438f;
-    }
-
     .advanced-seo-geo-actions .btn-gsc-generative-ai {
       color: #0b3d63;
       background: #e5f5ff;
@@ -2197,17 +2191,13 @@
         var canLiveVerify = hasPwsh && workflowConsistent && lifecycleStatus === "deployed";
         var aiWriter = fso.GetParentFolderName(root) + "\\scripts\\write-ai-visibility-snapshot.ps1";
         var aiRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-observation.ps1";
-        var aiLunaComparisonRunner = fso.GetParentFolderName(root) + "\\scripts\\run-ai-visibility-luna-comparison.ps1";
         var aiAutoImporter = fso.GetParentFolderName(root) + "\\scripts\\import-latest-ai-visibility.ps1";
         var gscGenerativeAiAnalyzer = root + "\\analyze-gsc-generative-ai.ps1";
         var aiQuestionSet = root + "\\config\\ai-visibility-question-set.json";
         var canImportAiVisibility = hasPwsh && fso.FileExists(aiWriter) && fso.FileExists(aiAutoImporter) && fso.FileExists(aiQuestionSet);
         var canRunAiVisibility = canImportAiVisibility && fso.FileExists(aiRunner);
-        var canRunAiVisibilityLunaComparison = canImportAiVisibility && fso.FileExists(aiRunner) && fso.FileExists(aiLunaComparisonRunner);
         setButtonState("btnImportAiVisibility", !canRunAiVisibility, "AI 可見度自動測試＋匯入",
           canRunAiVisibility ? "使用同一 OpenAI model 獨立跑固定 6 題，寫入收件匣後自動匯入；需要 OPENAI_API_KEY" : "需要 PowerShell 7、AI Visibility runner／importer／writer 與固定問題集");
-        setButtonState("btnRunAiVisibilityLunaComparison", !canRunAiVisibilityLunaComparison, "Luna 對照測試（不覆蓋目前正式結果）",
-          canRunAiVisibilityLunaComparison ? "以 gpt-5.6-luna 重跑同一固定 6 題；只寫入新的 observation 與對照報告，不會匯入或覆蓋目前 gpt-5.4-mini summary" : "需要 PowerShell 7、Luna comparison runner、AI Visibility runner 與固定問題集");
         setButtonState("btnImportAiVisibilityInbox", !canImportAiVisibility, "只匯入收件匣最新 JSON",
           canImportAiVisibility ? "不呼叫 AI API；自動讀取 Weekly SOP\\inbox\\ai-visibility 中最新的完整 JSON" : "需要 PowerShell 7、AI Visibility importer／writer 與固定問題集");
         setButtonState("btnImportAiVisibilityManual", !canImportAiVisibility, "手動選擇 AI Visibility JSON",
@@ -2322,7 +2312,6 @@
         setButtonState("btnSeoGeoDeploy", true, "正式上傳網站（FTP 部署）", "流程狀態讀取失敗");
         setButtonState("btnSeoGeoLiveVerify", true, "驗證網站已正確上線（live verify）", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibility", true, "AI 自動測試＋匯入 Visibility", "流程狀態讀取失敗");
-        setButtonState("btnRunAiVisibilityLunaComparison", true, "Luna 對照測試（不覆蓋 mini）", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityInbox", true, "只匯入收件匣最新 JSON", "流程狀態讀取失敗");
         setButtonState("btnImportAiVisibilityManual", true, "手動選擇 AI Visibility JSON", "流程狀態讀取失敗");
         setButtonState("btnAnalyzeGscGenerativeAi", true, "分析 GSC 生成式 AI Excel 報表＋匯入", "流程狀態讀取失敗");
@@ -3237,32 +3226,6 @@
       }
     }
 
-    function runAiVisibilityLunaComparison() {
-      try {
-        var root = getRootFolder();
-        var fso = new ActiveXObject("Scripting.FileSystemObject");
-        var repoRoot = fso.GetParentFolderName(root);
-        var runner = repoRoot + "\\scripts\\run-ai-visibility-luna-comparison.ps1";
-        var questionSet = root + "\\config\\ai-visibility-question-set.json";
-        var inboxPath = root + "\\inbox\\ai-visibility";
-        if (!fso.FileExists(runner) || !fso.FileExists(questionSet)) { throw new Error("Luna 對照 runner 或固定問題集不存在。"); }
-        var logPath = root + "\\latest\\ai-visibility-luna-comparison-last-run.log";
-        var cmd = 'cmd /d /c pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + runner.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -InboxPath "' + inboxPath.replace(/"/g, '""') + '" -QuestionSetPath "' + questionSet.replace(/"/g, '""') + '" -Model "gpt-5.6-luna" > "' + logPath.replace(/"/g, '""') + '" 2>&1';
-        setButtonsBusy(true);
-        setStatusSummary("Luna 正在以同一固定 6 題執行對照測試；目前 gpt-5.4-mini summary 不會被覆蓋...", "running");
-        var code = new ActiveXObject("WScript.Shell").Run(cmd, 1, true);
-        var logText = readTextIfExists(logPath);
-        setStatusDetails("Command:\n" + cmd + "\n\nComparison report:\n" + root + "\\latest\\ai-visibility-luna-comparison.json\n\nLog:\n" + logText);
-        setStatusSummary(code === 0 ? "Luna 對照測試完成：已新增獨立 gpt-5.6-luna observation 與 comparison report；原本 gpt-5.4-mini summary、receipt 與人工審核均保持不變。請先人工審閱 Luna 的 6 題回答，再決定是否變更預設 model。" : "Luna 對照測試未完成。若訊息顯示 OPENAI_API_KEY is not set，請先設定環境變數並重新開啟 UI。\n\n" + logText, code === 0 ? "success" : "error");
-      } catch (e) {
-        setStatusSummary("Luna 對照測試失敗：" + e.message, "error");
-      } finally {
-        setButtonsBusy(false);
-        renderSixZoneDashboard();
-        updateWorkflowControls();
-      }
-    }
-
     function analyzeGscGenerativeAiExcel() {
       try {
         var root = getRootFolder();
@@ -3578,7 +3541,6 @@
       bindClick("btnSeoGeoNextSmart", executeCurrentSeoGeoNextStep);
       bindClick("btnOpenSeoGeoActionPlan", openLatestSeoGeoActionPlan);
       bindClick("btnImportAiVisibility", runAiVisibilityAutomation);
-      bindClick("btnRunAiVisibilityLunaComparison", runAiVisibilityLunaComparison);
       bindClick("btnAnalyzeGscGenerativeAi", analyzeGscGenerativeAiExcel);
       bindClick("btnOpenGscGenerativeAiAnalysis", showGscGenerativeAiAnalysisInStatus);
       bindClick("btnToggleQueueDetails", toggleQueueDetails);
@@ -3635,10 +3597,9 @@
     <button id="toggleMonthlyAiAction" type="button" class="btn-monthly-ai-toggle">顯示每月 AI 可見度／生成式 AI 檢查（選用）</button>
     <div id="monthlyAiAction" class="advanced-seo-geo-actions">
       <button id="btnImportAiVisibility" class="btn-seo-geo btn-ai-visibility">執行 AI 可見度檢查</button>
-      <button id="btnRunAiVisibilityLunaComparison" class="btn-seo-geo btn-ai-luna">Luna 對照測試（額外模型費用）</button>
       <button id="btnAnalyzeGscGenerativeAi" class="btn-seo-geo btn-gsc-generative-ai">分析 GSC 生成式 AI Excel 報表＋匯入</button>
       <button id="btnOpenGscGenerativeAiAnalysis" class="btn-upload-fallback">在 UI 查看最新 GSC 生成式 AI 分析報表</button>
-      <p class="seo-geo-note">一般檢查會用預設模型完成並匯入固定 6 題。Luna 對照會以 <strong>gpt-5.6-luna</strong> 另跑同一組題目，產生獨立比較報告，不會覆蓋目前正式結果；因會多呼叫一個模型，將增加該模型的 API 用量／費用。兩者皆需要設定 <strong>OPENAI_API_KEY</strong>。</p>
+      <p class="seo-geo-note">一般檢查會以正式 baseline <strong>gpt-5.4-mini</strong> 完成並匯入固定 6 題，需要設定 <strong>OPENAI_API_KEY</strong>。既有對照報告僅供儀表板查閱，不會改寫正式結果。</p>
       <p class="seo-geo-note">「分析 GSC 生成式 AI Excel」請選取 GSC 下載的 <strong>.xlsx</strong>。它只分析 GSC 生成式 AI 功能曝光，不會改寫 direct AI Visibility 的提及、引用或正確性指標。</p>
     </div>
 

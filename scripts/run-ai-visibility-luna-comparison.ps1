@@ -220,7 +220,7 @@ $comparison = [ordered]@{
     luna_imported_into_latest_summary = $false
   }
   question_deltas = $questionDeltas
-  next_step = 'Review Luna answers manually before making any model-default change. This comparison does not overwrite the saved gpt-5.4-mini summary, receipt, or human accuracy review.'
+  next_step = 'Review Luna answers with a clearly labeled AI-assisted or human accuracy review before making any model-default change. This comparison does not overwrite the saved gpt-5.4-mini summary, receipt, or review provenance.'
 }
 Write-JsonAtomic -Path $ComparisonOutputPath -Value $comparison
 

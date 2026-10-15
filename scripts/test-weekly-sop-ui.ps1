@@ -46,9 +46,12 @@ $hta = Get-Content -LiteralPath $htaPath -Raw -Encoding UTF8
 foreach ($id in @('zoneDataTrust', 'zoneOwnerPortfolio', 'zoneDecision', 'zoneStrategy', 'zoneImplementation', 'zonePerformance')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing six-zone UI panel: $id"
 }
-foreach ($id in @('btnSeoGeoNextSmart', 'btnOpenSeoGeoActionPlan', 'btnImportAiVisibility', 'btnRunAiVisibilityLunaComparison')) {
+foreach ($id in @('btnSeoGeoNextSmart', 'btnOpenSeoGeoActionPlan', 'btnImportAiVisibility')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing SEO/GEO action button: $id"
 }
+Assert-True (-not ($hta -match 'id="btnRunAiVisibilityLunaComparison"')) 'Luna comparison execution button must not be present in the UI.'
+Assert-True (-not $hta.Contains('function runAiVisibilityLunaComparison')) 'Luna comparison execution handler must not be present in the UI.'
+Assert-True (-not $hta.Contains('.btn-ai-luna')) 'Luna comparison button styling must not be present in the UI.'
 foreach ($id in @('btnFetchGscLatest')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing GSC report action button: $id"
 }
@@ -62,7 +65,7 @@ Assert-True (([regex]::Matches($primaryActions, '<button\b')).Count -eq 2) 'Prim
 foreach ($marker in @('function executeCurrentSeoGeoNextStep', 'function invokeLifecycleNext', 'function getLifecycleNextInspection', 'function getSeoGeoUiProjection', 'function runSeoGeoAutoDeploy', 'AUTO_DEPLOY', 'invoke-seo-geo-lifecycle-next.ps1', 'invoke-seo-geo-autodeploy.ps1', '執行目前下一步', '查看目前 SEO/GEO 優化報表', '正式上傳網站（FTP 部署）')) {
   Assert-True ($hta.Contains($marker)) "Missing smart SEO/GEO UI marker: $marker"
 }
-foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionText', 'getEffectiveWorkflowProjection', 'strategy snapshot=', 'effective workflow=', 'single_page_alignment_review', 'observation_only', 'awaiting_implemented_receipt', 'btnLifecycleImplemented', 'btnLifecycleLocalValidated', 'btnSeoGeoDeployDryRun', 'btnSeoGeoDeploy', 'btnSeoGeoLiveVerify', 'btnImportAiVisibility', 'btnImportAiVisibilityInbox', 'btnImportAiVisibilityManual', 'btnRunAiVisibilityLunaComparison', 'runSeoGeoDeployment', 'runSeoGeoLiveVerification', 'runAiVisibilityAutomation', 'runAiVisibilityLunaComparison', 'run-ai-visibility-observation.ps1', 'run-ai-visibility-luna-comparison.ps1', 'importLatestAiVisibilityObservation', 'import-latest-ai-visibility.ps1', 'importAiVisibilityObservation', 'direct_ai_engine_observation', '品牌題：提及率=', '非品牌題：提及率=', '引用來源（按題計）', '自有網域：online.hong-sen.com=', 'accuracy（完全正確）=', 'accuracy review=', 'gsc_inference_prohibited', 'workflow consistency gate', 'queue_sha256', 'validation_receipt_sha256', 'write-seo-geo-workflow-transition.ps1', 'PowerShell transaction', 'function buildPostGscSubmissionReminder', '下一步操作提醒', '固定 6 題', 'observing_7d', 'decision_ready 7d manifest')) {
+foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionText', 'getEffectiveWorkflowProjection', 'strategy snapshot=', 'effective workflow=', 'single_page_alignment_review', 'observation_only', 'awaiting_implemented_receipt', 'btnLifecycleImplemented', 'btnLifecycleLocalValidated', 'btnSeoGeoDeployDryRun', 'btnSeoGeoDeploy', 'btnSeoGeoLiveVerify', 'btnImportAiVisibility', 'btnImportAiVisibilityInbox', 'btnImportAiVisibilityManual', 'runSeoGeoDeployment', 'runSeoGeoLiveVerification', 'runAiVisibilityAutomation', 'run-ai-visibility-observation.ps1', 'importLatestAiVisibilityObservation', 'import-latest-ai-visibility.ps1', 'importAiVisibilityObservation', 'direct_ai_engine_observation', '品牌題：提及率=', '非品牌題：提及率=', '引用來源（按題計）', '自有網域：online.hong-sen.com=', 'accuracy（完全正確）=', 'accuracy review=', 'gsc_inference_prohibited', 'workflow consistency gate', 'queue_sha256', 'validation_receipt_sha256', 'write-seo-geo-workflow-transition.ps1', 'PowerShell transaction', 'function buildPostGscSubmissionReminder', '下一步操作提醒', '固定 6 題', 'observing_7d', 'decision_ready 7d manifest')) {
   Assert-True ($hta.Contains($marker)) "Missing UI safety/render marker: $marker"
 }
 Assert-True (-not $hta.Contains('persistValidatedRoundArtifacts')) 'HTA must not retain duplicate JavaScript Round persistence.'

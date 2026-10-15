@@ -88,7 +88,8 @@ $reviewByQuestionId = @{}
 if (-not [string]::IsNullOrWhiteSpace($ReviewPath)) {
   $reviewPathResolved = (Resolve-Path -LiteralPath $ReviewPath).Path
   $review = Read-Json $reviewPathResolved
-  if ([int]$review.schema_version -ne 1 -or [string]$review.review_type -ne 'ai_visibility_human_accuracy_review') { throw 'Review must be schema_version=1 and review_type=ai_visibility_human_accuracy_review.' }
+  $acceptedReviewTypes = @('ai_visibility_human_accuracy_review', 'ai_visibility_ai_assisted_accuracy_review')
+  if ([int]$review.schema_version -ne 1 -or [string]$review.review_type -notin $acceptedReviewTypes) { throw 'Review must be schema_version=1 and use a supported human or AI-assisted accuracy review type.' }
   Require-NonEmpty $review.reviewed_at 'reviewed_at'
   Require-NonEmpty $review.reviewer 'reviewer'
   if ([string]$review.source_observation.sha256 -ne $inputSha) { throw 'Review source_observation.sha256 does not match InputPath.' }
@@ -174,7 +175,8 @@ $metrics = [ordered]@{
   accuracy_non_incorrect_rate = Get-Rate ($correctCount + $partialCount) $evaluated.Count
   accuracy_unverified_count = @($normalized | Where-Object { $_.accuracy -eq 'unverified' }).Count
 }
-$accuracyReviewProvenance = if ($null -eq $review) { $null } else { [ordered]@{ path = Get-RelativePath $root $reviewPathResolved; sha256 = $reviewSha; reviewed_at = [datetimeoffset]::Parse([string]$review.reviewed_at).ToUniversalTime().ToString('o'); reviewer = [string]$review.reviewer } }
+$reviewMethod = if ($null -ne $review -and $null -ne $review.PSObject.Properties['review_method']) { [string]$review.review_method } else { '' }
+$accuracyReviewProvenance = if ($null -eq $review) { $null } else { [ordered]@{ path = Get-RelativePath $root $reviewPathResolved; sha256 = $reviewSha; review_type = [string]$review.review_type; review_method = $reviewMethod; reviewed_at = [datetimeoffset]::Parse([string]$review.reviewed_at).ToUniversalTime().ToString('o'); reviewer = [string]$review.reviewer } }
 $snapshot = [ordered]@{
   schema_version = 1; snapshot_id = $snapshotId; status = 'complete'; measurement_source = 'direct_ai_engine_observation'; gsc_inference_prohibited = $true
   question_set = [ordered]@{ id = [string]$questionSet.question_set_id; path = Get-RelativePath $root $questionSetPathResolved; sha256 = $questionSetSha; locale = [string]$questionSet.locale }

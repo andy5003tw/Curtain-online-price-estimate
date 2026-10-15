@@ -42,7 +42,7 @@ $productId = strtoupper(trim((string) ($input['product_id'] ?? '')));
 $widthCm = $input['width_cm'] ?? null;
 $heightCm = $input['height_cm'] ?? null;
 
-if ($productId === '' || !preg_match('/^P\\d{3}$/', $productId)) {
+if ($productId === '' || !preg_match('/^P\\d{3,}$/', $productId)) {
     hs_response_json(422, [
         'ok' => false,
         'error_code' => 'INVALID_PRODUCT',
@@ -79,8 +79,16 @@ if (!is_array($products) || !isset($products[$productId])) {
 }
 
 $productRule = $products[$productId];
+if (hs_product_status($productRule) !== 'active') {
+    hs_response_json(404, [
+        'ok' => false,
+        'error_code' => 'PRODUCT_NOT_FOUND',
+        'message' => 'Product pricing rule not found.',
+    ]);
+}
 $formulaType = (string) ($productRule['formula_type'] ?? '');
 $pricing = $productRule['pricing'] ?? null;
+$formulaSettings = $productRule['formula_settings'] ?? [];
 if ($formulaType === '' || !is_array($pricing)) {
     hs_audit_log('calc_rule_invalid', ['product_id' => $productId]);
     hs_response_json(500, [
@@ -91,7 +99,7 @@ if ($formulaType === '' || !is_array($pricing)) {
 }
 
 try {
-    $result = hs_calc_price($formulaType, $width, $height, $pricing);
+    $result = hs_calc_price($formulaType, $width, $height, $pricing, is_array($formulaSettings) ? $formulaSettings : []);
 } catch (Throwable $exception) {
     hs_audit_log('calc_failed', [
         'product_id' => $productId,

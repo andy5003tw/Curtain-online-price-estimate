@@ -6,14 +6,17 @@ Chinese task terms: `關鍵字詞池`, `主攻詞`, `綁定主頁`, `產品 + �
 
 ## Baseline First
 
-Start with complete-day GSC baseline data:
+Use complete-day GSC baseline data only for Strategy / Re-selection Mode: creating a new pool, choosing/replacing the next 6 pages, or formally deciding keep/replace/expand.
 
-- 7-day query baseline: `Weekly SOP/history/7d/current_query_baseline.normalized.csv`
-- 7-day page baseline: `Weekly SOP/history/7d/current_page_baseline.normalized.csv`
-- 28-day query baseline: `Weekly SOP/history/28d/current_query_baseline.normalized.csv`
-- 28-day page baseline: `Weekly SOP/history/28d/current_page_baseline.normalized.csv`
+- Resolve the current query/page baseline paths from `Weekly SOP/latest/<window>/weekly-sop-last-run.json`.
+- For the current site these normally live under `Weekly SOP/history/curtain-online/<window>/current_*_baseline.normalized.csv`.
+- Read the complete normalized current baselines, not a thresholded Markdown/HTML report table.
 
 Use 7d for quick movement and micro-adjustments. Use 28d for formal decisions about keeping, replacing, or expanding keywords.
+
+If either required snapshot is `monitor_only`, bootstrapped without a prior comparison, or not `decision_ready`, stop at observation. Do not create source implementation tasks from that cycle.
+
+For routine implementation, do not reread raw baselines when `Weekly SOP/latest/seo-geo-action-plan.ai.md` already exists. Execute the action plan and preserve its selected pages/keywords unless the user explicitly asks to redo strategy.
 
 ## Keyword Ownership
 
@@ -23,10 +26,11 @@ Use 7d for quick movement and micro-adjustments. Use 28d for formal decisions ab
 - Do not let product pages, GEO pages, calculator pages, and blog pages compete for the same exact owner keyword.
 - Before editing pages, run:
   `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`
+- Running the owner check is required; reading the script source is not required unless debugging the script.
 
-## Six-Page Batch Rule
+## Focused Batch Rule
 
-Default ranking work is one complete 6-page batch. Do not split into smaller batches unless the user explicitly asks.
+Default ranking work is one focused 2-5 page batch, with 6 pages as the hard maximum. Do not add low-value pages merely to fill a fixed batch size.
 
 For each selected page, align:
 
@@ -40,13 +44,15 @@ For each selected page, align:
 
 ## Batch Selection
 
-Use the latest `Weekly SOP/12-keyword-pool-v*.md` unless the user specifies another file.
+Use `Weekly SOP/config/target-registry.json` as the canonical owner portfolio. Legacy `12-keyword-pool-v*.md` files are historical evidence only and must not drive a new queue.
+
+If a decision-ready `Weekly SOP/latest/seo-geo-action-plan.ai.md` has already selected the pages, do not reselect during implementation. If the current source already satisfies the requested state or the owner is inside its 28-day cooldown, keep it in observation instead of issuing the same implementation action again.
 
 When creating the next pool:
 
 - Start from 7d/28d query and page baselines.
 - Map each keyword to exactly one owner page.
-- Group owner pages into the next 6-page execution order.
+- Group eligible owner pages into focused 2-5 page Rounds, with 6 as the hard maximum; do not add filler pages.
 - Prefer pages that can support stronger visible content, FAQ, and internal-link intent without becoming thin or off-topic.
 - Do not add a keyword to the pool only because it sounds useful; it needs either GSC evidence, clear service value, or a deliberate expansion reason.
 
@@ -54,6 +60,7 @@ When creating the next pool:
 
 After each batch goes live:
 
+- Persist the validated action fingerprints and use both action history and registry `lastChangedAt` as 28-day cooldown evidence.
 - After 7 complete days: review CTR, impressions, average position, and obvious page/query mismatches.
 - After 28 complete days: decide whether to keep, replace, or expand each keyword cluster.
-- Keep `plan.md` compact by updating current state and next steps; move detailed completed evidence into phase/history files when needed.
+- Keep `plan.md` compact by updating current state and next steps; move detailed completed evidence into `All_plan/` or dedicated history files when needed.

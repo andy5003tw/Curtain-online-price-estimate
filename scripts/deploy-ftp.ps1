@@ -12,6 +12,11 @@ param(
 
   [string[]]$Path = @(),
   [string]$PathFile = '',
+  [string]$DeployPlanPath = '',
+  [string]$ManifestPath = 'Weekly SOP/latest/seo-geo-deployment-manifest.json',
+  [string]$QueueId = '',
+  [string]$CycleKey = '',
+  [string[]]$ActionId = @(),
 
   [switch]$DryRun,
   [switch]$Force,
@@ -22,6 +27,17 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# `pwsh -File` cannot reliably bind repeated array parameters from a command
+# string. The SOP launcher therefore passes the queue action IDs as one
+# pipe-delimited value; preserve direct array callers while normalizing both.
+$normalizedActionIds = @(
+  $ActionId |
+    ForEach-Object { ([string]$_ -split '\|') } |
+    ForEach-Object { ([string]$_).Trim() } |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+    Sort-Object -Unique
+)
 
 if (-not $HostName) { $HostName = if ($env:FTP_HOST) { $env:FTP_HOST } else { 'ftp.hong-sen.com' } }
 if (-not $RemoteRoot) { $RemoteRoot = if ($env:FTP_REMOTE_DIR) { $env:FTP_REMOTE_DIR } else { 'online.hong-sen.com' } }
@@ -48,6 +64,20 @@ function ConvertTo-RelativePath {
   param([System.IO.FileInfo]$File)
 
   return ([System.IO.Path]::GetRelativePath($rootPath, $File.FullName) -replace '\\', '/')
+}
+
+function Read-Json([string]$JsonPath) {
+  if (-not (Test-Path -LiteralPath $JsonPath -PathType Leaf)) { throw "Deploy plan not found: $JsonPath" }
+  return Get-Content -LiteralPath $JsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
+}
+
+function Get-StringSet([object[]]$Values) {
+  return @($Values | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+function Test-SameSet([object[]]$Left, [object[]]$Right) {
+  $a = @(Get-StringSet $Left); $b = @(Get-StringSet $Right)
+  return $a.Count -eq $b.Count -and @($a | Where-Object { $_ -notin $b }).Count -eq 0
 }
 
 function ConvertTo-FtpPath {
@@ -163,6 +193,9 @@ function Get-QuickFiles {
       $relative -like '*.html' -or
       $relative -like '*.txt' -or
       $relative -like '*.xml' -or
+      # Static-export public assets are copied under `out/` rather than
+      # `_next/static/`; excluding them leaves live HTML pointing at 404s.
+      $relative -match '\.(?:avif|gif|ico|jpe?g|png|svg|webp|woff2?|ttf|otf)$' -or
       $relative -eq 'robots.txt' -or
       $relative -eq '.htaccess'
   }
@@ -196,12 +229,40 @@ function Resolve-DeployPath {
   throw "Deploy path not found under ${LocalRoot}: $InputPath"
 }
 
+function Write-DeploymentManifest {
+  param([object]$Manifest)
+  $manifestFullPath = if ([System.IO.Path]::IsPathRooted($ManifestPath)) { $ManifestPath } else { Join-Path (Get-Location).Path $ManifestPath }
+  $manifestDirectory = Split-Path -Parent $manifestFullPath
+  if (-not (Test-Path -LiteralPath $manifestDirectory)) { New-Item -ItemType Directory -Path $manifestDirectory -Force | Out-Null }
+  $tempPath = "$manifestFullPath.tmp.$([guid]::NewGuid().ToString('N'))"
+  try {
+    $json = $Manifest | ConvertTo-Json -Depth 20
+    [System.IO.File]::WriteAllText($tempPath, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+    [System.IO.File]::Move($tempPath, $manifestFullPath, $true)
+  } finally {
+    if (Test-Path -LiteralPath $tempPath) { Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue }
+  }
+  return $manifestFullPath
+}
+
+$deployPlan = $null
+if ($DeployPlanPath) {
+  if ($Mode -ne 'paths') { throw 'DeployPlanPath requires -Mode paths.' }
+  $deployPlan = Read-Json $DeployPlanPath
+  if ([int]$deployPlan.schema_version -ne 1 -or [string]$deployPlan.status -ne 'ready' -or -not [bool]$deployPlan.preflight.passed) { throw 'Deploy plan is not ready.' }
+  if ([string]$deployPlan.target_host -ne 'online.hong-sen.com' -or [string]$deployPlan.ftp_host -ne $HostName -or [string]$deployPlan.remote_root -ne $remoteRootTrimmed) { throw 'Deploy plan target does not match the configured FTP destination.' }
+  if ($QueueId -ne [string]$deployPlan.queue_id -or $CycleKey -ne [string]$deployPlan.cycle_key -or -not (Test-SameSet $normalizedActionIds @($deployPlan.action_ids))) { throw 'Deploy plan identity does not match deployment context.' }
+  if (@($deployPlan.files).Count -eq 0) { throw 'Deploy plan has no approved files.' }
+}
+
 $selectedFiles = switch ($Mode) {
   'quick' { @(Get-QuickFiles) }
   'all' { @(Get-ChildItem -LiteralPath $rootPath -Recurse -File) }
   'paths' {
     $inputs = @()
-    if ($PathFile) {
+    if ($deployPlan) {
+      $inputs += @($deployPlan.files | ForEach-Object { [string]$_.relative_path })
+    } elseif ($PathFile) {
       if (-not (Test-Path -LiteralPath $PathFile -PathType Leaf)) {
         throw "Path file not found: $PathFile"
       }
@@ -233,11 +294,36 @@ foreach ($file in $selectedFiles) {
   $fileMap[$relative] = $file
 }
 
+if ($deployPlan) {
+  $planned = @($deployPlan.files | Sort-Object relative_path)
+  if ($fileMap.Count -ne $planned.Count) { throw 'Resolved deploy files do not match the approved deploy plan.' }
+  foreach ($entry in $planned) {
+    $relative = [string]$entry.relative_path
+    if (-not $fileMap.Contains($relative)) { throw "Deploy plan file missing from resolved set: $relative" }
+    $actualHash = (Get-FileHash -LiteralPath $fileMap[$relative].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualHash -ne [string]$entry.sha256) { throw "Deploy plan hash drift detected: $relative" }
+  }
+}
+
 $items = @(
   foreach ($key in ($fileMap.Keys | Sort-Object)) {
     [pscustomobject]@{
       RelativePath = $key
       File = $fileMap[$key]
+    }
+  }
+)
+$manifestItems = @(
+  foreach ($item in $items) {
+    $file = [System.IO.FileInfo]$item.File
+    [ordered]@{
+      relative_path = [string]$item.RelativePath
+      size_bytes = [int64]$file.Length
+      sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+      result = if ($DryRun) { 'would_upload' } else { 'pending' }
+      remote_size_before = $null
+      attempts = 0
+      error = $null
     }
   }
 )
@@ -272,6 +358,8 @@ foreach ($item in $items) {
     $remoteSize = Get-RemoteFileSize -RelativePath $relative
     if ($null -ne $remoteSize -and [int64]$remoteSize -eq [int64]$file.Length) {
       $skipped += 1
+      $manifestItems[$index - 1].result = 'skipped_same_size'
+      $manifestItems[$index - 1].remote_size_before = [int64]$remoteSize
       Write-Host "$prefix skip $relative ($sizeKb KB, same remote size)"
       continue
     }
@@ -281,14 +369,49 @@ foreach ($item in $items) {
     Send-FtpFile -File $file -RelativePath $relative
     $uploaded += 1
     $bytesUploaded += $file.Length
+    $manifestItems[$index - 1].result = 'uploaded'
+    $manifestItems[$index - 1].attempts = 1
     Write-Host "$prefix uploaded $relative ($sizeKb KB)"
   } catch {
     $failed += 1
+    $manifestItems[$index - 1].result = 'failed'
+    $manifestItems[$index - 1].error = $_.Exception.Message
     Write-Warning "$prefix failed $relative - $($_.Exception.Message)"
   }
 }
 
 Write-Host ("Summary: uploaded={0}, skipped={1}, failed={2}, uploadedMB={3}" -f $uploaded, $skipped, $failed, [Math]::Round($bytesUploaded / 1MB, 2))
+
+$manifestStatus = if ($DryRun) { 'dry_run' } elseif ($failed -eq 0) { 'success' } else { 'failed' }
+$deploymentManifest = [ordered]@{
+  schema_version = 1
+  status = $manifestStatus
+  generated_at = (Get-Date).ToUniversalTime().ToString('o')
+  completed_at = (Get-Date).ToUniversalTime().ToString('o')
+  deploy_mode = $Mode
+  dry_run = $DryRun.IsPresent
+  force = $Force.IsPresent
+  target_host = 'online.hong-sen.com'
+  ftp_host = $HostName
+  remote_root = $remoteRootTrimmed
+  local_root = $rootPath
+  deployment_context = [ordered]@{
+    queue_id = $QueueId
+    cycle_key = $CycleKey
+    action_ids = $normalizedActionIds
+  }
+  deploy_plan = if ($deployPlan) { [ordered]@{ path = $DeployPlanPath; sha256 = (Get-FileHash -LiteralPath $DeployPlanPath -Algorithm SHA256).Hash.ToLowerInvariant() } } else { $null }
+  summary = [ordered]@{
+    selected = $items.Count
+    uploaded = $uploaded
+    skipped = $skipped
+    failed = $failed
+    bytes_uploaded = $bytesUploaded
+  }
+  files = $manifestItems
+}
+$writtenManifestPath = Write-DeploymentManifest -Manifest $deploymentManifest
+Write-Host "Deployment manifest: $writtenManifestPath"
 
 if ($failed -gt 0) {
   throw "$failed file(s) failed to upload."

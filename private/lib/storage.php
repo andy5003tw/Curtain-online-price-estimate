@@ -37,7 +37,11 @@ function hs_read_rules(): array
 
 function hs_save_rules(array $rules): bool
 {
-    return hs_atomic_write(hs_rules_file_path(), hs_export_php_array($rules));
+    $saved = hs_atomic_write(hs_rules_file_path(), hs_export_php_array($rules));
+    if ($saved && function_exists('opcache_invalidate')) {
+        opcache_invalidate(hs_rules_file_path(), true);
+    }
+    return $saved;
 }
 
 function hs_read_users(): array
@@ -84,5 +88,9 @@ function hs_restore_latest_rules_backup(?string &$restoredFrom = null): bool
     }
     $latest = $backups[0];
     $restoredFrom = $latest;
-    return copy($latest, hs_rules_file_path());
+    $restored = copy($latest, hs_rules_file_path());
+    if ($restored && function_exists('opcache_invalidate')) {
+        opcache_invalidate(hs_rules_file_path(), true);
+    }
+    return $restored;
 }

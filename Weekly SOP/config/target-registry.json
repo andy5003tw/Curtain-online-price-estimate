@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "siteId": "curtain-online",
   "generatedFrom": "src/data/products.ts",
-  "updatedAt": "2026-10-11",
+  "updatedAt": "2026-10-15",
   "targets": [
     {
       "clusterId": "core-curtain",
@@ -79,7 +79,7 @@
       "priority": "P1",
       "schemaProfile": "product",
       "businessValue": "high",
-      "lastChangedAt": "2026-09-09",
+      "lastChangedAt": "2026-10-15",
       "status": "active"
     },
     {

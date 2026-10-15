@@ -959,7 +959,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         )}
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
           <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
-            <Calculator size={16} /> {product.id === 'P007' ? '直接做實木百葉窗價格試算' : product.id === 'P002' ? '用我的尺寸試算無縫紗簾' : product.id === 'P006' ? '用我的尺寸試算鋁百葉' : '直接線上估算我的費用'}
+            <Calculator size={16} /> {product.id === 'P007' ? '直接做實木百葉窗價格試算' : product.id === 'P002' ? '用我的尺寸試算無縫紗簾' : product.id === 'P006' ? '用我的尺寸試算鋁百葉' : product.id === 'P003' ? '試算蛇形窗簾價格' : '直接線上估算我的費用'}
           </Link>
         </div>
       </div>
@@ -1037,7 +1037,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href={buildCalculatorUrl(product.id)} className="btn-primary">
                   <Calculator size={16} />
-                  {product.id === 'P007' ? '立即做實木百葉窗價格試算' : product.id === 'P002' ? '試算無縫紗簾價格' : product.id === 'P006' ? '試算鋁百葉價格' : '立即估價'}
+                  {product.id === 'P007' ? '立即做實木百葉窗價格試算' : product.id === 'P002' ? '試算無縫紗簾價格' : product.id === 'P006' ? '試算鋁百葉價格' : product.id === 'P003' ? '蛇形窗簾價格試算' : '立即估價'}
                 </Link>
                 <a href="tel:0289727322" className="btn-outline">
                   致電諮詢

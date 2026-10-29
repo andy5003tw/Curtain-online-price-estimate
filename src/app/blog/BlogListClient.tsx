@@ -1,41 +1,57 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { withBasePath } from '@/lib/base-path';
 
-function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }: any) {
+import type { KnowledgePost } from '@/data/knowledgePosts';
+
+type KnowledgeCategory = { id: string; name: string };
+
+type BlogListProps = {
+  knowledgePosts: KnowledgePost[];
+  knowledgeCategories: KnowledgeCategory[];
+  knowledgeTags: string[];
+};
+
+function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }: BlogListProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initialCategory = searchParams?.get('category') || 'all';
-  const initialTag = searchParams?.get('tag') || null;
 
-  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
-  const [activeTag, setActiveTag] = useState<string | null>(initialTag);
+  // The URL is the single source of truth so direct links and browser
+  // back/forward navigation always render the matching filter.
+  const activeTag = searchParams?.get('tag') || null;
+  const activeCategory = activeTag ? 'all' : searchParams?.get('category') || 'all';
 
-  // Sync state if URL changes
-  useEffect(() => {
-    const cat = searchParams?.get('category');
-    const tag = searchParams?.get('tag');
-    if (cat) { setActiveCategory(cat); setActiveTag(null); }
-    if (tag) { setActiveTag(tag); setActiveCategory('all'); }
-  }, [searchParams]);
+  const updateFilterQuery = (category: string = 'all', tag: string | null = null) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.delete('category');
+    params.delete('tag');
+    if (tag) {
+      params.set('tag', tag);
+    } else if (category !== 'all') {
+      params.set('category', category);
+    }
+
+    const query = params.toString();
+    router.push(`${pathname}${query ? `?${query}` : ''}`, { scroll: false });
+  };
 
   const handleCategoryClick = (catId: string) => {
-    setActiveCategory(catId);
-    setActiveTag(null);
+    updateFilterQuery(catId);
   };
 
   const handleTagClick = (tag: string) => {
     if (activeTag === tag) {
-      setActiveTag(null); // toggle off
+      updateFilterQuery();
     } else {
-      setActiveTag(tag);
-      setActiveCategory('all');
+      updateFilterQuery('all', tag);
     }
   };
 
-  const filteredPosts = knowledgePosts.filter((post: any) => {
+  const filteredPosts = knowledgePosts.filter((post) => {
     if (activeTag) {
       return post.tags.includes(activeTag);
     }
@@ -67,7 +83,7 @@ function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }:
               >
                 全部文章
               </button>
-              {knowledgeCategories.map((cat: any) => (
+              {knowledgeCategories.map((cat) => (
                 <button 
                   key={cat.id} 
                   onClick={() => handleCategoryClick(cat.id)}
@@ -89,7 +105,7 @@ function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }:
                 <span style={{ fontSize: '0.9rem', color: 'var(--stone-500)' }}>目前搜尋標籤：</span>
                 <span style={{ background: 'var(--amber-100)', color: 'var(--amber-800)', padding: '0.3rem 1rem', borderRadius: '2rem', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   #{activeTag}
-                  <button onClick={() => setActiveTag(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0 }}>×</button>
+                  <button onClick={() => handleCategoryClick('all')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               </div>
             )}
@@ -98,12 +114,12 @@ function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }:
             {filteredPosts.length === 0 ? (
               <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'white', borderRadius: '1rem', border: '1px solid var(--stone-100)' }}>
                 <p style={{ color: 'var(--stone-500)', fontSize: '1.1rem' }}>沒有找到符合條件的文章。</p>
-                <button onClick={() => {setActiveCategory('all'); setActiveTag(null);}} style={{ marginTop: '1rem', background: 'var(--amber-600)', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '2rem', cursor: 'pointer', fontWeight: 600 }}>重設篩選</button>
+                <button onClick={() => handleCategoryClick('all')} style={{ marginTop: '1rem', background: 'var(--amber-600)', color: 'white', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '2rem', cursor: 'pointer', fontWeight: 600 }}>重設篩選</button>
               </div>
             ) : (
               <div className="blog-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-                {filteredPosts.map((article: any) => {
-                  const categoryName = knowledgeCategories.find((c: any) => c.id === article.category)?.name || '未分類';
+                {filteredPosts.map((article) => {
+                  const categoryName = knowledgeCategories.find((c) => c.id === article.category)?.name || '未分類';
                   return (
                     <article key={article.id} className="case-card" style={{ display: 'flex', flexDirection: 'column', background: 'white', borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--stone-100)', transition: 'all 0.3s ease' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -205,7 +221,7 @@ function BlogListContent({ knowledgePosts, knowledgeCategories, knowledgeTags }:
   );
 }
 
-export default function BlogListClient({ knowledgePosts, knowledgeCategories, knowledgeTags }: any) {
+export default function BlogListClient({ knowledgePosts, knowledgeCategories, knowledgeTags }: BlogListProps) {
   return (
     <Suspense fallback={<div style={{ padding: '4rem', textAlign: 'center' }}>載入知識庫中...</div>}>
       <BlogListContent knowledgePosts={knowledgePosts} knowledgeCategories={knowledgeCategories} knowledgeTags={knowledgeTags} />

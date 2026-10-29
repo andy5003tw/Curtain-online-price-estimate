@@ -10,7 +10,7 @@
 
 - Node.js 22 以上（建議；目前 GitHub Actions workflow 使用 Node 22）
 - npm（Windows 可使用 `npm.cmd`）
-- 可執行 PHP 的主機環境（建議 PHP 8.x）
+- 可執行 PHP 的主機環境；正式站目前為 PHP 7.1.33，後台與 API 程式須維持相容
 
 ## 專案結構（重點）
 
@@ -153,6 +153,8 @@ npm.cmd run seo:preflight
 
 ## 後台入口與功能
 
+原有價格卡欄位、公式設定、新增試算產品與上架流程請參考 [`PRICING_FORMULA_ADMIN.md`](PRICING_FORMULA_ADMIN.md)。價格卡保留軌道最低尺數、每才最低計價與每才基本安裝費，修改後會同步到實際試算公式。
+
 - 登入頁：`/admin/pricing/login.php`
 - 後台首頁：`/admin/pricing/`
 - 人員管理（owner）：`/admin/pricing/users.php`
@@ -162,9 +164,9 @@ npm.cmd run seo:preflight
 
 ## 後台權限角色
 
-- `owner`：可管理人員、回滾規則、修改價格
-- `admin`：可修改價格
-- `editor`：可修改價格（不含人員管理與回滾）
+- `owner`：可管理人員、回滾規則、修改原有價格卡欄位及進階公式、管理新試算產品
+- `admin`：可修改原有價格卡欄位及進階公式、管理新試算產品
+- `editor`：可修改原有價格卡欄位（含起算值），可唯讀查看進階公式；不能管理人員、回滾或管理新產品
 
 ## 後台資料與記錄
 

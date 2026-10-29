@@ -2,6 +2,7 @@
 
 ## 已完成
 
+- 根目錄 `HANDOVER.md` 已整理為現行交接、待辦與持續適用的維護規範；移除已完成的舊 queue、舊部署嘗試及過時任務明細，避免誤認現況。舊版完整內容可由 `git show 8ee5e32:HANDOVER.md` 查證，既有日期變更紀錄及本機 receipt 未刪除；2026-09-25 變更紀錄中的舊章節指向已修正。
 - SOP Round receipt 與佇列面板遷移：新增共用後端 gate，核對 Round、action／fingerprint、來源、registry、snapshot 與必要驗證；projection 與 HTA 共用結果與精簡 queue snapshot，移除 HTA 重複 gate。來源過期、讀取失敗或 identity／Round 不符時停用操作；保留 writer 最終重驗。離線 fixture 涵蓋錯誤 receipt 與 UI／面板一致性，未操作正式網站或 Windows HTA。
 - SOP HTA 流程合併第一階段：盤點後移除主按鈕中會被 UI projection 覆寫的舊分支，當時仍供佇列、面板及手動操作使用的 helper 先保留；其中 Round receipt 與佇列重複判斷已於第二階段遷移。自動部署補上畫面原已承諾的上傳確認。部署計畫增加來源 provenance 檢查，dry-run 後再核對來源與 queue／receipt，以阻擋過期資料上傳。離線測試涵蓋按鈕／提示、取消確認、實際 projection 狀態、來源漂移及 dry-run 期間變更；未進行真實 FTP 或 Windows HTA 點擊驗收。
 - SOP UI projection：查核後移除未接線的 `RUN_AI_VISIBILITY`、`RUN_LUNA_COMPARISON`、`ANALYZE_GSC_GENERATIVE_AI` 欄位；AI 可見度與 GSC Excel 的現有按鈕仍沿用直接 handler，Luna 手動對照 runner／fixture 與既有報告顯示保留。更新設計文件與 UI 契約測試；本機 UI 靜態／projection 檢查、auto-deploy 唯讀 Inspect 及 Luna 離線 fixture 均通過。專案外的 JSON 消費者無法由 repo 搜尋確認，若有依賴這三個欄位需同步更新。

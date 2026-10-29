@@ -11,6 +11,9 @@ $lifecycleNext = Join-Path $repoRoot 'scripts\invoke-seo-geo-lifecycle-next.ps1'
 $singlePageApprovalWriter = Join-Path $repoRoot 'scripts\approve-seo-geo-single-page-review.ps1'
 $provenanceChecker = Join-Path $repoRoot 'scripts\check-seo-geo-queue-provenance.ps1'
 $projectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-effective-workflow.ps1'
+$uiProjectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-ui-projection.ps1'
+$deployPlanWriter = Join-Path $repoRoot 'scripts\new-seo-geo-deploy-plan.ps1'
+$autoDeployWriter = Join-Path $repoRoot 'scripts\invoke-seo-geo-autodeploy.ps1'
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("curtain-seo-geo-cycle-{0}" -f ([guid]::NewGuid().ToString('N')))
 $runtimeRoot = Join-Path $testRoot 'runtime'
 # Keep fixture data fresh while preserving the two-day GSC final-data lag used
@@ -107,6 +110,12 @@ function Convert-CommandJson {
   } catch {
     throw "$Label did not emit valid JSON: $($_.Exception.Message)`nRaw output: $json"
   }
+}
+
+function Get-UiProjectionFixture {
+  $result = Invoke-PwshFile -File $uiProjectionWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-RepoRoot', $runtimeRoot)
+  Assert-True ($result.ExitCode -eq 0) ('UI projection fixture failed: ' + ($result.Output -join ' '))
+  return Convert-CommandJson -Output $result.Output -Label 'UI projection fixture'
 }
 
 function Invoke-Generator {
@@ -628,6 +637,9 @@ try {
   $invalidCtrCount = @($singleReviewQueue.ctr_benchmark.invalid_windows | Where-Object { $_.window_key -eq '2026-07-14~2026-08-10' }).Count
   Assert-True ([string]$singleReviewQueue.ctr_benchmark.selected_window -eq $expectedCtrWindow -and $invalidCtrCount -eq 1) "Invalid CTR selection/history contract failed: selected=$($singleReviewQueue.ctr_benchmark.selected_window), expected=$expectedCtrWindow, invalid_count=$invalidCtrCount."
   Assert-True ($singleReviewQueue.status -eq 'observation_only' -and [int]$singleReviewState.total_rounds -eq 0) 'single P0 review unexpectedly created an executable Round.'
+  $uiObservation = Get-UiProjectionFixture
+  Assert-True ([bool]$uiObservation.consistent -and [string]$uiObservation.state -eq 'observation_only' -and [string]$uiObservation.primary_action.id -eq 'GENERATE_PLAN' -and [bool]$uiObservation.primary_action.enabled) 'Observation-only UI projection changed the primary action.'
+  Assert-True (-not [bool]$uiObservation.actions.AUTO_DEPLOY.enabled -and -not [bool]$uiObservation.actions.ADVANCE_ROUND.enabled) 'Observation-only UI projection enabled deployment or Round advancement.'
   Assert-True ($null -ne $singleReviewOpportunity -and [bool]$singleReviewOpportunity.requires_user_approval) 'single P0 review was not retained with its explicit approval guard.'
   Assert-True ($null -ne $snakeAlignment -and [double]$snakeAlignment.owner_share -eq 5.45 -and [int]$snakeAlignment.cluster_impressions -eq 165 -and [string]$snakeAlignment.disposition -eq 'alignment_review') 'Snake-curtain owner-share alignment fixture did not become an eligible review signal.'
   Assert-True ($null -ne $snakeAlignmentReview -and [bool]$snakeAlignmentReview.requires_user_approval) 'Single owner-share alignment candidate did not use the single_page_review approval flow.'
@@ -655,6 +667,16 @@ try {
   Assert-True ($approvedProjectionResult.ExitCode -eq 0) ('effective workflow projection failed after single-page approval: ' + ($approvedProjectionResult.Output -join ' '))
   $approvedProjection = Convert-CommandJson -Output $approvedProjectionResult.Output -Label 'effective workflow projection after single-page approval'
   Assert-True ([bool]$approvedProjection.consistency.valid -and [string]$approvedProjection.strategy_snapshot.status -eq 'observation_only' -and [bool]$approvedProjection.approved_queue.approved_override -and [string]$approvedProjection.effective.status -eq 'active' -and [string]$approvedProjection.effective.source -eq 'approved_queue') 'effective workflow projection did not distinguish immutable observation snapshot from approved active Round.'
+  $uiActive = Get-UiProjectionFixture
+  Assert-True ([bool]$uiActive.consistent -and [string]$uiActive.primary_action.id -eq 'COPY_ROUND_PROMPT' -and [bool]$uiActive.primary_action.enabled -and -not [bool]$uiActive.actions.ADVANCE_ROUND.enabled) 'Active UI projection did not require a validation receipt before advancing.'
+  $missingGateScripts = Join-Path $testRoot 'missing-round-gate-scripts'
+  Ensure-Dir -Path $missingGateScripts
+  foreach ($scriptName in @('get-seo-geo-ui-projection.ps1', 'get-seo-geo-effective-workflow.ps1', 'check-seo-geo-queue-provenance.ps1')) {
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot $scriptName) -Destination (Join-Path $missingGateScripts $scriptName)
+  }
+  $missingGateResult = Invoke-PwshFile -File (Join-Path $missingGateScripts 'get-seo-geo-ui-projection.ps1') -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-RepoRoot', $runtimeRoot)
+  $uiMissingGate = Convert-CommandJson -Output $missingGateResult.Output -Label 'UI projection without Round gate'
+  Assert-True ($missingGateResult.ExitCode -eq 0 -and -not [bool]$uiMissingGate.consistent -and [string]$uiMissingGate.primary_action.id -eq 'NONE' -and -not [bool]$uiMissingGate.panels.queue.receipt_gate.passed -and (@($uiMissingGate.panels.data_trust.reasons) -join ' ') -match 'round_gate_failed') 'Missing Round gate did not fail closed.'
 
   $planSnapshotPath = Join-Path $runtimeRoot 'latest\seo-geo-action-plan.json'
   $planSnapshotBeforeMismatch = Get-Content -LiteralPath $planSnapshotPath -Raw -Encoding UTF8
@@ -665,6 +687,8 @@ try {
   Assert-True ($mismatchProjectionResult.ExitCode -eq 0) 'effective workflow projection did not return a safe result for plan/queue mismatch.'
   $mismatchProjection = Convert-CommandJson -Output $mismatchProjectionResult.Output -Label 'effective workflow projection after identity mismatch'
   Assert-True (-not [bool]$mismatchProjection.consistency.valid -and @($mismatchProjection.consistency.reasons) -contains 'plan_queue_identity_mismatch' -and [string]$mismatchProjection.effective.status -eq 'inconsistent') 'effective workflow projection did not block plan/queue identity mismatch.'
+  $uiMismatch = Get-UiProjectionFixture
+  Assert-True (-not [bool]$uiMismatch.consistent -and [string]$uiMismatch.primary_action.id -eq 'NONE' -and -not [bool]$uiMismatch.primary_action.enabled -and -not [bool]$uiMismatch.actions.AUTO_DEPLOY.enabled) 'Inconsistent UI projection did not block the primary action and auto-deploy.'
   [System.IO.File]::WriteAllText($planSnapshotPath, $planSnapshotBeforeMismatch, $utf8NoBom)
 
   (@($singleReviewRegistry.targets | Where-Object { $_.clusterId -eq 'fixture-about' })[0]).lastChangedAt = $null
@@ -722,6 +746,31 @@ try {
     $receiptResult.Output | ForEach-Object { Write-Host $_ }
   }
   Assert-True ($receiptResult.ExitCode -eq 0) 'matching receipt was rejected.'
+  $uiValidatedRound = Get-UiProjectionFixture
+  Assert-True ([bool]$uiValidatedRound.consistent -and [string]$uiValidatedRound.primary_action.id -eq 'ADVANCE_ROUND' -and [bool]$uiValidatedRound.primary_action.enabled) 'Validated active Round UI projection did not select advancement.'
+  Assert-True ([bool]$uiValidatedRound.panels.queue.receipt_gate.passed) 'Validated active Round queue panel did not expose the passing receipt gate.'
+  $fixtureReceiptPath = Join-Path $runtimeRoot 'latest\seo-geo-validation-receipt.json'
+  $fixtureReceiptOriginal = Get-Content -LiteralPath $fixtureReceiptPath -Raw -Encoding UTF8
+  try {
+    foreach ($defect in @('round', 'action_ids', 'fingerprint', 'source_before', 'source_after', 'registry', 'snapshot', 'validation')) {
+      $badReceipt = $fixtureReceiptOriginal | ConvertFrom-Json
+      switch ($defect) {
+        'round' { $badReceipt.round = 99 }
+        'action_ids' { $badReceipt.action_ids = @('wrong-action') }
+        'fingerprint' { $badReceipt.action_fingerprints[0].fingerprint = ('f' * 64) }
+        'source_before' { $badReceipt.source_fingerprint_before = ('f' * 64) }
+        'source_after' { $badReceipt.source_fingerprint_after = ('f' * 64) }
+        'registry' { $badReceipt.registry.sha256 = ('f' * 64) }
+        'snapshot' { $badReceipt.snapshot.'7d'.sha256 = ('f' * 64) }
+        'validation' { $badReceipt.validation_results[0].status = 'failed' }
+      }
+      Write-Json -Path $fixtureReceiptPath -Value $badReceipt
+      $uiBadReceipt = Get-UiProjectionFixture
+      Assert-True (-not [bool]$uiBadReceipt.panels.queue.receipt_gate.passed -and [string]$uiBadReceipt.primary_action.id -ne 'ADVANCE_ROUND') "Invalid $defect receipt enabled Round advancement."
+    }
+  } finally {
+    Write-Utf8NoBom -Path $fixtureReceiptPath -Text $fixtureReceiptOriginal
+  }
 
   $receiptPath = Join-Path $runtimeRoot 'latest\seo-geo-validation-receipt.json'
   $receipt = Read-Json -Path $receiptPath
@@ -787,8 +836,56 @@ try {
   Assert-True ($localLifecycleReceipt.ExitCode -eq 0) 'smart lifecycle controller rejected local_validated after implemented.'
   $state = Read-Json -Path $statePath
   Assert-True ($state.status -eq 'local_validated' -and -not [string]::IsNullOrWhiteSpace([string]$state.local_validated_at)) 'local_validated lifecycle stage was not persisted.'
+  $uiLocalValidated = Get-UiProjectionFixture
+  Assert-True ([bool]$uiLocalValidated.consistent -and [string]$uiLocalValidated.primary_action.id -eq 'AUTO_DEPLOY' -and -not [bool]$uiLocalValidated.primary_action.enabled) 'Local-validated fixture must block auto-deploy without a ready deploy plan.'
+  # Build a self-contained deploy candidate under the temporary fixture only.
+  # Inspect commands must not connect to FTP or write a deployment journal.
+  Copy-Item -LiteralPath (Join-Path $runtimeRoot 'src') -Destination (Join-Path $testRoot 'src') -Recurse
+  foreach ($target in @($queue.rounds | ForEach-Object { @($_.targets) })) {
+    $route = ([uri][string]$target).AbsolutePath.Trim('/')
+    $relativeOutput = if ($route) { "$route/index.html" } else { 'index.html' }
+    Write-Utf8NoBom -Path (Join-Path (Join-Path $testRoot 'out') $relativeOutput.Replace('/', '\')) -Text 'isolated deploy fixture'
+  }
+  $ftpEnvironment = @{}
+  foreach ($name in @('FTP_HOST', 'FTP_REMOTE_DIR', 'FTP_USER', 'FTP_PASS', 'FTP_PASSWORD')) {
+    $ftpEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+  }
+  $fixtureManifestPath = Join-Path $runtimeRoot 'latest\7d\weekly-sop-last-run.json'
+  $fixtureManifestOriginal = Get-Content -LiteralPath $fixtureManifestPath -Raw -Encoding UTF8
+  try {
+    [Environment]::SetEnvironmentVariable('FTP_HOST', 'ftp.hong-sen.com', 'Process')
+    [Environment]::SetEnvironmentVariable('FTP_REMOTE_DIR', 'online.hong-sen.com', 'Process')
+    [Environment]::SetEnvironmentVariable('FTP_USER', 'fixture-user', 'Process')
+    [Environment]::SetEnvironmentVariable('FTP_PASS', 'fixture-pass', 'Process')
+    [Environment]::SetEnvironmentVariable('FTP_PASSWORD', $null, 'Process')
+    $freshProvenance = Invoke-PwshFile -File $provenanceChecker -ScriptArgs @('-RuntimeRoot', $runtimeRoot)
+    Assert-True ($freshProvenance.ExitCode -eq 0 -and -not [bool](Convert-CommandJson -Output $freshProvenance.Output -Label 'fresh deploy provenance').stale) 'Fresh isolated deploy fixture has stale provenance.'
+    $freshPlanResult = Invoke-PwshFile -File $deployPlanWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Inspect')
+    Assert-True ($freshPlanResult.ExitCode -eq 0 -and [string](Convert-CommandJson -Output $freshPlanResult.Output -Label 'fresh deploy plan').status -eq 'ready') 'Fresh isolated deploy plan did not pass preflight.'
+    $freshDeployUi = Get-UiProjectionFixture
+    Assert-True ([bool]$freshDeployUi.actions.AUTO_DEPLOY.enabled) 'Fresh isolated deploy projection was not enabled.'
+
+    Write-Utf8NoBom -Path $fixtureManifestPath -Text ($fixtureManifestOriginal + "`n")
+    $staleProvenance = Invoke-PwshFile -File $provenanceChecker -ScriptArgs @('-RuntimeRoot', $runtimeRoot)
+    Assert-True ($staleProvenance.ExitCode -eq 0 -and [bool](Convert-CommandJson -Output $staleProvenance.Output -Label 'stale deploy provenance').stale) 'Modified snapshot fixture was not stale.'
+    $stalePlanResult = Invoke-PwshFile -File $deployPlanWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Inspect')
+    $stalePlan = Convert-CommandJson -Output $stalePlanResult.Output -Label 'stale deploy plan'
+    Assert-True ($stalePlanResult.ExitCode -eq 0 -and [string]$stalePlan.status -eq 'blocked' -and -not [bool]$stalePlan.preflight.passed -and (@($stalePlan.preflight.reasons) -join ' ') -match 'snapshot_7d_manifest_sha_mismatch') 'Deploy plan did not block stale queue provenance.'
+    $staleDeployUi = Get-UiProjectionFixture
+    Assert-True (-not [bool]$staleDeployUi.consistent -and -not [bool]$staleDeployUi.actions.AUTO_DEPLOY.enabled) 'Stale queue provenance did not disable the UI auto-deploy action.'
+    $staleAutoResult = Invoke-PwshFile -File $autoDeployWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Inspect')
+    if ($staleAutoResult.ExitCode -eq 0) {
+      Assert-True (-not [bool](Convert-CommandJson -Output $staleAutoResult.Output -Label 'stale auto-deploy inspection').ready) 'Auto-deploy inspection accepted stale queue provenance.'
+    } else {
+      Assert-True (($staleAutoResult.Output -join ' ') -match 'workflow consistency is not valid') 'Auto-deploy inspection failed for an unexpected reason.'
+    }
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $runtimeRoot 'latest\seo-geo-autodeploy-journal.json'))) 'Inspect must not start auto-deployment.'
+  } finally {
+    Write-Utf8NoBom -Path $fixtureManifestPath -Text $fixtureManifestOriginal
+    foreach ($name in $ftpEnvironment.Keys) { [Environment]::SetEnvironmentVariable($name, $ftpEnvironment[$name], 'Process') }
+  }
   $deploymentManifestPath = Join-Path $runtimeRoot 'latest\seo-geo-deployment-manifest.json'
-  Write-Json -Path $deploymentManifestPath -Value ([ordered]@{
+  $deploymentManifest = [ordered]@{
     schema_version = 1; status = 'success'; dry_run = $false; target_host = 'online.hong-sen.com'; deploy_mode = 'quick'
     generated_at = (Get-Date).AddMinutes(-1).ToUniversalTime().ToString('o'); completed_at = (Get-Date).ToUniversalTime().ToString('o')
     deployment_context = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; action_ids = $queueBinding.action_ids }
@@ -797,9 +894,10 @@ try {
     files = @(
       [ordered]@{ relative_path = 'products/cases/index.html'; size_bytes = 100; sha256 = ('a' * 64); result = 'uploaded' },
       [ordered]@{ relative_path = 'sitemap.xml'; size_bytes = 100; sha256 = ('b' * 64); result = 'uploaded' },
-      [ordered]@{ relative_path = 'robots.txt'; size_bytes = 100; sha256 = ('c' * 64); result = 'skipped_same_size' }
+      [ordered]@{ relative_path = 'robots.txt'; size_bytes = 100; sha256 = ('c' * 64); result = 'skipped_same_hash'; remote_sha256_before = ('c' * 64) }
     )
-  })
+  }
+  Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
   $badDeployEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; validation_receipt_sha256 = (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant(); uploaded = 2; skipped = 1; failed = 0; command = 'deploy fixture'; completed_at = (Get-Date).ToString('o'); target_host = 'online.hong-sen.com' } | ConvertTo-Json -Depth 5 -Compress
   $badDeployReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $badDeployEvidence)
   Assert-True ($badDeployReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted evidence without a complete deployment manifest.'
@@ -807,11 +905,27 @@ try {
   $badDeployShaReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $badDeployShaEvidence)
   Assert-True ($badDeployShaReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted a deployment manifest SHA mismatch.'
   Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'deployment manifest SHA mismatch advanced lifecycle state.'
+  foreach ($unsafeSkip in @('skipped_same_size', 'skipped_same_hash')) {
+    $deploymentManifest.files[2].result = $unsafeSkip
+    $deploymentManifest.files[2].remote_sha256_before = ('d' * 64)
+    Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
+    $unsafeDeployEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; validation_receipt_sha256 = (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant(); uploaded = 2; skipped = 1; failed = 0; command = 'deploy fixture'; completed_at = (Get-Date).ToString('o'); target_host = 'online.hong-sen.com'; deployment_manifest = [ordered]@{ path = 'latest/seo-geo-deployment-manifest.json'; sha256 = (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant() } } | ConvertTo-Json -Depth 8 -Compress
+    $unsafeDeployReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $unsafeDeployEvidence)
+    Assert-True ($unsafeDeployReceipt.ExitCode -ne 0) "deployed lifecycle receipt accepted unsafe skip: $unsafeSkip"
+    Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'unsafe skip advanced lifecycle state.'
+    $unsafeInspection = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Inspect')
+    Assert-True ($unsafeInspection.ExitCode -eq 0 -and -not [bool](Convert-CommandJson -Output $unsafeInspection.Output -Label 'Unsafe deployment inspection').ready) 'lifecycle inspection marked an unsafe skip ready.'
+  }
+  $deploymentManifest.files[2].result = 'skipped_same_hash'
+  $deploymentManifest.files[2].remote_sha256_before = ('c' * 64)
+  Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
   $deployReceipt = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Advance')
   if ($deployReceipt.ExitCode -ne 0) { $deployReceipt.Output | ForEach-Object { Write-Host $_ } }
   Assert-True ($deployReceipt.ExitCode -eq 0) 'deployed lifecycle receipt was rejected after local validation.'
   $state = Read-Json -Path $statePath
   Assert-True ($state.status -eq 'deployed' -and -not [string]::IsNullOrWhiteSpace([string]$state.deployed_at)) 'deployed lifecycle stage was not persisted.'
+  $uiDeployed = Get-UiProjectionFixture
+  Assert-True ([bool]$uiDeployed.consistent -and [string]$uiDeployed.primary_action.id -eq 'LIVE_VERIFY' -and [bool]$uiDeployed.primary_action.enabled -and -not [bool]$uiDeployed.actions.AUTO_DEPLOY.enabled) 'Deployed UI projection did not select live verification.'
   $liveManifestPath = Join-Path $runtimeRoot 'latest\seo-geo-live-verification.json'
   $pageChecks = @('http','title','meta_description','h1','canonical','faq_parity','json_ld','internal_links','cta','robots','sitemap') | ForEach-Object { [ordered]@{ name = $_; passed = $true; evidence = "fixture $_ passed" } }
   Write-Json -Path $liveManifestPath -Value ([ordered]@{
@@ -845,6 +959,8 @@ try {
   Assert-True ($liveReceipt.ExitCode -eq 0) 'live_verified lifecycle receipt was rejected after deployed.'
   $state = Read-Json -Path $statePath
   Assert-True ($state.status -eq 'live_verified') 'live_verified lifecycle stage was not persisted.'
+  $uiLiveVerified = Get-UiProjectionFixture
+  Assert-True ([bool]$uiLiveVerified.consistent -and [string]$uiLiveVerified.primary_action.id -eq 'ADVANCE_LIFECYCLE') 'Live-verified UI projection did not select lifecycle inspection.'
   $outOfOrderReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'completed', '-EvidenceJson', '{}')
   Assert-True ($outOfOrderReceipt.ExitCode -ne 0) 'lifecycle receipt allowed completed before 7d/28d review.'
 

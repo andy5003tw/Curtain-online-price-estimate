@@ -9,7 +9,28 @@
 
 ---
 
-## 當前執行狀態（2026-09-24）
+## 最新交接：網站優化與專案清理（2026-10-29）
+
+**整體尚未全部完成。** 以下為 10/29 稽核結論；更早日期的 queue、部署狀態與清單保留為歷史，不可直接當作目前狀態或重複執行舊指令。完整紀錄見 [`Weekly SOP/2026-10-29-change-log.md`](Weekly%20SOP/2026-10-29-change-log.md)；SOP 技術交接見 [`curtain-weekly-sop-ui-update-design.md`](curtain-weekly-sop-ui-update-design.md)。
+
+### 已完成與目前狀態
+
+- P001 一般窗簾詞頁對齊已實作，2026-10-29 02:39 實際上線並公開驗收；Owner、build 與 SEO 驗證已有紀錄。標準 queue `seo-geo-3bbc4c26c0342d93` 仍為 `local_validated`，缺少 queue-bound 的 deployed／live_verified 收據；先確認既有部署與公開驗收證據能否由標準流程接受，不重做頁面修改或手寫狀態。
+- 最新本機 GSC 正式 7d／28d 結束於 10/26；六題 OpenAI 測試已做 AI 輔助審核。Bing sitemap 在 10/29 使用者畫面顯示成功、發現 63 URL、0 錯誤／警告；發現不等於索引。IndexNow 的 P001 通知回應 202，不代表已完成 key 驗證、抓取或索引。
+- FTP 同大小檔案改為內容 SHA-256 比對；SOP 主按鈕與佇列面板共用 Round receipt gate。兩者已完成本機實作與離線測試，**尚未**完成 Windows HTA 實際點擊及本批 FTP 修正在正式主機的驗收；不要因測試通過而寫入 deployed／live_verified。
+- `BrandStory.tsx`、`LocationCityTabs.tsx`、`MotionWrapper.tsx`、`src/index.css` 與 `tmp-calc.json` 已列入本批清理刪除；`framer-motion` 仍由 `FloatingCta.tsx` 使用，必須保留。2026-10-29 稽核時 `.next/` 約 705.2 MiB、`.tmp/` 為空、`.upload-out-files.txt` 尚在；清理前須重新確認 dev/build 狀態及手動上傳需求。
+
+### 後續優先事項
+
+1. 核對 P001 queue 與既有部署／公開驗收證據，再透過標準 writer 處理 lifecycle；歷史 `PLEASE IMPLEMENT` 指令不得重複實作。
+2. 用隔離測試資料驗收 Windows HTA；其他流程提示與六區面板若要遷移，先補等價契約與回歸測試。正式 FTP 的遠端讀取能力與耗時留待下次部署觀察。
+3. 有可用資料時建立 Bing Search Performance 基準並檢查 Site Explorer；確認 IndexNow 後台狀態，勿重複通知沒有新變更的頁面。Bing Places 等客服回覆並核對 85／89 號地址差異。
+4. 捲簾／調光簾固定 7 天需完整 final 資料涵蓋 10/22–10/28；P001 固定觀察窗為 10/30–11/05 與 10/30–11/26，日期到期不等於資料完整。
+5. 清理尚未結束：`src/app/globals.css` 疑似城市頁籤樣式及 `.tab-*` 共用情況需逐項核對；歷史報表、history、圖片原檔與備份也未逐項核定可刪。
+
+`plan.md` 與 `Weekly SOP/latest/` 依 `.gitignore` 留在本機，GitHub 不包含這些操作資料；接手時應先讀本機最新狀態與收據，勿把本文件中的時間點紀錄當作即時後台結果。
+
+## 歷史執行狀態（2026-09-24，非目前 queue）
 
 - Queue：`seo-geo-a4151d46f72664bd`；Cycle：`seo-geo-v2-a4151d46f72664bd43e3c935`；Round 1 已完成，目標為 `/products/wooden-blinds/`（P007）及 `/products/custom-curtains/`（P001）。
 - 本機驗證 receipt 通過；FTP 正式部署 selected=25、uploaded=5、skipped=20、failed=0；queue-target live verification 通過，兩頁 HTTP 200，legacy P001/P007 均 301 至 owner URL。
@@ -23,7 +44,7 @@
    - 前端：Next.js 16（Turbopack）、React 19、TypeScript、純 Vanilla CSS（`src/app/globals.css`）。
    - 輸出模式：`output: "export"` 純靜態匯出（81 個 HTML 靜態頁面生成於 `out/` 目錄）。
    - 後台與 API：正式站實測 PHP 7.1.33（2026-09-24；`/api/calc.php`、`/admin/pricing/`），程式須維持 PHP 7.1 相容。
-   - 部署機制：PowerShell 自動化 FTP 腳本（`scripts/deploy-ftp.ps1`）強制同步覆蓋至遠端正式主機（`online.hong-sen.com`）。
+   - 部署機制：PowerShell FTP 腳本（`scripts/deploy-ftp.ps1`）支援 quick／paths 等模式；預設以遠端內容 SHA-256 核對同大小檔案，只有一致才略過，`-Force` 才強制上傳。
 
 2. **核心設計規範**：
    - 語言一律使用**繁體中文（台灣習慣用語 zh-TW）**，標點符號一律為**全形中文標點**。
@@ -32,7 +53,7 @@
 
 ---
 
-## 二、 已完成工作清單（Completed Checklist - 100% Verified & Deployed）
+## 二、 歷史已完成工作清單（2026-09-10，非目前進度）
 
 以下功能已全數實作、完成本機實機測試、SEO 規範驗證，並已強制部署至遠端正式主機生效：
 
@@ -109,7 +130,7 @@
 
 ---
 
-## 三、 下一個 AI 接續任務清單（Next Tasks & Backlog）
+## 三、 歷史任務清單（目前優先順序以最上方最新交接為準）
 
 接手的 AI 請依以下優先順序推進下一階段任務：
 
@@ -133,7 +154,7 @@
   - 強化試算結果引導至 LINE 預約到府丈量的轉換按鈕設計。
 
 ### 任務 4：程式碼版本控制維護（Git Commit）
-- **現況**：本日已完成 commit 與 GitHub 推送；目前本機與 `origin/codex/seo-geo-v3-optimization` 指向同一個 commit。
+- **歷史狀態**：2026-09-10 當時已完成 commit 與 GitHub 推送；目前同步狀態需以 Git 查詢為準。
 - **後續原則**：有新的 source、SOP 或交接文件變更時，先確認部署與驗證結果，再依使用者授權建立下一筆 commit 並推送。
 
 ### 今日 GitHub 同步紀錄（2026-09-10）
@@ -155,30 +176,22 @@ npm.cmd run dev
 ```
 
 ### 2. 生產環境建置與 SEO 檢查
-> **重要注意事項**：在 Windows 環境與沙盒下執行，請一律使用 `cmd.exe /c` 呼叫，並在必要時帶 `BypassSandbox: true`。
+> Windows 請使用 `npm.cmd`；實際執行環境與錯誤處理以專案 skill 的現行指引為準。
 ```powershell
 # 1. 執行靜態建置（輸出至 out/）
-cmd.exe /c "npm.cmd run build"
+npm.cmd run build
 
 # 2. 執行 SEO 規格檢驗（必須通過）
-cmd.exe /c "npm.cmd run seo:check"
+npm.cmd run seo:check
 
 # 3. 匯出後預檢
-cmd.exe /c "npm.cmd run seo:preflight"
+npm.cmd run seo:preflight
 ```
 
 ### 3. FTP 正式遠端部署 SOP
-- **認證設定**：主機系統環境變數中已具備 `$env:FTP_USER` 與 `$env:FTP_PASS`。
-- **上傳快取機制**：`scripts/deploy-ftp.ps1` 預設若大小相同會跳過（skip），若有更新 HTML 或 CSS，**必須加上 `-Force` 參數強制覆蓋**。
-- **核心路徑快速部署**：
-  ```powershell
-  # 建立 scripts/upload_patch.txt 填入要上傳的相對路徑後執行：
-  pwsh -NoLogo -ExecutionPolicy Bypass -File scripts/deploy-ftp.ps1 -Mode paths -PathFile scripts/upload_patch.txt -Force
-  ```
-- **全站快速部署**（上傳所有 HTML、最新 CSS/JS chunk、sitemap 與 robots）：
-  ```powershell
-  pwsh -NoLogo -ExecutionPolicy Bypass -File scripts/deploy-ftp.ps1 -Mode quick -Force
-  ```
+- **認證設定**：使用 `FTP_USER` 與 `FTP_PASS` 環境變數，密碼亦支援 `FTP_PASSWORD`；不得假定已設定或將值寫入文件。
+- **內容比對**：同大小檔案須遠端讀取並比對 SHA-256，內容一致才略過；比對失敗則上傳。`-Force` 只在明確需要強制上傳時使用，非每次部署的必要選項。正式主機的遠端讀取能力與耗時仍待下次部署觀察。
+- **部署步驟**：依專案 skill 的 [`validation-deploy.md`](.agents/skills/curtain-online-seo-geo/references/validation-deploy.md) 與 queue 契約，先建置、檢查並執行 `npm.cmd run deploy:ftp:dry`；經使用者授權後才執行適當的正式 quick／paths 部署，完成後再進行公開驗收。不要因 GitHub push 而推論網站已部署。
 
 ---
 

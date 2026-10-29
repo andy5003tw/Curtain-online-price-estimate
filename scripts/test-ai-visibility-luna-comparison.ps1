@@ -62,5 +62,15 @@ try {
   Assert-True (@($comparison.question_deltas).Count -eq 6) 'Comparison report must include all fixed questions.'
   Write-Host 'AI Visibility Luna comparison tests passed.'
 } finally {
-  if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }
+  if (Test-Path -LiteralPath $testRoot) {
+    $tempRoot = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).ProviderPath.TrimEnd('\')
+    $resolvedTestRoot = (Resolve-Path -LiteralPath $testRoot).ProviderPath.TrimEnd('\')
+    $item = Get-Item -LiteralPath $resolvedTestRoot -Force
+    if ($resolvedTestRoot -ne [IO.Path]::GetFullPath($testRoot).TrimEnd('\') -or
+        -not $resolvedTestRoot.StartsWith($tempRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
+        ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+      throw 'Refusing to remove an unverified Luna comparison test directory.'
+    }
+    Remove-Item -LiteralPath $resolvedTestRoot -Recurse -Force -ErrorAction Stop
+  }
 }

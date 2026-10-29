@@ -32,6 +32,11 @@ function Test-DeploymentManifest([string]$Path, [object]$Plan, [bool]$DryRun) {
   foreach ($file in @($Plan.files)) {
     $match = @($manifest.files | Where-Object { [string]$_.relative_path -eq [string]$file.relative_path })
     if ($match.Count -ne 1 -or [string]$match[0].sha256 -ne [string]$file.sha256) { throw "Deployment manifest does not match deploy plan: $($file.relative_path)" }
+    if ($DryRun -and [string]$match[0].result -ne 'would_upload') { throw "Dry-run manifest has an invalid result: $($file.relative_path)" }
+    if (-not $DryRun) {
+      if ([string]$match[0].result -notin @('uploaded', 'skipped_same_hash')) { throw "Deployment manifest has an unsafe result: $($file.relative_path)" }
+      if ([string]$match[0].result -eq 'skipped_same_hash' -and ($match[0].PSObject.Properties.Name -notcontains 'remote_sha256_before' -or [string]$match[0].remote_sha256_before -cne [string]$match[0].sha256)) { throw "Deployment manifest lacks a matching remote SHA: $($file.relative_path)" }
+    }
   }
   return $manifest
 }
@@ -99,6 +104,9 @@ try {
     & $deployScript -Mode paths -LocalRoot $plan.output_root -DeployPlanPath $planPath -HostName $plan.ftp_host -RemoteRoot $plan.remote_root -ManifestPath $dryRunPath -QueueId $plan.queue_id -CycleKey $plan.cycle_key -ActionId ($plan.action_ids -join '|') -DryRun
     $null = Test-DeploymentManifest $dryRunPath $plan $true
     Complete-Stage 'dry_run' $dryRunPath
+    $freshPlan = (& $planScript -RuntimeRoot $weeklyRoot -Mode Inspect | ConvertFrom-Json)
+    if (-not [bool]$freshPlan.preflight.passed -or [string]$freshPlan.status -ne 'ready') { throw 'Deploy plan became blocked after dry-run; no FTP action was started.' }
+    if ([string]$freshPlan.queue_id -ne [string]$plan.queue_id -or [string]$freshPlan.cycle_key -ne [string]$plan.cycle_key -or -not (Test-SameSet @($freshPlan.action_ids) @($plan.action_ids)) -or [string]$freshPlan.validation_receipt.sha256 -ne [string]$plan.validation_receipt.sha256) { throw 'Queue or validation receipt changed after dry-run; no FTP action was started.' }
     & $deployScript -Mode paths -LocalRoot $plan.output_root -DeployPlanPath $planPath -HostName $plan.ftp_host -RemoteRoot $plan.remote_root -ManifestPath $deployPath -QueueId $plan.queue_id -CycleKey $plan.cycle_key -ActionId ($plan.action_ids -join '|')
     $null = Test-DeploymentManifest $deployPath $plan $false
     Complete-Stage 'ftp_deploy' $deployPath

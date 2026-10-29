@@ -145,6 +145,29 @@ function Get-RemoteFileSize {
   }
 }
 
+function Get-RemoteFileSha256 {
+  param([string]$RelativePath)
+
+  $response = $null
+  $stream = $null
+  $sha256 = $null
+  try {
+    $request = New-FtpRequest -RelativePath $RelativePath -Method ([System.Net.WebRequestMethods+Ftp]::DownloadFile)
+    $response = $request.GetResponse()
+    $stream = $response.GetResponseStream()
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    return [Convert]::ToHexString($sha256.ComputeHash($stream)).ToLowerInvariant()
+  } catch {
+    if ($_.Exception -is [System.Net.WebException] -and $_.Exception.Response) { $_.Exception.Response.Close() }
+    # An unavailable or incomplete comparison must never become a skip.
+    return $null
+  } finally {
+    if ($sha256) { $sha256.Dispose() }
+    if ($stream) { $stream.Dispose() }
+    if ($response) { $response.Close() }
+  }
+}
+
 function Send-FtpFile {
   param(
     [System.IO.FileInfo]$File,
@@ -322,6 +345,7 @@ $manifestItems = @(
       sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
       result = if ($DryRun) { 'would_upload' } else { 'pending' }
       remote_size_before = $null
+      remote_sha256_before = $null
       attempts = 0
       error = $null
     }
@@ -354,14 +378,34 @@ foreach ($item in $items) {
     continue
   }
 
+  try {
+    $file.Refresh()
+    $localSha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([int64]$file.Length -ne [int64]$manifestItems[$index - 1].size_bytes -or $localSha256 -cne $manifestItems[$index - 1].sha256) {
+      throw 'Local file changed after the deployment manifest was prepared.'
+    }
+  } catch {
+    $failed += 1
+    $manifestItems[$index - 1].result = 'failed'
+    $manifestItems[$index - 1].error = $_.Exception.Message
+    Write-Warning "$prefix failed $relative - $($_.Exception.Message)"
+    continue
+  }
+
   if (-not $Force) {
     $remoteSize = Get-RemoteFileSize -RelativePath $relative
-    if ($null -ne $remoteSize -and [int64]$remoteSize -eq [int64]$file.Length) {
-      $skipped += 1
-      $manifestItems[$index - 1].result = 'skipped_same_size'
+    if ($null -ne $remoteSize) {
       $manifestItems[$index - 1].remote_size_before = [int64]$remoteSize
-      Write-Host "$prefix skip $relative ($sizeKb KB, same remote size)"
-      continue
+      if ([int64]$remoteSize -eq [int64]$file.Length) {
+        $remoteSha256 = Get-RemoteFileSha256 -RelativePath $relative
+        if ($remoteSha256) { $manifestItems[$index - 1].remote_sha256_before = $remoteSha256 }
+        if ($remoteSha256 -and $remoteSha256 -ceq $manifestItems[$index - 1].sha256) {
+          $skipped += 1
+          $manifestItems[$index - 1].result = 'skipped_same_hash'
+          Write-Host "$prefix skip $relative ($sizeKb KB, same SHA-256)"
+          continue
+        }
+      }
     }
   }
 

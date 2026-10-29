@@ -116,9 +116,13 @@ function Assert-DeploymentManifestEvidence {
   $files = @($manifest.files)
   if ($files.Count -ne [int]$manifest.summary.selected) { throw 'Deployment manifest files do not cover selected count.' }
   foreach ($file in $files) {
-    if ([string]::IsNullOrWhiteSpace([string]$file.relative_path) -or [string]$file.result -notin @('uploaded', 'skipped_same_size') -or [int64]$file.size_bytes -lt 0) { throw 'Deployment manifest file record is incomplete.' }
+    if ([string]::IsNullOrWhiteSpace([string]$file.relative_path) -or [string]$file.result -notin @('uploaded', 'skipped_same_hash') -or [int64]$file.size_bytes -lt 0) { throw 'Deployment manifest file record is incomplete or uses an unsafe skip.' }
     Assert-Sha256 -Value ([string]$file.sha256) -Label "Deployment manifest file SHA for $($file.relative_path)"
+    if ([string]$file.result -eq 'skipped_same_hash') {
+      if ($file.PSObject.Properties.Name -notcontains 'remote_sha256_before' -or [string]$file.remote_sha256_before -cne [string]$file.sha256) { throw "Deployment manifest skipped file has no matching remote SHA: $($file.relative_path)" }
+    }
   }
+  if (@($files | Where-Object { $_.result -eq 'uploaded' }).Count -ne [int]$manifest.summary.uploaded -or @($files | Where-Object { $_.result -eq 'skipped_same_hash' }).Count -ne [int]$manifest.summary.skipped) { throw 'Deployment manifest file results do not match the summary.' }
   return [pscustomobject]@{ path = [string]$Value.path; sha256 = $actualSha; manifest = $manifest }
 }
 

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -1471,391 +1471,12 @@
       return true;
     }
 
-    function findRoundItem(items, round) {
-      items = asArray(items);
-      for (var i = 0; i < items.length; i++) {
-        if (items[i] && Number(items[i].round) === Number(round)) {
-          return items[i];
-        }
-      }
-      return null;
-    }
-
-    function appendCommandValues(target, values) {
-      values = asArray(values);
-      for (var i = 0; i < values.length; i++) {
-        if (values[i] === null || typeof values[i] === "undefined") { continue; }
-        var parts = String(values[i]).split(/\r?\n/);
-        for (var p = 0; p < parts.length; p++) {
-          var command = parts[p].replace(/^\s+|\s+$/g, "");
-          if (command) { target.push(command); }
-        }
-      }
-    }
-
-    function normalizeActionFingerprints(values, expectedActionIds) {
-      var result = { valid: true, reason: "", ids: [], map: {} };
-      if (values === null || typeof values === "undefined") { return result; }
-      expectedActionIds = asArray(expectedActionIds);
-
-      function add(actionId, fingerprint) {
-        actionId = String(actionId || "").replace(/^\s+|\s+$/g, "");
-        fingerprint = String(fingerprint || "").replace(/^\s+|\s+$/g, "").toLowerCase();
-        if (!actionId || !fingerprint) {
-          result.valid = false;
-          result.reason = "action_fingerprints 含空白 action_id 或 fingerprint";
-          return;
-        }
-        var key = "$" + actionId;
-        if (typeof result.map[key] !== "undefined" && result.map[key] !== fingerprint) {
-          result.valid = false;
-          result.reason = "action_id " + actionId + " 有衝突 fingerprint";
-          return;
-        }
-        if (typeof result.map[key] === "undefined") {
-          result.ids.push(actionId);
-        }
-        result.map[key] = fingerprint;
-      }
-
-      if (Object.prototype.toString.call(values) === "[object Array]") {
-        for (var i = 0; i < values.length; i++) {
-          var entry = values[i] || {};
-          // Queue/state/prompt files store legacy fingerprints as an array aligned
-          // with action_ids. Receipts use { action_id, fingerprint } objects.
-          // Accept both formats so a valid receipt is not incorrectly blocked.
-          if (typeof entry === "string") {
-            add(expectedActionIds[i], entry);
-          } else {
-            add(entry.action_id, entry.fingerprint || entry.action_fingerprint);
-          }
-        }
-      } else if (typeof values === "object") {
-        if (values.action_id || values.fingerprint) {
-          add(values.action_id, values.fingerprint);
-        } else {
-          for (var property in values) {
-            if (values.hasOwnProperty(property)) {
-              add(property, values[property]);
-            }
-          }
-        }
-      } else {
-        result.valid = false;
-        result.reason = "action_fingerprints 格式錯誤";
-      }
-      result.ids = uniqueSortedStrings(result.ids);
-      return result;
-    }
-
-    function getActionFingerprintValue(set, actionId) {
-      return set && set.map ? set.map["$" + String(actionId)] : null;
-    }
-
-    function sameActionFingerprints(left, right) {
-      if (!left || !right || !left.valid || !right.valid || !sameStringSet(left.ids, right.ids)) {
-        return false;
-      }
-      for (var i = 0; i < left.ids.length; i++) {
-        var actionId = left.ids[i];
-        if (getActionFingerprintValue(left, actionId) !== getActionFingerprintValue(right, actionId)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    function normalizeRegistryBinding(binding) {
-      binding = binding || {};
-      var result = {
-        path: String(binding.path || "").replace(/\\/g, "/").replace(/^\/+/, ""),
-        sha256: String(binding.sha256 || "").toLowerCase(),
-        version: Number(typeof binding.version !== "undefined" ? binding.version : binding.schema_version)
-      };
-      result.valid = !!result.path && !!result.sha256 && !isNaN(result.version);
-      return result;
-    }
-
-    function sameRegistryBinding(left, right) {
-      left = normalizeRegistryBinding(left);
-      right = normalizeRegistryBinding(right);
-      return left.valid && right.valid && left.path === right.path &&
-        left.sha256 === right.sha256 && left.version === right.version;
-    }
-
-    function normalizeSnapshotWindow(windowBinding) {
-      windowBinding = windowBinding || {};
-      var query = windowBinding.query_baseline || {};
-      var page = windowBinding.page_baseline || {};
-      var result = {
-        inputSha256: String(windowBinding.sha256 || "").toLowerCase(),
-        manifestSha256: String(windowBinding.manifest_sha256 || "").toLowerCase(),
-        querySha256: String(query.sha256 || "").toLowerCase(),
-        pageSha256: String(page.sha256 || "").toLowerCase()
-      };
-      result.valid = !!result.inputSha256 && !!result.manifestSha256 && !!result.querySha256 && !!result.pageSha256;
-      return result;
-    }
-
-    function sameSnapshotWindow(left, right) {
-      left = normalizeSnapshotWindow(left);
-      right = normalizeSnapshotWindow(right);
-      return left.valid && right.valid && left.inputSha256 === right.inputSha256 &&
-        left.manifestSha256 === right.manifestSha256 && left.querySha256 === right.querySha256 &&
-        left.pageSha256 === right.pageSha256;
-    }
-
-    function sameSnapshotBinding(left, right) {
-      left = left || {};
-      right = right || {};
-      return sameSnapshotWindow(left["7d"], right["7d"]) && sameSnapshotWindow(left["28d"], right["28d"]);
-    }
-
-    function getRoundContract(state, queue, round) {
-      var prompt = findRoundItem(state.prompt_files, round);
-      var stateRound = findRoundItem(state.rounds, round);
-      var queueRound = queue ? findRoundItem(queue.rounds, round) : null;
-      var actionIdSources = [];
-
-      if (prompt && uniqueSortedStrings(prompt.action_ids).length) {
-        actionIdSources.push({ name: "prompt_files", values: uniqueSortedStrings(prompt.action_ids) });
-      }
-      if (stateRound && uniqueSortedStrings(stateRound.action_ids).length) {
-        actionIdSources.push({ name: "state.rounds", values: uniqueSortedStrings(stateRound.action_ids) });
-      }
-      if (queueRound && uniqueSortedStrings(queueRound.action_ids).length) {
-        actionIdSources.push({ name: "queue.rounds", values: uniqueSortedStrings(queueRound.action_ids) });
-      }
-
-      var queueActions = queueRound ? asArray(queueRound.actions) : [];
-      var queueActionIdsInOrder = [];
-      for (var i = 0; i < queueActions.length; i++) {
-        if (queueActions[i] && queueActions[i].action_id) {
-          queueActionIdsInOrder.push(queueActions[i].action_id);
-        }
-      }
-      var queueActionIds = uniqueSortedStrings(queueActionIdsInOrder);
-      if (queueActionIds.length) {
-        actionIdSources.push({ name: "queue.actions", values: queueActionIds });
-      }
-
-      if (!actionIdSources.length) {
-        return { valid: false, reason: "Round " + round + " 缺少 action_ids", actionIds: [], requiredValidations: [] };
-      }
-      var actionIds = actionIdSources[0].values;
-      for (var sourceIndex = 1; sourceIndex < actionIdSources.length; sourceIndex++) {
-        if (!sameStringSet(actionIds, actionIdSources[sourceIndex].values)) {
-          return {
-            valid: false,
-            reason: "Round " + round + " action_ids 在 " + actionIdSources[0].name + " 與 " + actionIdSources[sourceIndex].name + " 不一致",
-            actionIds: [],
-            requiredValidations: []
-          };
-        }
-      }
-
-      var fingerprintSources = [];
-      function addFingerprintSource(name, values, sourceActionIds) {
-        if (values === null || typeof values === "undefined") { return; }
-        var normalized = normalizeActionFingerprints(values, sourceActionIds);
-        if (!normalized.valid) {
-          fingerprintSources.push({ name: name, values: normalized, invalid: true });
-        } else if (normalized.ids.length) {
-          fingerprintSources.push({ name: name, values: normalized, invalid: false });
-        }
-      }
-      addFingerprintSource("prompt_files", prompt ? prompt.action_fingerprints : null, prompt ? prompt.action_ids : []);
-      addFingerprintSource("state.rounds", stateRound ? stateRound.action_fingerprints : null, stateRound ? stateRound.action_ids : []);
-      addFingerprintSource("queue.rounds", queueRound ? queueRound.action_fingerprints : null, queueRound ? queueRound.action_ids : []);
-      addFingerprintSource("queue.actions", queueActions, queueActionIdsInOrder);
-      if (!fingerprintSources.length) {
-        return { valid: false, reason: "Round " + round + " 缺少 action_fingerprints", actionIds: actionIds, requiredValidations: [] };
-      }
-      for (var fingerprintIndex = 0; fingerprintIndex < fingerprintSources.length; fingerprintIndex++) {
-        if (fingerprintSources[fingerprintIndex].invalid) {
-          return { valid: false, reason: fingerprintSources[fingerprintIndex].name + " action_fingerprints 無效：" + fingerprintSources[fingerprintIndex].values.reason, actionIds: actionIds, requiredValidations: [] };
-        }
-        if (!sameStringSet(fingerprintSources[fingerprintIndex].values.ids, actionIds)) {
-          return { valid: false, reason: fingerprintSources[fingerprintIndex].name + " action_fingerprints 未完整對應 action_ids", actionIds: actionIds, requiredValidations: [] };
-        }
-      }
-      var actionFingerprintSet = fingerprintSources[0].values;
-      for (fingerprintIndex = 1; fingerprintIndex < fingerprintSources.length; fingerprintIndex++) {
-        if (!sameActionFingerprints(actionFingerprintSet, fingerprintSources[fingerprintIndex].values)) {
-          return { valid: false, reason: "Round " + round + " action_fingerprints 在 " + fingerprintSources[0].name + " 與 " + fingerprintSources[fingerprintIndex].name + " 不一致", actionIds: actionIds, requiredValidations: [] };
-        }
-      }
-      var actionFingerprints = [];
-      for (var actionFingerprintIndex = 0; actionFingerprintIndex < actionIds.length; actionFingerprintIndex++) {
-        actionFingerprints.push({
-          action_id: actionIds[actionFingerprintIndex],
-          fingerprint: getActionFingerprintValue(actionFingerprintSet, actionIds[actionFingerprintIndex])
-        });
-      }
-
-      var stateCommands = [];
-      var queueCommands = [];
-      if (stateRound) { appendCommandValues(stateCommands, stateRound.required_validations); }
-      if (queueRound) { appendCommandValues(queueCommands, queueRound.required_validations); }
-      if (!queueCommands.length) {
-        for (var actionIndex = 0; actionIndex < queueActions.length; actionIndex++) {
-          if (!queueActions[actionIndex]) { continue; }
-          appendCommandValues(queueCommands, queueActions[actionIndex].validationCommands || queueActions[actionIndex].required_validations);
-        }
-      }
-      stateCommands = uniqueSortedStrings(stateCommands);
-      queueCommands = uniqueSortedStrings(queueCommands);
-      if (stateCommands.length && queueCommands.length && !sameStringSet(stateCommands, queueCommands)) {
-        return {
-          valid: false,
-          reason: "Round " + round + " required_validations 在 state 與 queue 不一致",
-          actionIds: actionIds,
-          requiredValidations: []
-        };
-      }
-      return {
-        valid: true,
-        reason: "",
-        actionIds: actionIds,
-        actionFingerprints: actionFingerprints,
-        actionFingerprintSet: actionFingerprintSet,
-        actions: queueActions,
-        requiredValidations: stateCommands.length ? stateCommands : queueCommands
-      };
-    }
-
-    function getReceiptGate(root, state, queue, round) {
-      var fixedReceiptPath = root + "\\latest\\seo-geo-validation-receipt.json";
-      if (!state.receipt_path) {
-        return { passed: false, reason: "queue state 缺少 receipt_path", path: fixedReceiptPath };
-      }
-      var receiptPath = resolveManifestPath(root, state.receipt_path);
-      var fso = new ActiveXObject("Scripting.FileSystemObject");
-      var actualFullPath = fso.GetAbsolutePathName(receiptPath).toLowerCase();
-      var fixedFullPath = fso.GetAbsolutePathName(fixedReceiptPath).toLowerCase();
-      if (actualFullPath !== fixedFullPath) {
-        return { passed: false, reason: "receipt_path 必須是 latest/seo-geo-validation-receipt.json", path: fixedReceiptPath };
-      }
-
-      var contract = getRoundContract(state, queue, round);
-      if (!contract.valid) {
-        return { passed: false, reason: contract.reason, path: receiptPath };
-      }
-      if (!queue) {
-        return { passed: false, reason: "缺少 queue JSON，無法核對 receipt binding", path: receiptPath, contract: contract };
-      }
-      if (String(queue.queue_id || "") !== String(state.queue_id || "") ||
-          String(queue.cycle_key || "") !== String(state.cycle_key || "")) {
-        return { passed: false, reason: "queue/state 的 queue_id 或 cycle_key 不一致", path: receiptPath, contract: contract };
-      }
-      var sourceFingerprintBefore = String(state.source_fingerprint || "").toLowerCase();
-      if (!sourceFingerprintBefore || sourceFingerprintBefore !== String(queue.source_fingerprint || "").toLowerCase()) {
-        return { passed: false, reason: "queue/state 的 source_fingerprint 不一致", path: receiptPath, contract: contract };
-      }
-      if (!sameRegistryBinding(state.registry, queue.registry)) {
-        return { passed: false, reason: "queue/state 的 registry binding 不一致", path: receiptPath, contract: contract };
-      }
-      if (!sameSnapshotBinding(state.snapshot, queue.snapshot)) {
-        return { passed: false, reason: "queue/state 的 7d/28d snapshot SHA binding 不一致", path: receiptPath, contract: contract };
-      }
-      var receipt = readJsonIfExists(receiptPath);
-      if (!receipt) {
-        return { passed: false, reason: "尚未收到 Round " + round + " 驗證 receipt", path: receiptPath, contract: contract };
-      }
-      if (String(receipt.queue_id || "") !== String(state.queue_id || "")) {
-        return { passed: false, reason: "receipt queue_id 不相符", path: receiptPath, contract: contract };
-      }
-      if (String(receipt.cycle_key || "") !== String(state.cycle_key || "")) {
-        return { passed: false, reason: "receipt cycle_key 不相符", path: receiptPath, contract: contract };
-      }
-      if (Number(receipt.round) !== Number(round)) {
-        return { passed: false, reason: "receipt round 不相符", path: receiptPath, contract: contract };
-      }
-      if (!sameStringSet(receipt.action_ids, contract.actionIds)) {
-        return { passed: false, reason: "receipt action_ids 不相符", path: receiptPath, contract: contract };
-      }
-      var receiptFingerprints = normalizeActionFingerprints(receipt.action_fingerprints, contract.actionIds);
-      if (!receiptFingerprints.valid || !sameActionFingerprints(receiptFingerprints, contract.actionFingerprintSet)) {
-        return { passed: false, reason: "receipt action_fingerprints 不相符", path: receiptPath, contract: contract };
-      }
-      if (String(receipt.source_fingerprint_before || "").toLowerCase() !== sourceFingerprintBefore) {
-        return { passed: false, reason: "receipt source_fingerprint_before 不相符", path: receiptPath, contract: contract };
-      }
-      if (!sameRegistryBinding(receipt.registry, state.registry)) {
-        return { passed: false, reason: "receipt registry binding 不相符", path: receiptPath, contract: contract };
-      }
-      if (!sameSnapshotBinding(receipt.snapshot, state.snapshot)) {
-        return { passed: false, reason: "receipt 7d/28d snapshot SHA binding 不相符", path: receiptPath, contract: contract };
-      }
-      if (String(receipt.status || "").toLowerCase() !== "passed") {
-        return { passed: false, reason: "receipt status 不是 passed", path: receiptPath, contract: contract };
-      }
-      if (String(receipt.result || "") !== "implemented" && String(receipt.result || "") !== "no_change_verified") {
-        return { passed: false, reason: "receipt result 無效", path: receiptPath, contract: contract };
-      }
-      var sourceFingerprintAfter = String(receipt.source_fingerprint_after || "").toLowerCase();
-      if (!sourceFingerprintAfter) {
-        return { passed: false, reason: "receipt 缺少 source_fingerprint_after", path: receiptPath, contract: contract };
-      }
-      if (receipt.result === "implemented" && sourceFingerprintAfter === sourceFingerprintBefore) {
-        return { passed: false, reason: "implemented receipt 的 source fingerprint 未變更", path: receiptPath, contract: contract };
-      }
-      if (receipt.result === "no_change_verified" && sourceFingerprintAfter !== sourceFingerprintBefore) {
-        return { passed: false, reason: "no_change_verified receipt 的 source fingerprint 不應變更", path: receiptPath, contract: contract };
-      }
-
-      var validationResults = asArray(receipt.validation_results);
-      for (var requiredIndex = 0; requiredIndex < contract.requiredValidations.length; requiredIndex++) {
-        var required = contract.requiredValidations[requiredIndex];
-        var foundPassed = false;
-        for (var resultIndex = 0; resultIndex < validationResults.length; resultIndex++) {
-          var result = validationResults[resultIndex] || {};
-          if (String(result.command || "") === required &&
-              String(result.status || "").toLowerCase() === "passed" &&
-              Number(result.exit_code) === 0) {
-            foundPassed = true;
-            break;
-          }
-        }
-        if (!foundPassed) {
-          return { passed: false, reason: "必要驗證未通過：" + required, path: receiptPath, contract: contract };
-        }
-      }
-      return { passed: true, reason: "Round " + round + " receipt 驗證通過", path: receiptPath, contract: contract, receipt: receipt };
-    }
-
     function setButtonState(id, disabled, label, title) {
       var btn = document.getElementById(id);
       if (!btn) { return; }
       btn.disabled = !!disabled;
       if (label) { btn.innerText = label; }
       btn.title = title || "";
-    }
-
-    function getQueueProvenance(root) {
-      var fso = new ActiveXObject("Scripting.FileSystemObject");
-      var checker = fso.GetAbsolutePathName(root + "\\..\\scripts\\check-seo-geo-queue-provenance.ps1");
-      if (!fso.FileExists(checker)) {
-        return { stale: true, status: "stale_plan", reasons: ["provenance_checker_missing"] };
-      }
-      try {
-        var shell = new ActiveXObject("WScript.Shell");
-        var cmd = 'pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + checker.replace(/"/g, '""') +
-          '" -RuntimeRoot "' + root.replace(/"/g, '""') + '"';
-        var exec = shell.Exec(cmd);
-        var output = exec.StdOut.ReadAll();
-        var err = exec.StdErr.ReadAll();
-        if (exec.ExitCode !== 0) {
-          return { stale: true, status: "stale_plan", reasons: ["provenance_check_failed:" + (err || output || "unknown")] };
-        }
-        var result = parseJson(output);
-        if (!result || typeof result.stale === "undefined") {
-          return { stale: true, status: "stale_plan", reasons: ["provenance_check_invalid_output"] };
-        }
-        return result;
-      } catch (e) {
-        return { stale: true, status: "stale_plan", reasons: ["provenance_check_failed:" + e.message] };
-      }
     }
 
     function getEffectiveWorkflowProjection(root) {
@@ -1924,30 +1545,46 @@
           isCopiedPending: false,
           isObservation: false,
           isLocalValidated: false,
+          isStale: false,
           receiptGate: { passed: false, reason: "queue 尚未建立" }
         };
       }
-      var queue = readJsonIfExists(root + "\\latest\\seo-geo-action-queue.json");
-      var provenance = getQueueProvenance(root);
-      var projection = getEffectiveWorkflowProjection(root);
-      var projectionValid = projection && projection.consistency && projection.consistency.valid === true;
-      if (!projectionValid) {
-        provenance = {
-          stale: true,
-          status: "stale_plan",
-          reasons: asArray(provenance.reasons).concat(asArray(projection && projection.consistency ? projection.consistency.reasons : ["effective_workflow_projection_invalid"]))
-        };
+      var uiProjection = getSeoGeoUiProjection(root);
+      var uiIdentity = uiProjection && uiProjection.identity ? uiProjection.identity : {};
+      var uiQueue = uiProjection && uiProjection.panels ? uiProjection.panels.queue : null;
+      var trust = uiProjection && uiProjection.panels ? uiProjection.panels.data_trust : null;
+      var uiState = uiQueue ? uiQueue.state_snapshot : null;
+      var queue = uiQueue ? uiQueue.queue_snapshot : null;
+      var expectedRound = Number(state.active_round || state.next_round || 1);
+      var expectedTotal = Number(state.total_rounds || (state.prompt_files ? state.prompt_files.length : 0) || 0);
+      var uiBound = uiProjection && uiProjection.consistent === true &&
+        String(uiIdentity.queue_id || "") === String(state.queue_id || "") &&
+        String(uiIdentity.cycle_key || "") === String(state.cycle_key || "") &&
+        String(uiProjection.state || "") === String(state.status || "") && !!uiQueue && !!trust &&
+        !!uiState && !!queue && String(uiState.queue_id || "") === String(state.queue_id || "") &&
+        String(uiState.cycle_key || "") === String(state.cycle_key || "") && String(uiState.status || "") === String(state.status || "") &&
+        Number(uiQueue.active_round) === expectedRound && Number(uiState.active_round || uiState.next_round || 1) === expectedRound &&
+        typeof uiQueue.total_rounds === "number" && Number(uiQueue.total_rounds) === expectedTotal &&
+        typeof uiQueue.is_observation === "boolean" && typeof uiQueue.is_local_validated === "boolean" &&
+        typeof uiQueue.is_awaiting_implemented === "boolean" && typeof uiQueue.is_copied_pending === "boolean";
+      if (uiBound) { state = uiState; } else { queue = readJsonIfExists(root + "\\latest\\seo-geo-action-queue.json"); }
+      var activeRound = uiBound ? Number(uiQueue.active_round) : expectedRound;
+      var totalRounds = uiBound ? Number(uiQueue.total_rounds) : Number(state.total_rounds || (state.prompt_files ? state.prompt_files.length : 0) || 0);
+      var isObservation = uiBound && uiQueue.is_observation === true;
+      var isAwaitingImplemented = uiBound && uiQueue.is_awaiting_implemented === true;
+      var isLocalValidated = uiBound && uiQueue.is_local_validated === true;
+      var receiptGate = uiQueue ? uiQueue.receipt_gate : null;
+      if (!receiptGate || typeof receiptGate.passed !== "boolean" || typeof receiptGate.reason !== "string" || !receiptGate.reason || Number(receiptGate.round) !== activeRound) { uiBound = false; }
+      var reasons = trust ? asArray(trust.reasons) : [];
+      if (!uiBound) {
+        var uiReason = reasons.length ? "佇列來源檢查未通過：" + reasons.join("；") :
+          (uiProjection && uiProjection.primary_action && uiProjection.primary_action.reason ? uiProjection.primary_action.reason : "UI projection 不屬於目前 queue／Round");
+        reasons = reasons.concat([uiReason]);
+        receiptGate = { passed: false, reason: uiReason, round: activeRound };
+        uiProjection = { consistent: false, state: "projection_error", primary_action: { id: "NONE", enabled: false, reason: uiReason }, actions: {} };
       }
-      var activeRound = Number(state.active_round || state.next_round || 1);
-      var totalRounds = Number(state.total_rounds || (state.prompt_files ? state.prompt_files.length : 0) || 0);
-      var completed = state.completed_rounds || [];
-      var copied = state.copied_rounds || [];
-      var isObservation = state.status === "observation_only";
-      var isAwaitingImplemented = state.status === "awaiting_implemented_receipt";
-      var isLocalValidated = ["awaiting_implemented_receipt", "implemented", "local_validated", "deployed", "live_verified", "observing_7d", "reviewed_28d", "completed"].indexOf(state.status) >= 0;
-      var receiptGate = (!isObservation && !isLocalValidated && totalRounds > 0) ?
-        getReceiptGate(root, state, queue, activeRound) :
-        { passed: false, reason: isObservation ? "observation_only 不需執行 Round" : "本輪已完成本機驗證" };
+      var provenance = { stale: !uiBound, status: uiBound ? "current" : "stale_plan", reasons: reasons };
+      var projection = { consistency: { valid: !!uiBound, reasons: reasons } };
       return {
         exists: true,
         state: state,
@@ -1960,9 +1597,10 @@
         isAwaitingImplemented: isAwaitingImplemented,
         lifecycleStatus: state.status,
         projection: projection,
+        uiProjection: uiProjection,
         isStale: !!provenance.stale,
         provenance: provenance,
-        isCopiedPending: !isObservation && !isLocalValidated && arrayContains(copied, activeRound) && !arrayContains(completed, activeRound),
+        isCopiedPending: !!uiBound && uiQueue.is_copied_pending === true,
         receiptGate: receiptGate,
         queueId: state.queue_id || "n/a",
         generatedAt: state.generated_at || "n/a"
@@ -2051,51 +1689,11 @@
       return { action: "open", title: "目前報告已對應 latest snapshot；直接開啟" };
     }
 
-    function configureSmartSeoGeoControls(root, hasPwsh, canGenerate, hasPlanHtml, queue, workflowConsistent, canApproveSinglePage) {
+    function configureSmartSeoGeoControls(root, canGenerate, hasPlanHtml, queue) {
       var reportDecision = getSmartReportDecision(root, queue, canGenerate, hasPlanHtml);
       setButtonState("btnSeoGeoReportSmart", reportDecision.action === "none", "更新／開啟 SEO/GEO 行動報告", reportDecision.title);
-      currentSeoGeoNextAction = { type: "none", enabled: false, label: "執行目前下一步", reason: "尚未建立有效報告" };
-      if (!hasPwsh) {
-        currentSeoGeoNextAction = { type: "none", enabled: false, label: "需要 PowerShell 7", reason: "找不到 pwsh" };
-      } else if (!queue.exists || queue.isStale) {
-        currentSeoGeoNextAction = { type: "none", enabled: false, label: "先更新 SEO/GEO 行動報告", reason: queue.isStale ? "queue 已過期，請先安全更新報告" : "尚未建立 queue" };
-      } else if (!workflowConsistent) {
-        currentSeoGeoNextAction = { type: "none", enabled: false, label: "流程資料不一致，請查看提示", reason: "workflow consistency gate 未通過" };
-      } else if (queue.isObservation) {
-        currentSeoGeoNextAction = canApproveSinglePage ?
-          { type: "approve_single_page", enabled: true, label: "核准單頁優化並建立 Round", reason: "可將已明確核准的單頁 reviews 建立為連續 Round" } :
-          { type: "none", enabled: false, label: "本輪只需觀察", reason: "observation_only；等待安全的新 GSC snapshot" };
-      } else if (!queue.isLocalValidated) {
-        currentSeoGeoNextAction = queue.receiptGate.passed ?
-          { type: "advance_round", enabled: true, label: "驗證通過並前進（Round " + queue.activeRound + "/" + queue.totalRounds + "）", reason: queue.receiptGate.reason } :
-          { type: "copy_round", enabled: true, label: "複製本輪 AI 工作指令（Round " + queue.activeRound + "/" + queue.totalRounds + "）", reason: queue.receiptGate.reason };
-      } else {
-        var status = String(queue.lifecycleStatus || "");
-        var inspection = getLifecycleNextInspection(root);
-        if (status === "local_validated") {
-          var actualGate = getDeploymentManifestGate(root, queue, false);
-          var dryGate = getDeploymentManifestGate(root, queue, true);
-          if (actualGate.passed) {
-            currentSeoGeoNextAction = { type: "lifecycle", enabled: !!inspection.ready, label: inspection.label || "記錄網站已上傳", reason: inspection.reason || actualGate.reason, inspection: inspection };
-          } else if (dryGate.passed) {
-            currentSeoGeoNextAction = { type: "deploy", enabled: true, label: "正式上傳網站（需確認）", reason: "部署預演已通過且綁定目前 queue" };
-          } else {
-            currentSeoGeoNextAction = { type: "dry_run", enabled: true, label: "執行部署預演（不實際上傳）", reason: dryGate.reason };
-          }
-        } else if (status === "deployed") {
-          currentSeoGeoNextAction = inspection.ready ?
-            { type: "lifecycle", enabled: true, label: inspection.label, reason: inspection.reason, inspection: inspection } :
-            { type: "live_verify", enabled: true, label: "驗證網站已正確上線", reason: inspection.reason || "尚未執行 live verify" };
-        } else {
-          currentSeoGeoNextAction = { type: "lifecycle", enabled: !!inspection.ready, label: inspection.label || "執行目前下一步", reason: inspection.reason || "等待必要 evidence", inspection: inspection };
-        }
-      }
-      setButtonState("btnSeoGeoNextSmart", !currentSeoGeoNextAction.enabled, currentSeoGeoNextAction.label, currentSeoGeoNextAction.reason);
-
-      // The PowerShell projection is the authoritative UI contract.  Retaining the
-      // legacy calculation above during this migration keeps non-primary controls
-      // stable, but it may never override the single state-changing primary action.
-      var ui = getSeoGeoUiProjection(root);
+      // The primary action comes only from the PowerShell UI projection.
+      var ui = queue && queue.uiProjection ? queue.uiProjection : getSeoGeoUiProjection(root);
       var primary = ui && ui.primary_action ? ui.primary_action : null;
       if (!ui || ui.consistent !== true || !primary) {
         currentSeoGeoNextAction = { type: "none", actionId: "NONE", enabled: false, label: "流程資料讀取失敗", reason: primary && primary.reason ? primary.reason : "UI projection 未通過 consistency gate" };
@@ -2234,7 +1832,7 @@
           setButtonState(lifecycleButton.id, !lifecycleEnabled, lifecycleButton.label,
             lifecycleEnabled ? lifecycleHint : "需要 workflow consistency PASS 且 current queue 狀態=" + lifecycleButton.predecessor);
         }
-        configureSmartSeoGeoControls(root, hasPwsh, canGenerate, hasPlanHtml, queue, workflowConsistent, canApproveSinglePage);
+        configureSmartSeoGeoControls(root, canGenerate, hasPlanHtml, queue);
 
         if (!hasPwsh) {
           renderWorkflowPanel("error", "流程狀態：缺少 PowerShell 7（pwsh）", "上傳與產生建議已停用；請安裝 pwsh 後重新開啟 UI。不會 fallback 到 Windows PowerShell 5.1。");
@@ -2374,15 +1972,14 @@
       if (!panel || !body || !summary || !badge) { return; }
 
       var root = getRootFolder();
-      var statePath = root + "\\latest\\seo-geo-action-queue-state.json";
-      var queuePath = root + "\\latest\\seo-geo-action-queue.json";
       var logPath = root + "\\latest\\seo-geo-action-plan-last-run.log";
       panel.className = "queue-panel";
 
       try {
-        var state = readJsonIfExists(statePath);
-        var queue = readJsonIfExists(queuePath);
-        if (!state) {
+        var snapshot = getQueueSnapshot(root);
+        var state = snapshot.state;
+        var queue = snapshot.queue;
+        if (!snapshot.exists || !state) {
           panel.className = "queue-panel warn";
           badge.innerText = "尚未建立";
           var log = readTextIfExists(logPath);
@@ -2394,7 +1991,6 @@
           return;
         }
 
-        var snapshot = getQueueSnapshot(root);
         var activeRound = snapshot.activeRound;
         var totalRounds = snapshot.totalRounds;
         var completed = state.completed_rounds || [];
@@ -3151,6 +2747,7 @@
         var repoRoot = fso.GetParentFolderName(root);
         var script = repoRoot + "\\scripts\\invoke-seo-geo-autodeploy.ps1";
         if (!fso.FileExists(script)) { throw new Error("找不到 auto-deploy 協調器：\n" + script); }
+        if (!confirm("即將執行部署預演、正式 FTP 上傳及上線驗證，並記錄通過的 lifecycle 階段。\n\n確認開始正式上傳嗎？")) { return; }
         var logPath = root + "\\latest\\seo-geo-autodeploy-last-run.log";
         var cmd = 'cmd /d /c cd /d "' + repoRoot.replace(/"/g, '""') + '" && pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "' + script.replace(/"/g, '""') + '" -RuntimeRoot "' + root.replace(/"/g, '""') + '" -Mode Execute > "' + logPath.replace(/"/g, '""') + '" 2>&1';
         setButtonsBusy(true);

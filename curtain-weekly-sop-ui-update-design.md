@@ -105,7 +105,7 @@
 - `更新最新 GSC 資料` 固定在 Hero 下方第一個次要區，成功後自動刷新 projection。
 - `查看目前 SEO/GEO 優化報表` 為唯讀 secondary action，不得修改 queue。
 - 「展開工作佇列明細」與「展開明細」只改變視覺狀態，不改變 workflow。
-- AI Visibility、Luna 對照、GSC Generative AI XLSX 分析放在「每月 AI Visibility」收合區，展開時標示 API key、模型成本與資料不會覆蓋正式 baseline 的規則。
+- AI Visibility 與 GSC Generative AI XLSX 分析放在「每月 AI Visibility」收合區；Luna 對照執行按鈕已移除，既有對照報告仍可查看，對照 runner 與測試保留供手動使用。
 - 正式 FTP 部署保留明確確認對話框；按鈕文案必須含「正式上傳」，禁止使用模糊詞彙如「執行」。
 
 ### Busy 與錯誤處理
@@ -126,13 +126,13 @@
 
 ```json
 {
-  "schemaVersion": 1,
-  "generatedAt": "ISO-8601 UTC",
+  "schema_version": 1,
+  "generated_at": "ISO-8601 UTC",
   "consistent": true,
   "state": "active",
-  "primaryAction": { "id": "COPY_ROUND_PROMPT", "enabled": true, "label": "...", "reason": "..." },
-  "actions": { "FETCH_GSC": { "enabled": true, "reason": "..." } },
-  "panels": { "dataTrust": {}, "queue": {}, "deployment": {}, "measurement": {}, "health": {} }
+  "primary_action": { "id": "COPY_ROUND_PROMPT", "enabled": true, "label": "...", "reason": "..." },
+  "actions": { "FETCH_GSC": { "label": "...", "enabled": true, "reason": "..." } },
+  "panels": { "data_trust": {}, "queue": {}, "deployment": {}, "measurement": {}, "health": {} }
 }
 ```
 
@@ -146,9 +146,9 @@
 
 ### Dispatcher 與二次驗證
 
-HTA 僅能傳送白名單 action ID：`FETCH_GSC`、`GENERATE_PLAN`、`OPEN_PLAN`、`COPY_ROUND_PROMPT`、`ADVANCE_ROUND`、`APPROVE_SINGLE_PAGE`、`DEPLOY_DRY_RUN`、`DEPLOY`、`LIVE_VERIFY`、`ADVANCE_LIFECYCLE`、`RUN_AI_VISIBILITY`、`RUN_LUNA_COMPARISON`、`ANALYZE_GSC_GENERATIVE_AI`。
+目前 UI projection 的 workflow action ID 為 `FETCH_GSC`、`GENERATE_PLAN`、`OPEN_PLAN`、`COPY_ROUND_PROMPT`、`ADVANCE_ROUND`、`APPROVE_SINGLE_PAGE`、`DEPLOY_DRY_RUN`、`DEPLOY`、`AUTO_DEPLOY`、`LIVE_VERIFY`、`ADVANCE_LIFECYCLE`。2026-10-29 已移除未被消費的 `RUN_AI_VISIBILITY`、`RUN_LUNA_COMPARISON`、`ANALYZE_GSC_GENERATIVE_AI` projection 欄位；AI 可見度與 GSC Excel 的選用按鈕仍直接呼叫既有處理函式，Luna 對照不設 UI 執行按鈕。
 
-Dispatcher 每次執行前重新建立 projection，確認該 action 仍 enabled 才可呼叫既有 writer。前端不得傳入 queue ID、lifecycle state、檔案路徑或 deploy eligibility；完成後必須重新輸出 projection。
+主按鈕 Dispatcher 每次執行前重新建立 projection，確認該 action 仍 enabled 才可呼叫既有 writer。選用 AI／GSC 控制目前由各自的按鈕處理，不由此 projection 決定啟用狀態。
 
 ## 7. 遷移計畫
 
@@ -265,6 +265,8 @@ local_validated
 ## 11. 實作紀錄（2026-09-11）
 
 > 本節是交接用實際變更紀錄。以下程式已實作在 `D:\projects\Curtain-online-price-estimate`；本文件可一併複製到該專案的 `Weekly SOP\` 資料夾保存。
+>
+> 原始 2026-09-11 實作範圍與驗證結果屬歷史紀錄；2026-10-29 的 Round gate、佇列遷移與驗證以本節後方標明日期的內容及 `plan.md` 現行摘要為準。
 
 ### 實作範圍與未執行事項
 
@@ -300,7 +302,31 @@ local_validated
 - `deployed`：顯示 live verification。
 - `implemented`、`live_verified`、`observing_7d`、`reviewed_28d` 等狀態：使用既有 lifecycle inspection 顯示下一個 evidence 操作。
 
-HTA 仍保留原有次要按鈕邏輯，以降低遷移風險；**唯一 primary action 已由 projection 覆寫，且點擊前會再重新讀取 projection**。因此目前屬於「primary action 已切換」的漸進式遷移，而不是完全刪除舊 DOM helper。
+2026-10-29 第一階段：主按鈕直接由 UI projection 決定，已移除先計算一次、再被 projection 覆寫的 HTA 分支；點擊前仍會重新讀取 projection。正式自動部署已補上既有畫面所承諾的確認對話框。
+
+2026-10-29 第二階段：`scripts/seo-geo-round-gate.mjs` 提供共用 Round receipt gate；UI projection 納入 queue provenance、gate、輪次狀態與精簡 state／queue snapshot，HTA 的主按鈕與佇列面板使用同一份結果。舊 JS Round contract／receipt gate 和獨立 provenance 包裝已移除；無法讀取或綁定資料時 fail closed。新 gate 保留原有 round、action、fingerprint、source、registry、snapshot 與驗證結果檢查，並額外要求 active schema v2 與固定四個驗證命令；實際 writer 仍會在前進時重新驗證。
+
+#### Round gate 契約與驗證交接（2026-10-29）
+
+- `get-seo-geo-ui-projection.ps1` 檢查 workflow identity 與 queue provenance；active Round 再呼叫共用 gate。projection 透過 `panels.queue.receipt_gate`、`state_snapshot` 和 `queue_snapshot` 提供同一輪的結果與摘要；HTA 的 `getQueueSnapshot` 適配既有消費者，identity、Round 或讀取不符時停用相關操作。
+- 共用 gate 要求 active 的 state／queue schema 為 2，並核對 prompt、state、queue 與 receipt 的 Round、action／fingerprint、source、registry、7d／28d snapshot 及必要驗證。必要命令固定為 `node .agents/skills/curtain-online-seo-geo/scripts/keyword-owner-check.mjs`、`npm.cmd run build`、`npm.cmd run seo:check`、`npm.cmd run seo:preflight`；測試會比對 gate 與 writer 的命令清單，避免契約漂移。這是 receipt 的要求，不表示此次文件更新重新執行了 build。
+- Gate JSON 的 `passed=false` 可能是正常的未通過狀態，即使程序 exit code 為 0；後端讀取錯誤則標記 `health=error`。必須同時檢查 projection 一致性與 gate 結果，且 writer 在實際前進時仍會重驗。
+- `node scripts/test-seo-geo-round-gate.mjs` 通過 61 個案例，含 10 個更嚴格拒絕案例。移除舊 JS 前曾對照 51 個共同情境；舊函式移除後會跳過舊版對照，仍執行固定預期結果與 writer 命令契約檢查。
+- `node scripts/test-weekly-sop-controls.mjs` 與 `pwsh -NoLogo -NoProfile -File scripts/test-weekly-sop-ui.ps1 -SkipBehaviorFixtures` 通過；前者是模擬 HTA 函式，後者跳過其他行為 fixture。`pwsh -NoLogo -NoProfile -File scripts/test-seo-geo-cycle.ps1` 獨立通過，含錯誤 receipt、來源漂移與 gate 缺失；`scripts/test-sop-autodeploy-stale.ps1` 離線測試通過。尚未完成 Windows HTA 實際點擊驗收，亦未聲稱完整 UI suite 通過。
+- 2026-10-29 17:46 稽核時新檔尚未追蹤；GitHub 同步必須將 gate、相關測試與呼叫端一併納入。缺少 gate 會使 active Round fail closed；`scripts/test-weekly-sop-ui.ps1` 也需要其參照的測試檔。實際檔案清單與其他待辦見 `Weekly SOP/2026-10-29-change-log.md`。
+
+其餘消費者與後續階段：
+
+| 消費者 | 現在的資料來源／保留原因 |
+| --- | --- |
+| `getQueueSnapshot` | 作為相容 adapter，將 UI projection 的 queue snapshot、狀態與 receipt gate 提供給佇列面板、報告及操作；讀取失敗或 identity／Round 不符時停用操作。 |
+| 流程提示與六區面板 | 佇列面板已讀取 UI projection；其他流程提示及六區仍依 HTA 的新鮮度、重複匯入、registry 與 effective workflow 資料產生。 |
+| 手動部署／live verification helper | 保留其 queue-bound dry-run、狀態檢查及確認流程；與自動部署不是同一套 gate。 |
+| 可選 AI／GSC 檢查 | 保留獨立按鈕與 handler；不使用 UI projection 的 workflow actions。 |
+
+UI projection 與自動部署計畫均會檢查 queue provenance；來源過期或檢查失敗時操作停用，dry-run 完成後會在 FTP 前再次檢查並核對 queue／receipt。
+
+後續若遷移其他流程與六區面板，仍須先補齊其新鮮度、重複匯入與 registry 等資料契約並比對各狀態。Node VM 測試執行實際 HTA 函式並模擬按鈕，不代表已在 Windows HTA 實際點擊驗收。
 
 ### 自動部署設定
 

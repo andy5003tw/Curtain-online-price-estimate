@@ -81,6 +81,11 @@ function Test-DeploymentManifest {
   if (-not (Test-Binding $manifest $manifest.deployment_context $actionIds)) { return 'deployment manifest 屬於舊 queue 或 action IDs 不一致' }
   if ([int]$manifest.summary.selected -le 0 -or [int]$manifest.summary.failed -ne 0 -or ([int]$manifest.summary.uploaded + [int]$manifest.summary.skipped) -ne [int]$manifest.summary.selected) { return 'deployment manifest 上傳摘要不完整' }
   if (@($manifest.files).Count -ne [int]$manifest.summary.selected) { return 'deployment manifest 檔案數與摘要不一致' }
+  foreach ($file in @($manifest.files)) {
+    if ([string]::IsNullOrWhiteSpace([string]$file.relative_path) -or [string]$file.sha256 -notmatch '^[a-fA-F0-9]{64}$' -or [string]$file.result -notin @('uploaded', 'skipped_same_hash')) { return 'deployment manifest 有不安全或不完整的檔案結果' }
+    if ([string]$file.result -eq 'skipped_same_hash' -and ($file.PSObject.Properties.Name -notcontains 'remote_sha256_before' -or [string]$file.remote_sha256_before -cne [string]$file.sha256)) { return 'deployment manifest 缺少相同內容的遠端 SHA-256 證據' }
+  }
+  if (@($manifest.files | Where-Object { $_.result -eq 'uploaded' }).Count -ne [int]$manifest.summary.uploaded -or @($manifest.files | Where-Object { $_.result -eq 'skipped_same_hash' }).Count -ne [int]$manifest.summary.skipped) { return 'deployment manifest 檔案結果與摘要不一致' }
   return ''
 }
 

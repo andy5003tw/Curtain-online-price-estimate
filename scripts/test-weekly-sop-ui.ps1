@@ -14,6 +14,9 @@ $projectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-effective-workflow.
 $uiProjectionWriter = Join-Path $repoRoot 'scripts\get-seo-geo-ui-projection.ps1'
 $deployPlanWriter = Join-Path $repoRoot 'scripts\new-seo-geo-deploy-plan.ps1'
 $autoDeployWriter = Join-Path $repoRoot 'scripts\invoke-seo-geo-autodeploy.ps1'
+$controlBehaviorTest = Join-Path $repoRoot 'scripts\test-weekly-sop-controls.mjs'
+$roundGateTest = Join-Path $repoRoot 'scripts\test-seo-geo-round-gate.mjs'
+$autoDeployStaleTest = Join-Path $repoRoot 'scripts\test-sop-autodeploy-stale.ps1'
 $cycleTest = Join-Path $repoRoot 'scripts\test-seo-geo-cycle.ps1'
 $aiVisibilityTest = Join-Path $repoRoot 'scripts\test-ai-visibility.ps1'
 $aiVisibilityImporter = Join-Path $repoRoot 'scripts\import-latest-ai-visibility.ps1'
@@ -35,6 +38,9 @@ Assert-True (Test-Path -LiteralPath $projectionWriter -PathType Leaf) "Effective
 Assert-True (Test-Path -LiteralPath $uiProjectionWriter -PathType Leaf) "UI projection writer not found: $uiProjectionWriter"
 Assert-True (Test-Path -LiteralPath $deployPlanWriter -PathType Leaf) "Verified deploy plan writer not found: $deployPlanWriter"
 Assert-True (Test-Path -LiteralPath $autoDeployWriter -PathType Leaf) "Protected auto-deploy coordinator not found: $autoDeployWriter"
+Assert-True (Test-Path -LiteralPath $controlBehaviorTest -PathType Leaf) "HTA controls behavior test not found: $controlBehaviorTest"
+Assert-True (Test-Path -LiteralPath $roundGateTest -PathType Leaf) "Round receipt gate test not found: $roundGateTest"
+Assert-True (Test-Path -LiteralPath $autoDeployStaleTest -PathType Leaf) "Auto-deploy drift fixture not found: $autoDeployStaleTest"
 Assert-True (Test-Path -LiteralPath $cycleTest -PathType Leaf) "SEO/GEO state behavior fixture is missing: $cycleTest"
 Assert-True (Test-Path -LiteralPath $aiVisibilityTest -PathType Leaf) "AI Visibility state behavior fixture is missing: $aiVisibilityTest"
 Assert-True (Test-Path -LiteralPath $aiVisibilityImporter -PathType Leaf) "AI Visibility one-click importer is missing: $aiVisibilityImporter"
@@ -52,6 +58,9 @@ foreach ($id in @('btnSeoGeoNextSmart', 'btnOpenSeoGeoActionPlan', 'btnImportAiV
 Assert-True (-not ($hta -match 'id="btnRunAiVisibilityLunaComparison"')) 'Luna comparison execution button must not be present in the UI.'
 Assert-True (-not $hta.Contains('function runAiVisibilityLunaComparison')) 'Luna comparison execution handler must not be present in the UI.'
 Assert-True (-not $hta.Contains('.btn-ai-luna')) 'Luna comparison button styling must not be present in the UI.'
+foreach ($marker in @('bindClick("btnImportAiVisibility", runAiVisibilityAutomation)', 'bindClick("btnAnalyzeGscGenerativeAi", analyzeGscGenerativeAiExcel)')) {
+  Assert-True ($hta.Contains($marker)) "Optional AI/GSC control must retain its direct handler: $marker"
+}
 foreach ($id in @('btnFetchGscLatest')) {
   Assert-True ($hta -match ('id="' + [regex]::Escape($id) + '"')) "Missing GSC report action button: $id"
 }
@@ -69,6 +78,7 @@ foreach ($marker in @('function renderSixZoneDashboard', 'diagnosticDimensionTex
   Assert-True ($hta.Contains($marker)) "Missing UI safety/render marker: $marker"
 }
 Assert-True (-not $hta.Contains('persistValidatedRoundArtifacts')) 'HTA must not retain duplicate JavaScript Round persistence.'
+Assert-True (-not $hta.Contains('function getReceiptGate(') -and -not $hta.Contains('function getRoundContract(')) 'HTA must consume the backend Round receipt gate instead of reimplementing it.'
 Assert-True (Test-Path -LiteralPath $aiVisibilityLunaComparison -PathType Leaf) 'Missing Luna comparison runner.'
 Assert-True (Test-Path -LiteralPath $aiVisibilityLunaComparisonTest -PathType Leaf) 'Missing Luna comparison test.'
 Assert-True (-not $hta.Contains('writeJsonAtomic(statePath, state)')) 'HTA must not directly persist queue state.'
@@ -94,9 +104,24 @@ Assert-True ($LASTEXITCODE -eq 0) ('UI projection failed: ' + ($uiProjectionText
 $uiProjection = ($uiProjectionText -join "`n") | ConvertFrom-Json
 Assert-True ([int]$uiProjection.schema_version -eq 1 -and $null -ne $uiProjection.primary_action -and $null -ne $uiProjection.actions) 'UI projection schema contract is invalid.'
 Assert-True ([string]$uiProjection.state -eq [string]$state.status) 'UI projection state does not match authoritative queue state.'
-foreach ($actionId in @('FETCH_GSC','COPY_ROUND_PROMPT','ADVANCE_ROUND','AUTO_DEPLOY','LIVE_VERIFY','ADVANCE_LIFECYCLE')) {
+Assert-True ($null -ne $uiProjection.panels.queue.receipt_gate -and $uiProjection.panels.queue.receipt_gate.passed -is [bool] -and -not [string]::IsNullOrWhiteSpace([string]$uiProjection.panels.queue.receipt_gate.reason)) 'UI projection is missing the shared Round receipt gate contract.'
+$uiQueue = $uiProjection.panels.queue
+Assert-True ($null -ne $uiQueue.state_snapshot -and $null -ne $uiQueue.queue_snapshot -and [string]$uiQueue.state_snapshot.queue_id -eq [string]$state.queue_id -and [string]$uiQueue.state_snapshot.cycle_key -eq [string]$state.cycle_key) 'UI projection is missing the bound queue panel snapshot.'
+foreach ($field in @('is_observation','is_local_validated','is_awaiting_implemented','is_copied_pending')) {
+  Assert-True ($uiQueue.$field -is [bool]) "UI projection queue flag is not boolean: $field"
+}
+foreach ($actionId in @('FETCH_GSC','GENERATE_PLAN','OPEN_PLAN','COPY_ROUND_PROMPT','ADVANCE_ROUND','APPROVE_SINGLE_PAGE','DEPLOY_DRY_RUN','DEPLOY','AUTO_DEPLOY','LIVE_VERIFY','ADVANCE_LIFECYCLE')) {
   Assert-True ($uiProjection.actions.PSObject.Properties.Name -contains $actionId) "UI projection is missing action contract: $actionId"
-  Assert-True ($uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'enabled' -and $uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'reason') "UI action lacks enabled/reason: $actionId"
+  Assert-True ($uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'label' -and $uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'enabled' -and $uiProjection.actions.$actionId.PSObject.Properties.Name -contains 'reason') "UI action lacks label/enabled/reason: $actionId"
+}
+foreach ($actionId in @('RUN_AI_VISIBILITY','RUN_LUNA_COMPARISON','ANALYZE_GSC_GENERATIVE_AI')) {
+  Assert-True ($uiProjection.actions.PSObject.Properties.Name -notcontains $actionId) "UI projection still exposes an unused optional action: $actionId"
+}
+if ([string]$uiProjection.primary_action.id -ne 'NONE') {
+  $primaryId = [string]$uiProjection.primary_action.id
+  Assert-True ($uiProjection.actions.PSObject.Properties.Name -contains $primaryId) 'Primary action is missing from the action contract.'
+  $primaryAction = $uiProjection.actions.$primaryId
+  Assert-True ([bool]$uiProjection.primary_action.enabled -eq [bool]$primaryAction.enabled -and [string]$uiProjection.primary_action.label -ceq [string]$primaryAction.label -and [string]$uiProjection.primary_action.reason -ceq [string]$primaryAction.reason) 'Primary action does not match its action contract.'
 }
 Assert-True ($state.PSObject.Properties.Name -contains 'precondition_gates') 'Queue state is missing precondition gates.'
 if ([string]$state.status -notin @('observation_only', 'active')) {
@@ -114,6 +139,13 @@ if ([string]$state.status -eq 'observation_only') {
   Assert-True ($hta -match '無 executable Round；複製、前進、部署與 lifecycle 寫入均保持 disabled') 'Six-zone implementation panel must state the observation-only deployment boundary.'
 }
 
+$controlOutput = @(& node $controlBehaviorTest 2>&1)
+Assert-True ($LASTEXITCODE -eq 0) ('HTA controls behavior fixture failed: ' + ($controlOutput -join "`n"))
+Assert-True (($controlOutput -join "`n") -match 'PASS weekly SOP HTA controls projection tests') 'HTA controls behavior fixture did not report successful completion.'
+$roundGateOutput = @(& node $roundGateTest 2>&1)
+Assert-True ($LASTEXITCODE -eq 0) ('Round receipt gate fixture failed: ' + ($roundGateOutput -join "`n"))
+Assert-True (($roundGateOutput -join "`n") -match 'PASS SEO/GEO Round gate') 'Round receipt gate fixture did not report successful completion.'
+
 if (-not $SkipBehaviorFixtures) {
   # The HTA is a host UI, so lifecycle behavior is exercised through the same
   # PowerShell writers that its controls call.  This covers approved-plan
@@ -122,6 +154,9 @@ if (-not $SkipBehaviorFixtures) {
   $behaviorOutput = @(& pwsh -NoLogo -NoProfile -File $cycleTest 2>&1)
   Assert-True ($LASTEXITCODE -eq 0) ('Weekly SOP state behavior fixture failed: ' + ($behaviorOutput -join "`n"))
   Assert-True (($behaviorOutput -join "`n") -match 'SEO/GEO cycle tests passed') 'State behavior fixture did not report successful completion.'
+  $deployDriftOutput = @(& pwsh -NoLogo -NoProfile -File $autoDeployStaleTest 2>&1)
+  Assert-True ($LASTEXITCODE -eq 0) ('Auto-deploy drift fixture failed: ' + ($deployDriftOutput -join "`n"))
+  Assert-True (($deployDriftOutput -join "`n") -match 'PASS SOP auto-deploy stale-preflight integration tests') 'Auto-deploy drift fixture did not report successful completion.'
   $aiOutput = @(& pwsh -NoLogo -NoProfile -File $aiVisibilityTest 2>&1)
   Assert-True ($LASTEXITCODE -eq 0) ('AI Visibility state behavior fixture failed: ' + ($aiOutput -join "`n"))
   Assert-True (($aiOutput -join "`n") -match 'AI Visibility tests passed') 'AI Visibility fixture did not report successful completion.'

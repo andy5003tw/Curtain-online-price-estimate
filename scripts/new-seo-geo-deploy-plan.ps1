@@ -52,6 +52,15 @@ $allowedRemoteRoots = @('online.hong-sen.com')
 $ftpHost = [string]$env:FTP_HOST
 $remoteRoot = ([string]$env:FTP_REMOTE_DIR).Trim('/')
 $preflightReasons = @()
+try {
+  $provenanceScript = Join-Path $PSScriptRoot 'check-seo-geo-queue-provenance.ps1'
+  if (-not (Test-Path -LiteralPath $provenanceScript -PathType Leaf)) { throw 'Queue provenance checker is missing.' }
+  $provenance = (& $provenanceScript -RuntimeRoot $weeklyRoot -RepoRoot $repoRoot | ConvertFrom-Json -ErrorAction Stop)
+  if (-not $provenance -or $provenance.PSObject.Properties.Name -notcontains 'stale') { throw 'Queue provenance result is invalid.' }
+  if ([bool]$provenance.stale) { $preflightReasons += 'Queue provenance is stale: ' + (@($provenance.reasons) -join '；') }
+} catch {
+  $preflightReasons += 'Queue provenance check failed: ' + $_.Exception.Message
+}
 if ($ftpHost -notin $allowedFtpHosts) { $preflightReasons += 'FTP_HOST is missing or not on the production whitelist.' }
 if ($remoteRoot -notin $allowedRemoteRoots) { $preflightReasons += 'FTP_REMOTE_DIR is missing or not on the production whitelist.' }
 

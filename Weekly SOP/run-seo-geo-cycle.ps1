@@ -7,6 +7,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$queueSnapshotHelper = Join-Path (Split-Path -Parent $PSScriptRoot) 'scripts\seo-geo-queue-snapshot.ps1'
+if (-not (Test-Path -LiteralPath $queueSnapshotHelper -PathType Leaf)) {
+  throw "SEO/GEO queue snapshot helper not found: $queueSnapshotHelper"
+}
+. $queueSnapshotHelper
+
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [Console]::OutputEncoding = $utf8NoBom
 $OutputEncoding = $utf8NoBom
@@ -1884,22 +1890,177 @@ function Get-ActionHistoryCooldown {
 }
 
 function Get-LifecycleReviewDates {
-  param([string]$WeeklyRoot)
-  $map = @{}
+  param([string]$WeeklyRoot, [string]$RepositoryRoot)
+  $candidatesByPage = @{}
   $path = Join-Path $WeeklyRoot 'latest\seo-geo-lifecycle-receipt.json'
-  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $map }
-  try { $receipt = Read-JsonIfExists -Path $path } catch { return $map }
-  if (-not $receipt) { return $map }
-  $deployed = @($receipt.stages | Where-Object { $_.stage -eq 'deployed' } | Select-Object -Last 1)[0]
-  $live = @($receipt.stages | Where-Object { $_.stage -eq 'live_verified' } | Select-Object -Last 1)[0]
-  foreach ($page in @($receipt.target_pages)) {
-    $map[[string]$page] = [PSCustomObject]@{
-      deployed_at = if ($deployed) { [string]$deployed.recorded_at } else { $null }
-      live_verified_at = if ($live) { [string]$live.recorded_at } else { $null }
-      queue_id = [string]$receipt.queue_id
+  if (Test-Path -LiteralPath $path -PathType Leaf) {
+    try { $receipt = Read-JsonIfExists -Path $path }
+    catch { throw "Lifecycle receipt is invalid JSON; refusing to fall back to historical deployment dates: $($_.Exception.Message)" }
+    if ($receipt) {
+      $deployed = @($receipt.stages | Where-Object { $_.stage -eq 'deployed' } | Select-Object -Last 1)[0]
+      $live = @($receipt.stages | Where-Object { $_.stage -eq 'live_verified' } | Select-Object -Last 1)[0]
+      if ($deployed) {
+        $rawTimes = Get-RawLifecycleDeploymentTimes -Path $path
+        if ($rawTimes.completed_at_present) {
+          $deployedAt = [string]$rawTimes.completed_at
+          if (-not (ConvertTo-DeploymentDateTimeOffset -Value $deployedAt)) {
+            throw 'Lifecycle deployed evidence.completed_at exists but is not a zoned ISO timestamp.'
+          }
+          $dateSource = "lifecycle.deployed.evidence.completed_at ($($receipt.queue_id))"
+        } else {
+          $deployedAt = [string]$rawTimes.recorded_at
+          if (-not (ConvertTo-DeploymentDateTimeOffset -Value $deployedAt)) {
+            throw 'Lifecycle deployed evidence.completed_at is missing and recorded_at is not a zoned ISO timestamp.'
+          }
+          $dateSource = "lifecycle.deployed.recorded_at legacy fallback ($($receipt.queue_id))"
+        }
+        foreach ($page in @($receipt.target_pages)) {
+          if ([string]::IsNullOrWhiteSpace([string]$page)) { continue }
+          if (-not $candidatesByPage.ContainsKey([string]$page)) { $candidatesByPage[[string]$page] = @() }
+          $candidatesByPage[[string]$page] += [PSCustomObject]@{
+            deployed_at = $deployedAt
+            recorded_at = [string]$rawTimes.recorded_at
+            live_verified_at = if ($live) { [string]$live.recorded_at } else { $null }
+            queue_id = [string]$receipt.queue_id
+            evidence_status = 'standard_lifecycle'
+            date_source = $dateSource
+            receipt_path = 'latest/seo-geo-lifecycle-receipt.json'
+          }
+        }
+      }
     }
   }
+
+  if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) { $RepositoryRoot = Split-Path -Parent $PSScriptRoot }
+  $historicalReader = Join-Path $RepositoryRoot 'scripts\seo-geo-historical-deployment.mjs'
+  if (-not (Test-Path -LiteralPath $historicalReader -PathType Leaf)) {
+    throw "Historical deployment reader not found: $historicalReader"
+  }
+  $historicalOutput = @(& node $historicalReader --read-dates --runtime-root $WeeklyRoot 2>&1)
+  if ($LASTEXITCODE -ne 0) {
+    throw "Historical deployment reader failed: $($historicalOutput -join ' ')"
+  }
+  $historicalJson = [string]::Join([Environment]::NewLine, @($historicalOutput | ForEach-Object { [string]$_ })).Trim()
+  try { $historicalDeployments = if ($historicalJson) { @(Get-HistoricalDeploymentDateRecords -Json $historicalJson) } else { @() } }
+  catch { throw "Historical deployment reader returned invalid JSON: $($_.Exception.Message)" }
+  foreach ($deployment in @($historicalDeployments)) {
+    if ([string]$deployment.evidence_status -cne 'historical_deployment_accepted') { continue }
+    $deployedAt = [string]$deployment.deployed_at
+    if (-not (ConvertTo-DeploymentDateTimeOffset -Value $deployedAt)) { continue }
+    foreach ($page in @($deployment.target_pages)) {
+      if ([string]::IsNullOrWhiteSpace([string]$page)) { continue }
+      if (-not $candidatesByPage.ContainsKey([string]$page)) { $candidatesByPage[[string]$page] = @() }
+      $candidatesByPage[[string]$page] += [PSCustomObject]@{
+        deployed_at = $deployedAt
+        recorded_at = if ($deployment.PSObject.Properties.Name -contains 'recorded_at') { [string]$deployment.recorded_at } else { $null }
+        live_verified_at = $null
+        queue_id = [string]$deployment.queue_id
+        evidence_status = [string]$deployment.evidence_status
+        date_source = "historical_deployment_accepted ($($deployment.queue_id))"
+        receipt_path = [string]$deployment.receipt_path
+      }
+    }
+  }
+
+  $map = @{}
+  foreach ($page in $candidatesByPage.Keys) {
+    $selected = Select-LatestDeploymentDateCandidate -Candidates @($candidatesByPage[$page])
+    if ($selected) { $map[[string]$page] = $selected }
+  }
   return $map
+}
+
+function Get-RawLifecycleDeploymentTimes {
+  param([string]$Path)
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+  $jsonText = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+  $document = [System.Text.Json.JsonDocument]::Parse($jsonText)
+  try {
+    $stages = $null
+    foreach ($property in $document.RootElement.EnumerateObject()) {
+      if ([string]$property.Name -ceq 'stages') { $stages = $property.Value; break }
+    }
+    if ($null -eq $stages -or $stages.ValueKind -ne [System.Text.Json.JsonValueKind]::Array) { return $null }
+    $deployedTimes = $null
+    foreach ($stage in $stages.EnumerateArray()) {
+      $stageName = $null
+      $recordedAt = $null
+      $completedAtPresent = $false
+      $completedAt = $null
+      foreach ($property in $stage.EnumerateObject()) {
+        if ([string]$property.Name -ceq 'stage' -and $property.Value.ValueKind -eq [System.Text.Json.JsonValueKind]::String) { $stageName = $property.Value.GetString() }
+        if ([string]$property.Name -ceq 'recorded_at' -and $property.Value.ValueKind -eq [System.Text.Json.JsonValueKind]::String) { $recordedAt = $property.Value.GetString() }
+      }
+      if ($stageName -cne 'deployed') { continue }
+      foreach ($property in $stage.EnumerateObject()) {
+        if ([string]$property.Name -cne 'evidence' -or $property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) { continue }
+        foreach ($evidenceProperty in $property.Value.EnumerateObject()) {
+          if ([string]$evidenceProperty.Name -ceq 'completed_at') {
+            $completedAtPresent = $true
+            if ($evidenceProperty.Value.ValueKind -eq [System.Text.Json.JsonValueKind]::String) { $completedAt = $evidenceProperty.Value.GetString() }
+          }
+        }
+      }
+      $deployedTimes = [PSCustomObject]@{ completed_at_present = $completedAtPresent; completed_at = $completedAt; recorded_at = $recordedAt }
+    }
+    return $deployedTimes
+  } finally {
+    $document.Dispose()
+  }
+}
+
+function Get-HistoricalDeploymentDateRecords {
+  param([Parameter(Mandatory = $true)][string]$Json)
+  $document = [System.Text.Json.JsonDocument]::Parse($Json)
+  try {
+    if ($document.RootElement.ValueKind -ne [System.Text.Json.JsonValueKind]::Array) { throw 'Historical deployment reader must return a JSON array.' }
+    $records = @()
+    foreach ($record in $document.RootElement.EnumerateArray()) {
+      if ($record.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) { throw 'Historical deployment reader returned a non-object record.' }
+      $values = @{}
+      foreach ($property in $record.EnumerateObject()) {
+        switch ([string]$property.Name) {
+          { $_ -in @('queue_id', 'deployed_at', 'recorded_at', 'evidence_status', 'receipt_path') } {
+            if ($property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { throw "Historical deployment property '$($property.Name)' must be a string." }
+            $values[[string]$property.Name] = $property.Value.GetString()
+          }
+          'target_pages' {
+            if ($property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::Array) { throw 'Historical deployment target_pages must be an array.' }
+            $values.target_pages = @($property.Value.EnumerateArray() | ForEach-Object {
+              if ($_.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { throw 'Historical deployment target_pages entries must be strings.' }
+              $_.GetString()
+            })
+          }
+        }
+      }
+      foreach ($required in @('queue_id', 'deployed_at', 'evidence_status', 'receipt_path', 'target_pages')) {
+        if (-not $values.ContainsKey($required)) { throw "Historical deployment record is missing '$required'." }
+      }
+      $records += [PSCustomObject]$values
+    }
+    return @($records)
+  } finally {
+    $document.Dispose()
+  }
+}
+
+function ConvertTo-DeploymentDateTimeOffset {
+  param([string]$Value)
+  $text = if ($null -eq $Value) { '' } else { $Value.Trim() }
+  if ($text -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})$') { return $null }
+  $parsed = [DateTimeOffset]::MinValue
+  if (-not [DateTimeOffset]::TryParse($text, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$parsed)) { return $null }
+  return $parsed.ToOffset([TimeSpan]::FromHours(8))
+}
+
+function Select-LatestDeploymentDateCandidate {
+  param([object[]]$Candidates)
+  $datedCandidates = @($Candidates | ForEach-Object {
+    $timestamp = ConvertTo-DeploymentDateTimeOffset -Value ([string]$_.deployed_at)
+    if ($timestamp) { [PSCustomObject]@{ candidate = $_; utc_ticks = $timestamp.UtcDateTime.Ticks } }
+  } | Where-Object { $null -ne $_ } | Sort-Object utc_ticks -Descending)
+  if ($datedCandidates.Count -eq 0) { return $null }
+  return $datedCandidates[0].candidate
 }
 
 function Get-NonOverlappingReviewWindows {
@@ -1919,12 +2080,12 @@ function Get-NonOverlappingReviewWindows {
     $changed = [datetime]::MinValue
     $dateSource = 'registry.lastChangedAt (source change date; not a deployment timestamp)'
     $lifecycle = if ($LifecycleDates.ContainsKey([string]$owner.ownerPage)) { $LifecycleDates[[string]$owner.ownerPage] } else { $null }
-    if ($lifecycle -and -not [string]::IsNullOrWhiteSpace([string]$lifecycle.live_verified_at) -and [datetime]::TryParse([string]$lifecycle.live_verified_at, [ref]$changed)) {
-      $dateSource = "lifecycle.live_verified_at ($($lifecycle.queue_id))"
-    } elseif ($lifecycle -and -not [string]::IsNullOrWhiteSpace([string]$lifecycle.deployed_at) -and [datetime]::TryParse([string]$lifecycle.deployed_at, [ref]$changed)) {
-      $dateSource = "lifecycle.deployed_at ($($lifecycle.queue_id))"
+    $deploymentTimestamp = if ($lifecycle) { ConvertTo-DeploymentDateTimeOffset -Value ([string]$lifecycle.deployed_at) } else { $null }
+    if ($deploymentTimestamp) {
+      $changed = $deploymentTimestamp.Date
+      $dateSource = if (-not [string]::IsNullOrWhiteSpace([string]$lifecycle.date_source)) { [string]$lifecycle.date_source } elseif ([string]$lifecycle.evidence_status -eq 'historical_deployment_accepted') { "historical_deployment_accepted ($($lifecycle.queue_id))" } else { "lifecycle.deployed.evidence.completed_at ($($lifecycle.queue_id))" }
     } elseif (-not [datetime]::TryParseExact([string]$owner.lastChangedAt, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$changed)) { continue }
-    $changed = $changed.Date
+    else { $changed = $changed.Date }
     $post7End = $changed.AddDays(7)
     $post28End = $changed.AddDays(28)
     $pre28Start=$changed.AddDays(-28).ToString('yyyy-MM-dd');$pre28End=$changed.AddDays(-1).ToString('yyyy-MM-dd')
@@ -1940,6 +2101,9 @@ function Get-NonOverlappingReviewWindows {
       page = [string]$owner.ownerPage
       change_date = $changed.ToString('yyyy-MM-dd')
       date_source = $dateSource
+      deployment_evidence_status = if ($lifecycle) { [string]$lifecycle.evidence_status } else { 'registry_change_date' }
+      deployment_queue_id = if ($lifecycle) { [string]$lifecycle.queue_id } else { $null }
+      deployment_receipt_path = if ($lifecycle) { [string]$lifecycle.receipt_path } else { $null }
       pre_change_28d = "$pre28Start~$pre28End"
       pre_change_28d_result = $pre28Result
       pre_change_28d_metrics = Format-DiagnosticResult -Result $pre28Result
@@ -2600,7 +2764,7 @@ $monitorOnlyAssets = @(Get-MonitorOnlyAssets -Registry $registry -ExpectedHost $
 $registryRelativePath = Get-RelativePortablePath -BasePath $weeklyRoot -Path $registryFullPath
 $registrySha = Get-Sha256File -Path $registryFullPath
 $registryVersion = if ($null -ne $registry.schemaVersion) { [int]$registry.schemaVersion } else { 1 }
-$lifecycleReviewDates = Get-LifecycleReviewDates -WeeklyRoot $weeklyRoot
+$lifecycleReviewDates = Get-LifecycleReviewDates -WeeklyRoot $weeklyRoot -RepositoryRoot $repoRoot
 $outputHtmlIndex = Get-OutputHtmlIndex -RepoRoot $repoRoot
 
 $query7dPath = Get-BaselinePathFromManifest -WeeklyRoot $weeklyRoot -Manifest $fresh7d.manifest -Kind query -Required $true
@@ -3078,7 +3242,7 @@ $queuePayload = [ordered]@{
   technical_tasks = $technicalTasks
   optional_opportunities = $minorOpportunities
 }
-Write-Utf8NoBom -Path $outputQueueJson -Text ($queuePayload | ConvertTo-Json -Depth 12)
+$queueJsonText = $queuePayload | ConvertTo-Json -Depth 12
 
 $stateRounds = @($actionQueue | ForEach-Object {
   [PSCustomObject]@{
@@ -3152,7 +3316,14 @@ if ($existingState -and [string]$existingState.cycle_key -eq $cycleKey -and $sam
     $queueState.copied_rounds = @()
   }
 }
-Write-Utf8NoBom -Path $outputQueueStateJson -Text ($queueState | ConvertTo-Json -Depth 12)
+$queueStateJsonText = $queueState | ConvertTo-Json -Depth 12
+
+# Preserve the exact current queue/state bytes before either latest file is
+# replaced. SHA-addressed archive members and their pair manifest are immutable;
+# any missing or corrupted archive fails closed and leaves latest untouched.
+Save-SeoGeoQueueSnapshot -WeeklyRoot $weeklyRoot -QueuePath $outputQueueJson -StatePath $outputQueueStateJson
+Write-Utf8NoBom -Path $outputQueueJson -Text $queueJsonText
+Write-Utf8NoBom -Path $outputQueueStateJson -Text $queueStateJsonText
 
 $md = @()
 $md += '# Curtain Online SEO/GEO Action Plan'

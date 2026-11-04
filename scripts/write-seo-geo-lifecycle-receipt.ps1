@@ -13,8 +13,10 @@ $statePath = Join-Path $weeklyRoot 'latest\seo-geo-action-queue-state.json'
 $queuePath = Join-Path $weeklyRoot 'latest\seo-geo-action-queue.json'
 $localReceiptPath = Join-Path $weeklyRoot 'latest\seo-geo-validation-receipt.json'
 $lifecyclePath = Join-Path $weeklyRoot 'latest\seo-geo-lifecycle-receipt.json'
-$state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
-$queue = Get-Content -LiteralPath $queuePath -Raw -Encoding UTF8 | ConvertFrom-Json
+$stateJson = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8
+$queueJson = Get-Content -LiteralPath $queuePath -Raw -Encoding UTF8
+$state = $stateJson | ConvertFrom-Json
+$queue = $queueJson | ConvertFrom-Json
 if ([int]$state.schema_version -ne 2 -or [int]$queue.schema_version -ne 2) { throw 'Queue/state schema_version must be 2.' }
 if ([string]$state.queue_id -ne [string]$queue.queue_id -or [string]$state.cycle_key -ne [string]$queue.cycle_key) { throw 'Queue/state identity mismatch.' }
 $evidenceText = if ($PSCmdlet.ParameterSetName -eq 'File') {
@@ -22,6 +24,28 @@ $evidenceText = if ($PSCmdlet.ParameterSetName -eq 'File') {
   Get-Content -LiteralPath $EvidencePath -Raw -Encoding UTF8
 } else { $EvidenceJson }
 try { $evidence = $evidenceText | ConvertFrom-Json } catch { throw "Lifecycle evidence is invalid JSON: $($_.Exception.Message)" }
+
+function Get-RawJsonStringProperty {
+  param([Parameter(Mandatory = $true)][string]$Json, [Parameter(Mandatory = $true)][string]$Name)
+  $document = [System.Text.Json.JsonDocument]::Parse($Json)
+  try {
+    foreach ($property in $document.RootElement.EnumerateObject()) {
+      if ([string]$property.Name -cne $Name) { continue }
+      if ($property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { throw "JSON property '$Name' must be a string." }
+      return $property.Value.GetString()
+    }
+    return $null
+  } finally {
+    $document.Dispose()
+  }
+}
+
+if ($state.PSObject.Properties.Name -contains 'deployed_at' -and $null -ne $state.deployed_at) {
+  $state.deployed_at = Get-RawJsonStringProperty -Json $stateJson -Name 'deployed_at'
+}
+if ($evidence.PSObject.Properties.Name -contains 'completed_at') {
+  $evidence.completed_at = Get-RawJsonStringProperty -Json $evidenceText -Name 'completed_at'
+}
 
 function Resolve-WeeklyRelativePath {
   param([Parameter(Mandatory = $true)][string]$RelativePath)
@@ -35,6 +59,23 @@ function Resolve-WeeklyRelativePath {
 function Assert-Sha256 {
   param([string]$Value, [string]$Label)
   if ($Value -notmatch '^[a-fA-F0-9]{64}$') { throw "$Label requires a 64-character SHA-256." }
+}
+
+function ConvertTo-ZonedDateTimeOffset {
+  param([string]$Value, [string]$Label)
+  $text = if ($null -eq $Value) { '' } else { $Value.Trim() }
+  if ($text -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})$') {
+    throw "$Label must be an ISO-8601 timestamp with an explicit timezone."
+  }
+  $parsed = [DateTimeOffset]::MinValue
+  $parsedOk = [DateTimeOffset]::TryParse(
+    $text,
+    [Globalization.CultureInfo]::InvariantCulture,
+    [Globalization.DateTimeStyles]::None,
+    [ref]$parsed
+  )
+  if (-not $parsedOk) { throw "$Label is not a valid ISO-8601 timestamp." }
+  return $parsed
 }
 
 function Get-NormalizedStringSet {
@@ -107,7 +148,9 @@ function Assert-DeploymentManifestEvidence {
   if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "Deployment manifest does not exist: $($Value.path)" }
   $actualSha = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
   if ($actualSha -ne ([string]$Value.sha256).ToLowerInvariant()) { throw 'deployment_manifest.sha256 does not match the current manifest.' }
-  $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+  $manifestJson = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
+  $manifest = $manifestJson | ConvertFrom-Json
+  $manifest.completed_at = Get-RawJsonStringProperty -Json $manifestJson -Name 'completed_at'
   if ([int]$manifest.schema_version -ne 1 -or [string]$manifest.status -ne 'success' -or [bool]$manifest.dry_run) { throw 'Deployment manifest must be schema_version=1, status=success, and dry_run=false.' }
   if ([string]$manifest.target_host -ne 'online.hong-sen.com') { throw 'Deployment manifest target_host must be online.hong-sen.com.' }
   if ([string]$manifest.deployment_context.queue_id -ne [string]$Binding.queue_id -or [string]$manifest.deployment_context.cycle_key -ne [string]$Binding.cycle_key) { throw 'Deployment manifest queue/cycle binding does not match current queue.' }
@@ -123,7 +166,15 @@ function Assert-DeploymentManifestEvidence {
     }
   }
   if (@($files | Where-Object { $_.result -eq 'uploaded' }).Count -ne [int]$manifest.summary.uploaded -or @($files | Where-Object { $_.result -eq 'skipped_same_hash' }).Count -ne [int]$manifest.summary.skipped) { throw 'Deployment manifest file results do not match the summary.' }
-  return [pscustomobject]@{ path = [string]$Value.path; sha256 = $actualSha; manifest = $manifest }
+  $manifestCompletedAt = ConvertTo-ZonedDateTimeOffset -Value ([string]$manifest.completed_at) -Label 'Deployment manifest completed_at'
+  $evidenceCompletedAt = ConvertTo-ZonedDateTimeOffset -Value ([string]$evidence.completed_at) -Label 'deployed evidence completed_at'
+  if ($manifestCompletedAt.UtcDateTime.Ticks -ne $evidenceCompletedAt.UtcDateTime.Ticks) {
+    throw 'deployed evidence completed_at must match the deployment manifest completed_at.'
+  }
+  if ($manifestCompletedAt -gt [DateTimeOffset]::UtcNow) {
+    throw 'Deployment manifest completed_at cannot be in the future.'
+  }
+  return [pscustomobject]@{ path = [string]$Value.path; sha256 = $actualSha; manifest = $manifest; completed_at = [string]$manifest.completed_at }
 }
 
 function Assert-LiveVerificationManifestEvidence {
@@ -216,16 +267,16 @@ if ($Stage -eq 'live_verified') {
 if ($Stage -eq 'observing_7d') {
   $through = [datetime]::MinValue
   if (-not [datetime]::TryParse([string]$evidence.observed_through_date, [ref]$through)) { throw 'observing_7d evidence requires observed_through_date.' }
-  $deployedAt = [datetime]::Parse([string]$state.deployed_at)
-  if ($through.Date -lt $deployedAt.Date.AddDays(7)) { throw 'observing_7d requires seven complete days after deployed_at.' }
+  $deployedAtTaipei = (ConvertTo-ZonedDateTimeOffset -Value ([string]$state.deployed_at) -Label 'state.deployed_at').ToOffset([TimeSpan]::FromHours(8)).Date
+  if ($through.Date -lt $deployedAtTaipei.AddDays(7)) { throw 'observing_7d requires seven complete days after deployed_at (Taipei date).' }
   $manifest = Assert-GscManifestEvidence -Value $evidence.gsc_manifest -Window '7d'
   if ([string]$manifest.end_date -ne $through.ToString('yyyy-MM-dd')) { throw 'observing_7d observed_through_date must equal the bound GSC manifest end_date.' }
 }
 if ($Stage -eq 'reviewed_28d') {
   $gscEnd = [datetime]::MinValue
   if (-not [datetime]::TryParse([string]$evidence.gsc_end_date, [ref]$gscEnd)) { throw 'reviewed_28d evidence requires gsc_end_date.' }
-  $deployedAt = [datetime]::Parse([string]$state.deployed_at)
-  if ($gscEnd.Date -lt $deployedAt.Date.AddDays(28)) { throw 'reviewed_28d requires a complete 28-day post-deploy window.' }
+  $deployedAtTaipei = (ConvertTo-ZonedDateTimeOffset -Value ([string]$state.deployed_at) -Label 'state.deployed_at').ToOffset([TimeSpan]::FromHours(8)).Date
+  if ($gscEnd.Date -lt $deployedAtTaipei.AddDays(28)) { throw 'reviewed_28d requires a complete 28-day post-deploy window (Taipei date).' }
   $manifest = Assert-GscManifestEvidence -Value $evidence.gsc_manifest -Window '28d'
   if ([string]$manifest.end_date -ne $gscEnd.ToString('yyyy-MM-dd')) { throw 'reviewed_28d gsc_end_date must equal the bound GSC manifest end_date.' }
   if ([string]$evidence.decision -notin @('keep', 'refine', 'expand', 'replace')) { throw 'reviewed_28d requires decision=keep/refine/expand/replace.' }
@@ -254,7 +305,7 @@ $null = $json | ConvertFrom-Json
 $state.status = $Stage
 if ($state.PSObject.Properties.Name -contains 'lifecycle_receipt_path') { $state.lifecycle_receipt_path = 'latest/seo-geo-lifecycle-receipt.json' } else { $state | Add-Member -NotePropertyName lifecycle_receipt_path -NotePropertyValue 'latest/seo-geo-lifecycle-receipt.json' }
 if ($state.PSObject.Properties.Name -contains ($Stage + '_at')) { $state.($Stage + '_at') = $now } else { $state | Add-Member -NotePropertyName ($Stage + '_at') -NotePropertyValue $now }
-if ($Stage -eq 'deployed') { $state.deployed_at = $now }
+if ($Stage -eq 'deployed') { $state.deployed_at = [string]$deploymentManifest.completed_at }
 if ($Stage -eq 'deployed') { $state | Add-Member -Force -NotePropertyName deployment_manifest_path -NotePropertyValue ([string]$deploymentManifest.path) }
 if ($Stage -eq 'live_verified') { $state | Add-Member -Force -NotePropertyName live_verification_manifest_path -NotePropertyValue ([string]$liveVerificationManifest.path) }
 $stateJson = $state | ConvertTo-Json -Depth 20

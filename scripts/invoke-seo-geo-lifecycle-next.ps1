@@ -11,7 +11,35 @@ $ErrorActionPreference = 'Stop'
 
 function Read-Json([string]$Path) {
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
-  return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+  $jsonText = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+  $value = $jsonText | ConvertFrom-Json
+  if ([System.IO.Path]::GetFileName($Path) -eq 'seo-geo-action-queue-state.json' -and $value.PSObject.Properties.Name -contains 'deployed_at' -and $null -ne $value.deployed_at) {
+    $value.deployed_at = Get-RawJsonStringProperty -Json $jsonText -Name 'deployed_at'
+  }
+  return $value
+}
+
+function Get-RawJsonStringProperty {
+  param([Parameter(Mandatory = $true)][string]$Json, [Parameter(Mandatory = $true)][string]$Name)
+  $document = [System.Text.Json.JsonDocument]::Parse($Json)
+  try {
+    foreach ($property in $document.RootElement.EnumerateObject()) {
+      if ([string]$property.Name -cne $Name) { continue }
+      if ($property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { throw "JSON property '$Name' must be a string." }
+      return $property.Value.GetString()
+    }
+    return $null
+  } finally {
+    $document.Dispose()
+  }
+}
+
+function Read-DeploymentManifest([string]$Path) {
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+  $jsonText = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+  $manifest = $jsonText | ConvertFrom-Json
+  $manifest.completed_at = Get-RawJsonStringProperty -Json $jsonText -Name 'completed_at'
+  return $manifest
 }
 
 function Get-Sha256([string]$Path) {
@@ -26,6 +54,27 @@ function Test-SameStringSet([object[]]$Actual, [object[]]$Expected) {
   $actualSet = @(Get-StringSet $Actual)
   $expectedSet = @(Get-StringSet $Expected)
   return $actualSet.Count -eq $expectedSet.Count -and @($actualSet | Where-Object { $_ -notin $expectedSet }).Count -eq 0
+}
+
+function ConvertTo-ZonedDateTimeOffset {
+  param([string]$Value, [string]$Label)
+  $text = if ($null -eq $Value) { '' } else { $Value.Trim() }
+  if ($text -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})$') {
+    throw "$Label must be an ISO-8601 timestamp with an explicit timezone."
+  }
+  $parsed = [DateTimeOffset]::MinValue
+  $parsedOk = [DateTimeOffset]::TryParse(
+    $text,
+    [Globalization.CultureInfo]::InvariantCulture,
+    [Globalization.DateTimeStyles]::None,
+    [ref]$parsed
+  )
+  if (-not $parsedOk) { throw "$Label is not a valid ISO-8601 timestamp." }
+  return $parsed
+}
+
+function Get-TaipeiDate([string]$Timestamp, [string]$Label) {
+  return (ConvertTo-ZonedDateTimeOffset -Value $Timestamp -Label $Label).ToOffset([TimeSpan]::FromHours(8)).Date
 }
 
 function New-Inspection {
@@ -75,9 +124,13 @@ function Test-ValidationReceipt {
 
 function Test-DeploymentManifest {
   if (-not (Test-Path -LiteralPath $deploymentPath -PathType Leaf)) { return '尚未完成正式 FTP 部署' }
-  $manifest = Read-Json $deploymentPath
+  $manifest = Read-DeploymentManifest $deploymentPath
   if (-not $manifest -or [int]$manifest.schema_version -ne 1 -or [string]$manifest.status -ne 'success' -or [bool]$manifest.dry_run) { return '正式 deployment manifest 尚未成功' }
   if ([string]$manifest.target_host -ne 'online.hong-sen.com') { return 'deployment manifest host 不正確' }
+  try {
+    $manifestCompletedAt = ConvertTo-ZonedDateTimeOffset -Value ([string]$manifest.completed_at) -Label 'Deployment manifest completed_at'
+    if ($manifestCompletedAt -gt [DateTimeOffset]::UtcNow) { return 'deployment manifest completed_at 不可是未來時間' }
+  } catch { return $_.Exception.Message }
   if (-not (Test-Binding $manifest $manifest.deployment_context $actionIds)) { return 'deployment manifest 屬於舊 queue 或 action IDs 不一致' }
   if ([int]$manifest.summary.selected -le 0 -or [int]$manifest.summary.failed -ne 0 -or ([int]$manifest.summary.uploaded + [int]$manifest.summary.skipped) -ne [int]$manifest.summary.selected) { return 'deployment manifest 上傳摘要不完整' }
   if (@($manifest.files).Count -ne [int]$manifest.summary.selected) { return 'deployment manifest 檔案數與摘要不一致' }
@@ -174,7 +227,7 @@ switch ($currentStatus) {
   'live_verified' {
     if ([string]::IsNullOrWhiteSpace([string]$state.deployed_at)) { $inspection = New-Inspection $currentStatus $nextStage $false $false '等待 7 天完整資料' 'state 缺少 deployed_at。' }
     else {
-      $required = ([datetime]::Parse([string]$state.deployed_at)).Date.AddDays(7)
+      $required = (Get-TaipeiDate -Timestamp ([string]$state.deployed_at) -Label 'state.deployed_at').AddDays(7)
       $windowResult = Test-GscWindow '7d' $required
       $inspection = New-Inspection $currentStatus $nextStage (-not $windowResult.reason) $false $(if ($windowResult.reason) { '等待 7 天完整資料' } else { '記錄開始觀察 7 天成效' }) $(if ($windowResult.reason) { $windowResult.reason } else { '7d manifest 已 decision-ready 且涵蓋完整部署後 7 日。' }) $required.ToString('yyyy-MM-dd') $(if ($windowResult.manifest) { [string]$windowResult.manifest.end_date } else { '' })
     }
@@ -182,7 +235,7 @@ switch ($currentStatus) {
   'observing_7d' {
     if ([string]::IsNullOrWhiteSpace([string]$state.deployed_at)) { $inspection = New-Inspection $currentStatus $nextStage $false $false '等待 28 天完整資料' 'state 缺少 deployed_at。' }
     else {
-      $required = ([datetime]::Parse([string]$state.deployed_at)).Date.AddDays(28)
+      $required = (Get-TaipeiDate -Timestamp ([string]$state.deployed_at) -Label 'state.deployed_at').AddDays(28)
       $windowResult = Test-GscWindow '28d' $required
       $inspection = New-Inspection $currentStatus $nextStage (-not $windowResult.reason) (-not $windowResult.reason) $(if ($windowResult.reason) { '等待 28 天完整資料' } else { '記錄完成 28 天成效檢討' }) $(if ($windowResult.reason) { $windowResult.reason } else { '資料已完整；請選擇策略決策並輸入摘要。' }) $required.ToString('yyyy-MM-dd') $(if ($windowResult.manifest) { [string]$windowResult.manifest.end_date } else { '' })
     }
@@ -220,7 +273,7 @@ switch ($nextStage) {
     $evidence.validation_summary = if ($passed.Count) { 'Passed: ' + ($passed -join '；') } else { 'validation receipt status=passed。' }
   }
   'deployed' {
-    $manifest = Read-Json $deploymentPath
+    $manifest = Read-DeploymentManifest $deploymentPath
     $evidence.validation_receipt_sha256 = Get-Sha256 $validationPath
     $evidence.uploaded = [int]$manifest.summary.uploaded
     $evidence.skipped = [int]$manifest.summary.skipped

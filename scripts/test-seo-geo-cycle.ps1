@@ -45,9 +45,56 @@ function Write-Json {
   Write-Utf8NoBom -Path $Path -Text (($Value | ConvertTo-Json -Depth 20) + [Environment]::NewLine)
 }
 
+function Copy-OrderedDictionary {
+  param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Value)
+  $copy = [ordered]@{}
+  foreach ($key in $Value.Keys) { $copy[$key] = $Value[$key] }
+  return $copy
+}
+
 function Read-Json {
   param([Parameter(Mandatory = $true)][string]$Path)
   return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+}
+
+function Get-RawJsonStringProperty {
+  param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][string]$Name)
+  $jsonText = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+  $document = [System.Text.Json.JsonDocument]::Parse($jsonText)
+  try {
+    foreach ($property in $document.RootElement.EnumerateObject()) {
+      if ([string]$property.Name -cne $Name) { continue }
+      if ($property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { throw "JSON property '$Name' must be a string." }
+      return $property.Value.GetString()
+    }
+    return $null
+  } finally {
+    $document.Dispose()
+  }
+}
+
+function New-DeploymentEvidenceJson {
+  param(
+    [Parameter(Mandatory = $true)][object]$QueueBinding,
+    [Parameter(Mandatory = $true)][string]$ReceiptPath,
+    [Parameter(Mandatory = $true)][string]$CompletedAt,
+    [Parameter(Mandatory = $true)][string]$ManifestPath,
+    [Parameter(Mandatory = $true)][string]$ManifestSha256
+  )
+  return [ordered]@{
+    queue_id = $QueueBinding.queue_id
+    cycle_key = $QueueBinding.cycle_key
+    queue_sha256 = $QueueBinding.queue_sha256
+    action_ids = $QueueBinding.action_ids
+    validation_receipt_sha256 = (Get-FileHash -LiteralPath $ReceiptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    uploaded = 2
+    skipped = 1
+    failed = 0
+    command = 'deploy fixture'
+    completed_at = $CompletedAt
+    target_host = 'online.hong-sen.com'
+    deployment_manifest = [ordered]@{ path = $ManifestPath; sha256 = $ManifestSha256 }
+  } | ConvertTo-Json -Depth 8 -Compress
 }
 
 function Assert-True {
@@ -257,7 +304,7 @@ function Test-ReviewWindowBoundaries {
   $parseErrors = $null
   $generatorAst = [System.Management.Automation.Language.Parser]::ParseFile($generator, [ref]$tokens, [ref]$parseErrors)
   if ($parseErrors.Count -gt 0) { throw "Could not parse generator review-window helpers: $($parseErrors[0].Message)" }
-  $requiredFunctions = @('Get-ReturnedMetrics', 'Get-ExactPrimaryKeywordMetrics', 'Measure-DiagnosticMetrics', 'Get-PeriodDiagnosticResult', 'Format-DiagnosticResult', 'Get-NonOverlappingReviewWindows')
+  $requiredFunctions = @('Read-Utf8Text', 'Read-JsonIfExists', 'Get-ReturnedMetrics', 'Get-ExactPrimaryKeywordMetrics', 'Measure-DiagnosticMetrics', 'Get-PeriodDiagnosticResult', 'Format-DiagnosticResult', 'Get-LifecycleReviewDates', 'Get-RawLifecycleDeploymentTimes', 'Get-HistoricalDeploymentDateRecords', 'ConvertTo-DeploymentDateTimeOffset', 'Select-LatestDeploymentDateCandidate', 'Get-NonOverlappingReviewWindows')
   $functionAsts = @($generatorAst.FindAll({
     param($node)
     $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $requiredFunctions -contains $node.Name
@@ -313,6 +360,111 @@ function Test-ReviewWindowBoundaries {
   $completeWindow = @(Get-NonOverlappingReviewWindows -Owners @($owner) -LatestFinalizedDate $post28End.ToString('yyyy-MM-dd') -DateRows $completeRows.date_rows -DatePageRows $completeRows.date_page_rows)[0]
   Assert-True ($completeWindow.review_28d_status -eq 'eligible' -and [bool]$completeWindow.post_28d_result.available) 'A fully covered post-28d window was not marked eligible at its final day.'
   Assert-True ([int]$completeWindow.post_28d_result.impressions -eq 56) 'Post-28d metrics did not cover all 28 days after the change date.'
+
+  $deploymentOwnerPage = 'https://online.hong-sen.com/products/custom-curtains/'
+  $deploymentOwner = [PSCustomObject]@{ clusterId = 'product-P001'; ownerPage = $deploymentOwnerPage; lastChangedAt = '2026-10-20' }
+  $deploymentTimestamp = '2026-10-28T18:39:26.4981634Z'
+  $posthocLiveTimestamp = '2026-11-04T09:02:12.422Z'
+  $equivalentDeploymentTimestamp = '2026-10-29T02:39:26.4981634+08:00'
+  $utcDeploymentDate = ConvertTo-DeploymentDateTimeOffset -Value $deploymentTimestamp
+  $offsetDeploymentDate = ConvertTo-DeploymentDateTimeOffset -Value $equivalentDeploymentTimestamp
+  Assert-True ($null -ne $utcDeploymentDate -and $null -ne $offsetDeploymentDate -and $utcDeploymentDate.UtcDateTime.Ticks -eq $offsetDeploymentDate.UtcDateTime.Ticks -and $utcDeploymentDate.Date.ToString('yyyy-MM-dd') -eq '2026-10-29') 'Equivalent Z and +08 deployment timestamps did not preserve the instant and Taipei deployment date.'
+  $historicalZJson = '[{"queue_id":"seo-geo-z-fixture","target_pages":["https://online.hong-sen.com/products/custom-curtains/"],"deployed_at":"2026-10-28T18:39:26.4981634Z","recorded_at":"2026-11-04T09:02:12.430Z","evidence_status":"historical_deployment_accepted","receipt_path":"history/fixture/receipt.json"}]'
+  $historicalZRecord = @(Get-HistoricalDeploymentDateRecords -Json $historicalZJson)[0]
+  Assert-True ([string]$historicalZRecord.deployed_at -ceq '2026-10-28T18:39:26.4981634Z' -and [string]$historicalZRecord.recorded_at -ceq '2026-11-04T09:02:12.430Z') 'Historical JSON timestamp reader did not preserve raw ISO Z strings.'
+
+  $standardRuntimeRoot = Join-Path $testRoot 'lifecycle-date-reader-runtime'
+  $standardReceiptPath = Join-Path $standardRuntimeRoot 'latest\seo-geo-lifecycle-receipt.json'
+  $standardEvidence = [ordered]@{ completed_at = $deploymentTimestamp }
+  $standardFixture = [ordered]@{
+    queue_id = 'seo-geo-raw-z-fixture'
+    target_pages = @($deploymentOwnerPage)
+    stages = @([ordered]@{ stage = 'deployed'; recorded_at = '2026-11-04T09:02:12.430Z'; evidence = $standardEvidence })
+  }
+  Write-Json -Path $standardReceiptPath -Value $standardFixture
+  $rawLifecycleTimes = Get-RawLifecycleDeploymentTimes -Path $standardReceiptPath
+  Assert-True ([bool]$rawLifecycleTimes.completed_at_present -and [string]$rawLifecycleTimes.completed_at -ceq $deploymentTimestamp -and [string]$rawLifecycleTimes.recorded_at -ceq '2026-11-04T09:02:12.430Z') 'Lifecycle JSON timestamp reader did not preserve raw completed_at and recorded_at ISO Z strings.'
+  $standardReaderDates = Get-LifecycleReviewDates -WeeklyRoot $standardRuntimeRoot -RepositoryRoot $repoRoot
+  $standardReaderDate = $standardReaderDates[$deploymentOwnerPage]
+  Assert-True ([string]$standardReaderDate.deployed_at -ceq $deploymentTimestamp -and [string]$standardReaderDate.recorded_at -ceq '2026-11-04T09:02:12.430Z') 'Lifecycle review-date reader did not retain raw deployment and recording timestamps.'
+
+  $fallbackRuntimeRoot = Join-Path $testRoot 'lifecycle-date-fallback-runtime'
+  $fallbackFixture = [ordered]@{
+    queue_id = 'seo-geo-legacy-date-fixture'
+    target_pages = @($deploymentOwnerPage)
+    stages = @([ordered]@{ stage = 'deployed'; recorded_at = '2026-10-28T18:39:26.4981634Z'; evidence = [ordered]@{ deployment_manifest = 'legacy fixture without completed_at' } })
+  }
+  Write-Json -Path (Join-Path $fallbackRuntimeRoot 'latest\seo-geo-lifecycle-receipt.json') -Value $fallbackFixture
+  $fallbackDates = Get-LifecycleReviewDates -WeeklyRoot $fallbackRuntimeRoot -RepositoryRoot $repoRoot
+  $fallbackDate = $fallbackDates[$deploymentOwnerPage]
+  Assert-True ([string]$fallbackDate.deployed_at -ceq '2026-10-28T18:39:26.4981634Z' -and [string]$fallbackDate.date_source -match 'legacy fallback') 'Legacy lifecycle fallback did not use the raw recorded_at value when completed_at was absent.'
+
+  $invalidTimestampRuntimeRoot = Join-Path $testRoot 'lifecycle-invalid-deployed-at-runtime'
+  $invalidTimestampFixture = [ordered]@{
+    queue_id = 'seo-geo-invalid-date-fixture'
+    target_pages = @($deploymentOwnerPage)
+    stages = @([ordered]@{ stage = 'deployed'; recorded_at = '2026-10-28T18:39:26.4981634Z'; evidence = [ordered]@{ completed_at = '10/28/2026 18:39:26' } })
+  }
+  Write-Json -Path (Join-Path $invalidTimestampRuntimeRoot 'latest\seo-geo-lifecycle-receipt.json') -Value $invalidTimestampFixture
+  $invalidCompletedAtRejected = $false
+  try { [void](Get-LifecycleReviewDates -WeeklyRoot $invalidTimestampRuntimeRoot -RepositoryRoot $repoRoot) } catch { $invalidCompletedAtRejected = $_.Exception.Message -match 'completed_at exists' }
+  Assert-True $invalidCompletedAtRejected 'A malformed existing completed_at was silently replaced by recorded_at instead of failing closed.'
+
+  $invalidJsonRuntimeRoot = Join-Path $testRoot 'lifecycle-invalid-json-runtime'
+  Write-Utf8NoBom -Path (Join-Path $invalidJsonRuntimeRoot 'latest\seo-geo-lifecycle-receipt.json') -Text '{ "queue_id": '
+  $invalidJsonReceiptRejected = $false
+  try { [void](Get-LifecycleReviewDates -WeeklyRoot $invalidJsonRuntimeRoot -RepositoryRoot $repoRoot) } catch { $invalidJsonReceiptRejected = $_.Exception.Message -match 'Lifecycle receipt is invalid JSON' }
+  Assert-True $invalidJsonReceiptRejected 'A malformed standard lifecycle receipt was ignored while the historical reader could supply an older deployment date.'
+
+  $standardCandidate = [PSCustomObject]@{
+    deployed_at = $deploymentTimestamp; live_verified_at = $posthocLiveTimestamp; queue_id = 'seo-geo-standard';
+    evidence_status = 'standard_lifecycle'; date_source = 'lifecycle.deployed.evidence.completed_at (seo-geo-standard)'; receipt_path = 'latest/seo-geo-lifecycle-receipt.json'
+  }
+  $standardWindow = @(Get-NonOverlappingReviewWindows -Owners @($deploymentOwner) -LatestFinalizedDate '2026-11-04' -LifecycleDates @{ $deploymentOwnerPage = $standardCandidate })[0]
+  Assert-True ($standardWindow.change_date -eq '2026-10-29' -and $standardWindow.post_7d -eq '2026-10-30~2026-11-05' -and $standardWindow.post_28d -eq '2026-10-30~2026-11-26') 'Standard lifecycle deployment windows did not use the Taipei date of evidence.completed_at.'
+  Assert-True ($standardWindow.change_date -ne ([DateTimeOffset]::Parse($posthocLiveTimestamp, [Globalization.CultureInfo]::InvariantCulture).ToOffset([TimeSpan]::FromHours(8)).Date.ToString('yyyy-MM-dd')) -and [string]$standardWindow.date_source -match 'evidence.completed_at') 'Posthoc live verification time overrode the standard deployment date.'
+  Assert-True ([string]$standardWindow.deployment_evidence_status -eq 'standard_lifecycle' -and [string]$standardWindow.deployment_queue_id -eq 'seo-geo-standard') 'Standard lifecycle date provenance was not retained in the review window.'
+
+  $historicalCandidate = [PSCustomObject]@{
+    deployed_at = '2026-11-04T16:30:00+08:00'; live_verified_at = $null; queue_id = 'seo-geo-accepted';
+    evidence_status = 'historical_deployment_accepted'; date_source = 'historical_deployment_accepted (seo-geo-accepted)'; receipt_path = 'history/curtain-online/historical-deployments/fixture/receipt.json'
+  }
+  $selectedHistorical = Select-LatestDeploymentDateCandidate -Candidates @($standardCandidate, $historicalCandidate)
+  Assert-True ([string]$selectedHistorical.queue_id -eq 'seo-geo-accepted') 'A newer accepted deployment did not take precedence over an older standard deployment date.'
+  $historicalWindow = @(Get-NonOverlappingReviewWindows -Owners @($deploymentOwner) -LatestFinalizedDate '2026-11-04' -LifecycleDates @{ $deploymentOwnerPage = $historicalCandidate })[0]
+  Assert-True ($historicalWindow.change_date -eq '2026-11-04' -and [string]$historicalWindow.deployment_evidence_status -eq 'historical_deployment_accepted' -and [string]$historicalWindow.deployment_receipt_path -eq $historicalCandidate.receipt_path) 'Historical accepted deployment date or receipt provenance was not used in its observation window.'
+
+  $acceptedRoot = Join-Path $repoRoot 'Weekly SOP\history\curtain-online\historical-deployments'
+  $acceptedReceipt = if (Test-Path -LiteralPath $acceptedRoot -PathType Container) {
+    Get-ChildItem -LiteralPath $acceptedRoot -Filter 'receipt.json' -File -Recurse | Where-Object { $_.FullName -match 'seo-geo-3bbc4c26c0342d93' } | Select-Object -First 1
+  } else { $null }
+  if ($acceptedReceipt) {
+    $sourceVersionRoot = Split-Path -Parent $acceptedReceipt.FullName
+    $sourceQueueRoot = Split-Path -Parent $sourceVersionRoot
+    $queueId = Split-Path -Leaf $sourceQueueRoot
+    $historicalRuntimeRoot = Join-Path $testRoot 'historical-deployment-reader-runtime'
+    $historicalRuntimeHistory = Join-Path $historicalRuntimeRoot "history\curtain-online\historical-deployments\$queueId"
+    Ensure-Dir -Path (Split-Path -Parent $historicalRuntimeHistory)
+    Copy-Item -LiteralPath $sourceQueueRoot -Destination $historicalRuntimeHistory -Recurse
+    $actualAcceptedDates = Get-LifecycleReviewDates -WeeklyRoot $historicalRuntimeRoot -RepositoryRoot $repoRoot
+    $actualAccepted = $actualAcceptedDates[$deploymentOwnerPage]
+    Assert-True ($actualAccepted -and [string]$actualAccepted.evidence_status -eq 'historical_deployment_accepted' -and [string]$actualAccepted.queue_id -eq 'seo-geo-3bbc4c26c0342d93') 'The historical reader did not return the accepted P001 receipt.'
+    $selectedAcceptedReceiptPath = Join-Path $historicalRuntimeRoot ([string]$actualAccepted.receipt_path).Replace('/', '\')
+    $selectedAcceptedRecordedAt = Get-RawJsonStringProperty -Path $selectedAcceptedReceiptPath -Name 'recorded_at'
+    Assert-True ([string]$actualAccepted.deployed_at -ceq '2026-10-28T18:39:26.4981634Z' -and [string]$actualAccepted.recorded_at -ceq $selectedAcceptedRecordedAt -and [string]$actualAccepted.recorded_at -cne [string]$actualAccepted.deployed_at) 'Historical reader lost the original deployment timestamp or confused it with the selected receipt acceptance time.'
+    $actualAcceptedWindows = @(Get-NonOverlappingReviewWindows -Owners @($deploymentOwner) -LatestFinalizedDate '2026-11-04' -LifecycleDates $actualAcceptedDates)
+    Assert-True ($actualAcceptedWindows.Count -eq 1) 'Multiple captures of the same accepted deployment were double-counted as observation windows.'
+    $actualAcceptedWindow = $actualAcceptedWindows[0]
+    Assert-True ($actualAcceptedWindow.change_date -eq '2026-10-29' -and $actualAcceptedWindow.post_7d -eq '2026-10-30~2026-11-05' -and $actualAcceptedWindow.post_28d -eq '2026-10-30~2026-11-26') 'The actual accepted P001 receipt produced the wrong Taipei deployment observation windows.'
+    Assert-True ([string]$actualAcceptedWindow.date_source -eq 'historical_deployment_accepted (seo-geo-3bbc4c26c0342d93)' -and [string]$actualAcceptedWindow.deployment_receipt_path -eq [string]$actualAccepted.receipt_path) 'The actual accepted P001 review window lost its evidence source.'
+
+    foreach ($archivedManifest in @(Get-ChildItem -LiteralPath $historicalRuntimeHistory -Filter 'deployment.json' -File -Recurse | Where-Object { $_.FullName -match '[\\/]original[\\/]deployment\.json$' })) {
+      [System.IO.File]::AppendAllText($archivedManifest.FullName, "`n", $utf8NoBom)
+    }
+    $corruptEvidenceRejected = $false
+    try { [void](Get-LifecycleReviewDates -WeeklyRoot $historicalRuntimeRoot -RepositoryRoot $repoRoot) } catch { $corruptEvidenceRejected = $true }
+    Assert-True $corruptEvidenceRejected 'Historical reader did not fail closed when archived deployment evidence was corrupted.'
+  }
 
   $missingDate = $post28End.ToString('yyyy-MM-dd')
   $missingRows = & $makeRows -ThroughDate $post28End -OmitDate $missingDate
@@ -526,6 +678,7 @@ try {
   [void](Invoke-Generator)
   $queuePath = Join-Path $runtimeRoot 'latest\seo-geo-action-queue.json'
   $statePath = Join-Path $runtimeRoot 'latest\seo-geo-action-queue-state.json'
+  $lifecyclePath = Join-Path $runtimeRoot 'latest\seo-geo-lifecycle-receipt.json'
   $slimPath = Join-Path $runtimeRoot 'latest\seo-geo-action-plan.slim.ai.md'
   $htmlPath = Join-Path $runtimeRoot 'latest\seo-geo-action-plan.html'
   $mdPath = Join-Path $runtimeRoot 'latest\seo-geo-action-plan.md'
@@ -887,7 +1040,7 @@ try {
   $deploymentManifestPath = Join-Path $runtimeRoot 'latest\seo-geo-deployment-manifest.json'
   $deploymentManifest = [ordered]@{
     schema_version = 1; status = 'success'; dry_run = $false; target_host = 'online.hong-sen.com'; deploy_mode = 'quick'
-    generated_at = (Get-Date).AddMinutes(-1).ToUniversalTime().ToString('o'); completed_at = (Get-Date).ToUniversalTime().ToString('o')
+    generated_at = '2026-10-28T18:38:26.4981634Z'; completed_at = '2026-10-28T18:39:26.4981634Z'
     deployment_context = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; action_ids = $queueBinding.action_ids }
     deploy_plan = $null
     summary = [ordered]@{ selected = 3; uploaded = 2; skipped = 1; failed = 0 }
@@ -898,18 +1051,66 @@ try {
     )
   }
   Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
+  Assert-True ([string]$deploymentManifest.completed_at -match 'Z$') 'Deployment fixture must use the actual UTC Z timestamp representation.'
+  $offsetRuntimeRoot = Join-Path $testRoot 'deployment-offset-equivalence-runtime'
+  Copy-Item -LiteralPath $runtimeRoot -Destination $offsetRuntimeRoot -Recurse -Force
+  $offsetManifestPath = Join-Path $offsetRuntimeRoot 'latest\seo-geo-deployment-manifest.json'
+  Write-Json -Path $offsetManifestPath -Value $deploymentManifest
+  $offsetEvidenceCompletedAt = [DateTimeOffset]::Parse([string]$deploymentManifest.completed_at, [Globalization.CultureInfo]::InvariantCulture).ToOffset([TimeSpan]::FromHours(8)).ToString('o')
+  $offsetEvidence = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath (Join-Path $offsetRuntimeRoot 'latest\seo-geo-validation-receipt.json') -CompletedAt $offsetEvidenceCompletedAt -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 (Get-FileHash -LiteralPath $offsetManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $offsetReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $offsetRuntimeRoot, '-Stage', 'deployed', '-EvidenceJson', $offsetEvidence)
+  if ($offsetReceipt.ExitCode -ne 0) { $offsetReceipt.Output | ForEach-Object { Write-Host $_ } }
+  Assert-True ($offsetReceipt.ExitCode -eq 0) 'deployed receipt rejected equivalent UTC Z and Taipei +08 timestamps.'
+  Assert-True ((Get-RawJsonStringProperty -Path (Join-Path $offsetRuntimeRoot 'latest\seo-geo-action-queue-state.json') -Name 'deployed_at') -ceq [string]$deploymentManifest.completed_at) 'deployed_at did not retain the manifest UTC Z timestamp when evidence used an equivalent +08 time.'
   $badDeployEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; validation_receipt_sha256 = (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant(); uploaded = 2; skipped = 1; failed = 0; command = 'deploy fixture'; completed_at = (Get-Date).ToString('o'); target_host = 'online.hong-sen.com' } | ConvertTo-Json -Depth 5 -Compress
   $badDeployReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $badDeployEvidence)
   Assert-True ($badDeployReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted evidence without a complete deployment manifest.'
-  $badDeployShaEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; validation_receipt_sha256 = (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant(); uploaded = 2; skipped = 1; failed = 0; command = 'deploy fixture'; completed_at = (Get-Date).ToString('o'); target_host = 'online.hong-sen.com'; deployment_manifest = [ordered]@{ path = 'latest/seo-geo-deployment-manifest.json'; sha256 = ('0' * 64) } } | ConvertTo-Json -Depth 8 -Compress
+  $badDeployShaEvidence = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath $receiptPath -CompletedAt ([string]$deploymentManifest.completed_at) -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 ('0' * 64)
   $badDeployShaReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $badDeployShaEvidence)
   Assert-True ($badDeployShaReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted a deployment manifest SHA mismatch.'
   Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'deployment manifest SHA mismatch advanced lifecycle state.'
+
+  $originalCompletedAt = [string]$deploymentManifest.completed_at
+  $originalLifecycleStageCount = @(Read-Json -Path $lifecyclePath).stages.Count
+  $manifestWithoutZone = Copy-OrderedDictionary -Value $deploymentManifest
+  $manifestWithoutZone.completed_at = $originalCompletedAt.Substring(0, 19)
+  Write-Json -Path $deploymentManifestPath -Value $manifestWithoutZone
+  $manifestWithoutZoneEvidence = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath $receiptPath -CompletedAt ([string]$manifestWithoutZone.completed_at) -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $manifestWithoutZoneReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $manifestWithoutZoneEvidence)
+  Assert-True ($manifestWithoutZoneReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted a manifest completed_at without a timezone.'
+  Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'timezone-less manifest advanced lifecycle state.'
+
+  Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
+  $evidenceWithoutZone = $originalCompletedAt.Substring(0, 19)
+  $evidenceWithoutZoneJson = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath $receiptPath -CompletedAt $evidenceWithoutZone -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $evidenceWithoutZoneReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $evidenceWithoutZoneJson)
+  Assert-True ($evidenceWithoutZoneReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted evidence completed_at without a timezone.'
+  Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'timezone-less evidence advanced lifecycle state.'
+
+  $mismatchedCompletedAt = [DateTimeOffset]::Parse($originalCompletedAt, [Globalization.CultureInfo]::InvariantCulture).AddSeconds(-1).ToString('o')
+  $mismatchedEvidence = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath $receiptPath -CompletedAt $mismatchedCompletedAt -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $mismatchedReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $mismatchedEvidence)
+  Assert-True ($mismatchedReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted an evidence completed_at different from the manifest.'
+  Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'mismatched completed_at advanced lifecycle state.'
+
+  $futureDeploymentManifest = Copy-OrderedDictionary -Value $deploymentManifest
+  $futureDeploymentManifest.completed_at = [DateTimeOffset]::UtcNow.AddMinutes(5).ToString('o')
+  Write-Json -Path $deploymentManifestPath -Value $futureDeploymentManifest
+  $futureEvidence = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath $receiptPath -CompletedAt ([string]$futureDeploymentManifest.completed_at) -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $futureReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $futureEvidence)
+  Assert-True ($futureReceipt.ExitCode -ne 0) 'deployed lifecycle receipt accepted a future deployment manifest completed_at.'
+  Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'future completed_at advanced lifecycle state.'
+  $futureInspection = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Inspect')
+  $futureInspectionJson = Convert-CommandJson -Output $futureInspection.Output -Label 'future deployment inspection'
+  Assert-True ($futureInspection.ExitCode -eq 0 -and -not [bool]$futureInspectionJson.ready -and [string]$futureInspectionJson.reason -match '未來時間') 'Lifecycle controller marked a future deployment manifest ready.'
+
+  Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
+  Assert-True (@((Read-Json -Path $lifecyclePath).stages).Count -eq $originalLifecycleStageCount) 'Rejected deployment timestamps modified the lifecycle receipt.'
   foreach ($unsafeSkip in @('skipped_same_size', 'skipped_same_hash')) {
     $deploymentManifest.files[2].result = $unsafeSkip
     $deploymentManifest.files[2].remote_sha256_before = ('d' * 64)
     Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
-    $unsafeDeployEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; validation_receipt_sha256 = (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant(); uploaded = 2; skipped = 1; failed = 0; command = 'deploy fixture'; completed_at = (Get-Date).ToString('o'); target_host = 'online.hong-sen.com'; deployment_manifest = [ordered]@{ path = 'latest/seo-geo-deployment-manifest.json'; sha256 = (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant() } } | ConvertTo-Json -Depth 8 -Compress
+    $unsafeDeployEvidence = New-DeploymentEvidenceJson -QueueBinding $queueBinding -ReceiptPath $receiptPath -CompletedAt ([string]$deploymentManifest.completed_at) -ManifestPath 'latest/seo-geo-deployment-manifest.json' -ManifestSha256 (Get-FileHash -LiteralPath $deploymentManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $unsafeDeployReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'deployed', '-EvidenceJson', $unsafeDeployEvidence)
     Assert-True ($unsafeDeployReceipt.ExitCode -ne 0) "deployed lifecycle receipt accepted unsafe skip: $unsafeSkip"
     Assert-True ((Read-Json -Path $statePath).status -eq 'local_validated') 'unsafe skip advanced lifecycle state.'
@@ -919,11 +1120,22 @@ try {
   $deploymentManifest.files[2].result = 'skipped_same_hash'
   $deploymentManifest.files[2].remote_sha256_before = ('c' * 64)
   Write-Json -Path $deploymentManifestPath -Value $deploymentManifest
+  $deployAdvanceStartedAt = [DateTimeOffset]::UtcNow
   $deployReceipt = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Mode', 'Advance')
+  $deployAdvanceFinishedAt = [DateTimeOffset]::UtcNow
   if ($deployReceipt.ExitCode -ne 0) { $deployReceipt.Output | ForEach-Object { Write-Host $_ } }
   Assert-True ($deployReceipt.ExitCode -eq 0) 'deployed lifecycle receipt was rejected after local validation.'
   $state = Read-Json -Path $statePath
   Assert-True ($state.status -eq 'deployed' -and -not [string]::IsNullOrWhiteSpace([string]$state.deployed_at)) 'deployed lifecycle stage was not persisted.'
+  $manifestDeployedAt = [DateTimeOffset]::Parse([string]$deploymentManifest.completed_at, [Globalization.CultureInfo]::InvariantCulture)
+  $stateDeployedAtRaw = Get-RawJsonStringProperty -Path $statePath -Name 'deployed_at'
+  $stateDeployedAt = [DateTimeOffset]::Parse($stateDeployedAtRaw, [Globalization.CultureInfo]::InvariantCulture)
+  Assert-True ($stateDeployedAtRaw -ceq [string]$deploymentManifest.completed_at) 'deployed_at did not preserve the manifest timestamp string.'
+  Assert-True ($stateDeployedAt.UtcDateTime.Ticks -eq $manifestDeployedAt.UtcDateTime.Ticks) 'deployed_at did not use the validated deployment manifest completed_at.'
+  $lifecycleAfterDeploy = Read-Json -Path $lifecyclePath
+  $deployedStage = @($lifecycleAfterDeploy.stages | Where-Object { [string]$_.stage -eq 'deployed' } | Select-Object -Last 1)[0]
+  $recordedAtUtcTicks = ([datetime]$deployedStage.recorded_at).ToUniversalTime().Ticks
+  Assert-True ($recordedAtUtcTicks -ge $deployAdvanceStartedAt.UtcDateTime.Ticks -and $recordedAtUtcTicks -le $deployAdvanceFinishedAt.UtcDateTime.Ticks) 'deployed receipt recorded_at did not retain the lifecycle write time.'
   $uiDeployed = Get-UiProjectionFixture
   Assert-True ([bool]$uiDeployed.consistent -and [string]$uiDeployed.primary_action.id -eq 'LIVE_VERIFY' -and [bool]$uiDeployed.primary_action.enabled -and -not [bool]$uiDeployed.actions.AUTO_DEPLOY.enabled) 'Deployed UI projection did not select live verification.'
   $liveManifestPath = Join-Path $runtimeRoot 'latest\seo-geo-live-verification.json'
@@ -961,6 +1173,73 @@ try {
   Assert-True ($state.status -eq 'live_verified') 'live_verified lifecycle stage was not persisted.'
   $uiLiveVerified = Get-UiProjectionFixture
   Assert-True ([bool]$uiLiveVerified.consistent -and [string]$uiLiveVerified.primary_action.id -eq 'ADVANCE_LIFECYCLE') 'Live-verified UI projection did not select lifecycle inspection.'
+
+  $dateBoundaryRuntimeRoot = Join-Path $testRoot 'lifecycle-date-boundary-runtime'
+  Copy-Item -LiteralPath $runtimeRoot -Destination $dateBoundaryRuntimeRoot -Recurse -Force
+  $dateBoundaryStatePath = Join-Path $dateBoundaryRuntimeRoot 'latest\seo-geo-action-queue-state.json'
+  $dateBoundaryState = Read-Json -Path $dateBoundaryStatePath
+  $manifestTaipeiDate = [DateTimeOffset]::Parse([string]$deploymentManifest.completed_at, [Globalization.CultureInfo]::InvariantCulture).ToOffset([TimeSpan]::FromHours(8)).Date
+  $required7dTaipeiDate = $manifestTaipeiDate.AddDays(7).ToString('yyyy-MM-dd')
+  $required28dTaipeiDate = $manifestTaipeiDate.AddDays(28).ToString('yyyy-MM-dd')
+  Assert-True ($manifestTaipeiDate.ToString('yyyy-MM-dd') -eq '2026-10-29' -and $required7dTaipeiDate -eq '2026-11-05' -and $required28dTaipeiDate -eq '2026-11-26') 'UTC Z deployment fixture did not cross to the expected Taipei calendar dates.'
+  $dateBoundaryState.deployed_at = [string]$deploymentManifest.completed_at
+  Write-Json -Path $dateBoundaryStatePath -Value $dateBoundaryState
+  $dateBoundarySevenPath = Join-Path $dateBoundaryRuntimeRoot 'latest\7d\weekly-sop-last-run.json'
+  $dateBoundarySevenManifest = Read-Json -Path $dateBoundarySevenPath
+  $dateBoundarySevenManifest.end_date = ([datetime]::ParseExact($required7dTaipeiDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).AddDays(-1).ToString('yyyy-MM-dd')
+  Write-Json -Path $dateBoundarySevenPath -Value $dateBoundarySevenManifest
+  $inspect7dBefore = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Mode', 'Inspect')
+  $inspect7dBeforeJson = Convert-CommandJson -Output $inspect7dBefore.Output -Label '7d pre-boundary inspection'
+  Assert-True ($inspect7dBefore.ExitCode -eq 0 -and -not [bool]$inspect7dBeforeJson.ready -and [string]$inspect7dBeforeJson.earliest_date -eq $required7dTaipeiDate) '7d controller accepted the day before the Taipei deployment anniversary.'
+  $dateBoundarySevenManifest.end_date = $required7dTaipeiDate
+  Write-Json -Path $dateBoundarySevenPath -Value $dateBoundarySevenManifest
+  $inspect7dOnBoundary = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Mode', 'Inspect')
+  $inspect7dOnBoundaryJson = Convert-CommandJson -Output $inspect7dOnBoundary.Output -Label '7d boundary inspection'
+  Assert-True ($inspect7dOnBoundary.ExitCode -eq 0 -and [bool]$inspect7dOnBoundaryJson.ready -and [string]$inspect7dOnBoundaryJson.earliest_date -eq $required7dTaipeiDate) '7d controller did not accept the Taipei deployment anniversary date.'
+  $taipeiEquivalentDeploymentAt = [DateTimeOffset]::Parse([string]$deploymentManifest.completed_at, [Globalization.CultureInfo]::InvariantCulture).ToOffset([TimeSpan]::FromHours(8)).ToString('o')
+  $dateBoundaryState.deployed_at = $taipeiEquivalentDeploymentAt
+  Write-Json -Path $dateBoundaryStatePath -Value $dateBoundaryState
+  $inspectEquivalentOffset = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Mode', 'Inspect')
+  $inspectEquivalentOffsetJson = Convert-CommandJson -Output $inspectEquivalentOffset.Output -Label 'equivalent-offset 7d inspection'
+  Assert-True ($inspectEquivalentOffset.ExitCode -eq 0 -and [bool]$inspectEquivalentOffsetJson.ready -and [string]$inspectEquivalentOffsetJson.earliest_date -eq $required7dTaipeiDate) '7d controller treated equivalent UTC Z and Taipei +08 timestamps as different deployment dates.'
+
+  $dateBoundarySevenManifest.end_date = ([datetime]::ParseExact($required7dTaipeiDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).AddDays(-1).ToString('yyyy-MM-dd')
+  Write-Json -Path $dateBoundarySevenPath -Value $dateBoundarySevenManifest
+  $dateBoundaryObservationEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; observed_through_date = ([datetime]::ParseExact($required7dTaipeiDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).AddDays(-1).ToString('yyyy-MM-dd'); gsc_manifest = [ordered]@{ path = 'latest/7d/weekly-sop-last-run.json'; sha256 = (Get-FileHash -LiteralPath $dateBoundarySevenPath -Algorithm SHA256).Hash.ToLowerInvariant() } } | ConvertTo-Json -Depth 8 -Compress
+  $writer7dBefore = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Stage', 'observing_7d', '-EvidenceJson', $dateBoundaryObservationEvidence)
+  Assert-True ($writer7dBefore.ExitCode -ne 0 -and (Read-Json -Path $dateBoundaryStatePath).status -eq 'live_verified' -and ($writer7dBefore.Output -join ' ') -match 'seven complete days after deployed_at \(Taipei date\)') '7d writer did not reject a pre-boundary date for the Taipei day-count reason.'
+  $dateBoundarySevenManifest.end_date = $required7dTaipeiDate
+  Write-Json -Path $dateBoundarySevenPath -Value $dateBoundarySevenManifest
+  $dateBoundaryObservationEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; observed_through_date = $required7dTaipeiDate; gsc_manifest = [ordered]@{ path = 'latest/7d/weekly-sop-last-run.json'; sha256 = (Get-FileHash -LiteralPath $dateBoundarySevenPath -Algorithm SHA256).Hash.ToLowerInvariant() } } | ConvertTo-Json -Depth 8 -Compress
+  $writer7dOnBoundary = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Stage', 'observing_7d', '-EvidenceJson', $dateBoundaryObservationEvidence)
+  if ($writer7dOnBoundary.ExitCode -ne 0) { $writer7dOnBoundary.Output | ForEach-Object { Write-Host $_ } }
+  Assert-True ($writer7dOnBoundary.ExitCode -eq 0 -and (Read-Json -Path $dateBoundaryStatePath).status -eq 'observing_7d') '7d writer rejected a manifest ending on the Taipei deployment anniversary.'
+
+  $dateBoundaryTwentyEightPath = Join-Path $dateBoundaryRuntimeRoot 'latest\28d\weekly-sop-last-run.json'
+  $dateBoundaryTwentyEightManifest = Read-Json -Path $dateBoundaryTwentyEightPath
+  $dateBoundaryTwentyEightManifest.end_date = ([datetime]::ParseExact($required28dTaipeiDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).AddDays(-1).ToString('yyyy-MM-dd')
+  Write-Json -Path $dateBoundaryTwentyEightPath -Value $dateBoundaryTwentyEightManifest
+  $inspect28dBefore = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Mode', 'Inspect')
+  $inspect28dBeforeJson = Convert-CommandJson -Output $inspect28dBefore.Output -Label '28d pre-boundary inspection'
+  Assert-True ($inspect28dBefore.ExitCode -eq 0 -and -not [bool]$inspect28dBeforeJson.ready -and [string]$inspect28dBeforeJson.earliest_date -eq $required28dTaipeiDate) '28d controller accepted the day before the Taipei deployment anniversary.'
+  $dateBoundaryTwentyEightManifest.end_date = $required28dTaipeiDate
+  Write-Json -Path $dateBoundaryTwentyEightPath -Value $dateBoundaryTwentyEightManifest
+  $inspect28dOnBoundary = Invoke-PwshFile -File $lifecycleNext -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Mode', 'Inspect')
+  $inspect28dOnBoundaryJson = Convert-CommandJson -Output $inspect28dOnBoundary.Output -Label '28d boundary inspection'
+  Assert-True ($inspect28dOnBoundary.ExitCode -eq 0 -and [bool]$inspect28dOnBoundaryJson.ready -and [bool]$inspect28dOnBoundaryJson.needs_input -and [string]$inspect28dOnBoundaryJson.earliest_date -eq $required28dTaipeiDate) '28d controller did not accept the Taipei deployment anniversary date.'
+
+  $dateBoundaryTwentyEightManifest.end_date = ([datetime]::ParseExact($required28dTaipeiDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).AddDays(-1).ToString('yyyy-MM-dd')
+  Write-Json -Path $dateBoundaryTwentyEightPath -Value $dateBoundaryTwentyEightManifest
+  $writer28dBeforeEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; gsc_end_date = ([datetime]::ParseExact($required28dTaipeiDate, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)).AddDays(-1).ToString('yyyy-MM-dd'); decision = 'keep'; review_summary = 'fixture review'; gsc_manifest = [ordered]@{ path = 'latest/28d/weekly-sop-last-run.json'; sha256 = (Get-FileHash -LiteralPath $dateBoundaryTwentyEightPath -Algorithm SHA256).Hash.ToLowerInvariant() } } | ConvertTo-Json -Depth 8 -Compress
+  $writer28dBefore = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Stage', 'reviewed_28d', '-EvidenceJson', $writer28dBeforeEvidence)
+  Assert-True ($writer28dBefore.ExitCode -ne 0 -and (Read-Json -Path $dateBoundaryStatePath).status -eq 'observing_7d' -and ($writer28dBefore.Output -join ' ') -match 'complete 28-day post-deploy window \(Taipei date\)') '28d writer did not reject a pre-boundary date for the Taipei day-count reason.'
+  $dateBoundaryTwentyEightManifest.end_date = $required28dTaipeiDate
+  Write-Json -Path $dateBoundaryTwentyEightPath -Value $dateBoundaryTwentyEightManifest
+  $writer28dOnBoundaryEvidence = [ordered]@{ queue_id = $queueBinding.queue_id; cycle_key = $queueBinding.cycle_key; queue_sha256 = $queueBinding.queue_sha256; action_ids = $queueBinding.action_ids; gsc_end_date = $required28dTaipeiDate; decision = 'keep'; review_summary = 'fixture review'; gsc_manifest = [ordered]@{ path = 'latest/28d/weekly-sop-last-run.json'; sha256 = (Get-FileHash -LiteralPath $dateBoundaryTwentyEightPath -Algorithm SHA256).Hash.ToLowerInvariant() } } | ConvertTo-Json -Depth 8 -Compress
+  $writer28dOnBoundary = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $dateBoundaryRuntimeRoot, '-Stage', 'reviewed_28d', '-EvidenceJson', $writer28dOnBoundaryEvidence)
+  if ($writer28dOnBoundary.ExitCode -ne 0) { $writer28dOnBoundary.Output | ForEach-Object { Write-Host $_ } }
+  Assert-True ($writer28dOnBoundary.ExitCode -eq 0 -and (Read-Json -Path $dateBoundaryStatePath).status -eq 'reviewed_28d') '28d writer rejected a manifest ending on the Taipei deployment anniversary.'
+
   $outOfOrderReceipt = Invoke-PwshFile -File $lifecycleWriter -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-Stage', 'completed', '-EvidenceJson', '{}')
   Assert-True ($outOfOrderReceipt.ExitCode -ne 0) 'lifecycle receipt allowed completed before 7d/28d review.'
 

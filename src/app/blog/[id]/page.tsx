@@ -167,7 +167,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
               />
             </div>
 
-            <div style={{ padding: '3rem 2.5rem' }}>
+            <div className={post.id === 'curtain-price-guide-2026' ? 'price-guide-content' : undefined} style={{ padding: '3rem 2.5rem' }}>
               <div 
                 className="blog-content" 
                 dangerouslySetInnerHTML={{ __html: withBasePathInHtml(post.contentHtml) }} 
@@ -228,6 +228,19 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
         .blog-content p { margin-bottom: 1.5rem; }
         .blog-content a { color: var(--amber-700); text-decoration: underline; text-decoration-color: var(--amber-200); text-underline-offset: 4px; transition: all 0.2s; font-weight: 600; }
         .blog-content a:hover { color: var(--amber-600); text-decoration-color: var(--amber-500); }
+        .blog-content .price-guide-table-hint { display: none; margin: 0 0 0.75rem; padding: 0.65rem 0.75rem; border: 1px solid #f5c77a; border-radius: 0.65rem; background: #fff7e8; color: var(--amber-800); font-size: 0.9rem; font-weight: 700; line-height: 1.4; }
+        .price-guide-table-hint__arrow { flex: none; font-size: 1.2rem; line-height: 1; }
+        .price-guide-table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--stone-200); border-radius: 0.75rem; }
+        .price-guide-table-scroll:focus-visible { outline: 3px solid var(--amber-600); outline-offset: 3px; }
+        .price-guide-table { width: 100%; min-width: 30rem; border-collapse: collapse; }
+        .price-guide-table th, .price-guide-table td { padding: 0.75rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--stone-200); }
+        .price-guide-table thead th { background: var(--stone-50); color: var(--stone-900); }
+        .price-guide-table tbody th { font-weight: 600; }
+        .price-guide-table tbody tr:last-child th, .price-guide-table tbody tr:last-child td { border-bottom: 0; }
+        @media (max-width: 640px) {
+          .price-guide-content { padding: 1.5rem 1.25rem !important; }
+        }
+        @media (max-width: 570px) { .blog-content .price-guide-table-hint { display: flex; align-items: center; justify-content: center; gap: 0.45rem; } }
         .hover-text-white:hover { color: white !important; }
         .hover-border-dark:hover { border-color: var(--stone-400) !important; }
         .hover-tag-span:hover { background: var(--stone-200) !important; color: var(--stone-800) !important; }

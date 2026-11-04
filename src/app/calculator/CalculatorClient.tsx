@@ -273,9 +273,20 @@ export function CalculatorForm({ products: bootstrapProducts }: CalculatorClient
               <p className="form-hint" style={{ marginTop: '0.75rem' }}>
                 單一窗的材料費與安裝費先作線上初估；整筆工程最低總施工費為 NT$1,300，非每窗最低安裝費。特殊窗型、配件與施工條件須於丈量後確認正式報價。
               </p>
-              <a href="#contact" className="btn-primary" style={{ marginTop: '1.25rem', width: '100%' }}>
-                預約現場丈量 <ChevronRight size={16} />
-              </a>
+              <p className="form-hint" style={{ marginTop: '0.75rem', color: 'var(--amber-800)' }}>
+                <strong>車資提醒：</strong>線上試算金額不隨地區變動，也未含車資；台北、新北以外及較偏遠地區需酌收車資，金額與服務安排請先洽詢確認。
+              </p>
+              <p className="form-hint" style={{ marginTop: '1.25rem' }}>
+                試算結果不會自動送出；請透過電話或 LINE 提供品項、尺寸及所在地，預約丈量。
+              </p>
+              <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <a href="tel:0289727322" className="btn-primary">
+                  電話預約 02-8972-7322 <ChevronRight size={16} aria-hidden="true" />
+                </a>
+                <a href="https://line.me/ti/p/fDWxUXkiZb" target="_blank" rel="noopener noreferrer" className="btn-outline">
+                  LINE 詢問丈量 <ChevronRight size={16} aria-hidden="true" />
+                </a>
+              </div>
             </>
           ) : (
             <div className="result-empty">

@@ -6,7 +6,16 @@ import { withBasePath } from '@/lib/base-path';
 type HeroAction = {
   href: string;
   label: string;
+  nativeAnchor?: boolean;
 };
+
+function HeroActionLink({ action, className, children }: { action: HeroAction; className: string; children: ReactNode }) {
+  if (action.nativeAnchor && action.href.startsWith('#')) {
+    return <a href={action.href} className={className}>{children}</a>;
+  }
+
+  return <Link href={action.href} className={className}>{children}</Link>;
+}
 
 type EditorialLandingHeroProps = {
   eyebrow: string;
@@ -49,12 +58,12 @@ export default function EditorialLandingHero({
             <p className="editorial-landing-hero__description" data-ai-answer={descriptionAiAnswer ? 'true' : undefined}>{description}</p>
           </div>
           <div className="editorial-landing-hero__actions">
-            <Link href={primaryAction.href} className="editorial-landing-hero__primary">
+            <HeroActionLink action={primaryAction} className="editorial-landing-hero__primary">
               {primaryAction.label} <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-            <Link href={secondaryAction.href} className="editorial-landing-hero__secondary">
+            </HeroActionLink>
+            <HeroActionLink action={secondaryAction} className="editorial-landing-hero__secondary">
               {secondaryAction.label}
-            </Link>
+            </HeroActionLink>
           </div>
         </div>
       </div>

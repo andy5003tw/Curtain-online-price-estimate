@@ -66,12 +66,19 @@ const calculatorBasics = [
   { text: '先輸入接近實際的寬高尺寸，可先抓窗簾價格區間，再由現場丈量微調。', icon: Ruler },
   { text: '窗簾安裝費用會受窗型、配件與施工難度影響，估價頁可先看材料與基本安裝費的大方向預算。', icon: Wrench },
   { text: '想判斷窗簾價格多少合理，請用同一組尺寸比較 2 到 3 種品項，避免只看單才價格。', icon: CircleDollarSign },
-  { text: '台北窗簾估價前，請先準備每扇窗的寬高、想比較的品項、安裝區域與主要需求（如遮光、採光或隱私）；若有窗簾盒、特殊窗型、既有軌道或現場照片也可一併提供。自量尺寸只供預算比較，正式報價仍以現場丈量為準。', icon: ClipboardList },
   { text: '若要比較不同產品，建議固定同一尺寸切換捲簾、鋁百葉、實木百葉、調光簾與風琴簾，判斷更直覺。', icon: LayoutGrid },
   { text: '若你想先做「百葉窗價格試算」，可先比較鋁百葉與實木百葉，再依防潮、木質感與安裝條件挑選。', icon: ShieldCheck },
   { text: '若你想先比較「紗簾價格」，可用同尺寸切換無縫紗簾與遮光布簾，確認透光不透人、雙層搭配與安裝費差異。', icon: Sparkles },
-  { text: '若你想先衝「實木百葉窗價格試算」，可先切換木百葉品項再套用三重或台北區域，會更接近實際報價條件。', icon: Home },
+  { text: '比較實木百葉時，可先輸入尺寸試算材料與基本安裝費。線上試算金額不隨地區變動，台北、新北以外及較偏遠地區需酌收車資，費用與服務安排請先洽詢確認。', icon: Home },
   { text: '若你正在搜尋「三重窗簾」或「板橋窗簾」，可直接從本頁快速切到對應地區頁比對在地方案與交期。', icon: MapPin },
+];
+
+const estimatePreparation = [
+  { title: '窗戶數量與概略尺寸', text: '記下需要安裝的窗戶數量，分別量取每扇窗的寬、高（公分）；線上工具每次試算一扇，多窗請逐扇輸入並記錄。', icon: Ruler },
+  { title: '喜歡的款式與用途', text: '先想想要比較布簾、捲簾或百葉等款式，以及遮光、採光或隱私需求。', icon: SlidersHorizontal },
+  { title: '安裝區域與現場條件', text: '準備所在行政區，並留意窗型、窗簾盒、既有軌道與可能影響安裝的障礙物。台北、新北以外及較偏遠地區需酌收車資，請先洽詢費用與服務安排。', icon: MapPin },
+  { title: '窗戶與現場照片', text: '若方便，可準備窗戶正面、側面及窗簾盒或既有軌道的照片，聯絡時提供參考。', icon: Home },
+  { title: '預算與其他需求', text: '若已有預算，或想討論舊簾拆除、搬運、清運等需求，可先告知；是否提供及費用需另行確認。', icon: ClipboardList },
 ];
 
 const calculatorFaqIcons = [Calculator, CircleDollarSign, SlidersHorizontal, ClipboardList, LayoutGrid, Wrench];
@@ -95,8 +102,8 @@ export default function CalculatorPage() {
         desktopImage="/nav-hero/calculator-desktop.webp"
         mobileImage="/nav-hero/calculator-mobile.webp"
         imageAlt="窗邊布樣與量尺整理於估價準備桌面的情境"
-        primaryAction={{ href: '#calculator-form', label: '開始 1 分鐘試算' }}
-        secondaryAction={{ href: '#calculator-basics', label: '先看估價重點' }}
+        primaryAction={{ href: '#calculator-form', label: '開始 1 分鐘試算', nativeAnchor: true }}
+        secondaryAction={{ href: '#estimate-preparation', label: '估價前準備', nativeAnchor: true }}
       />
 
       <section className="editorial-guide" aria-labelledby="calculator-guide-heading">
@@ -107,6 +114,7 @@ export default function CalculatorPage() {
           </div>
           <nav className="editorial-guide__links" aria-label="線上估價快速入口">
             <a href="#calculator-form">立即開始試算</a>
+            <a href="#estimate-preparation">估價前準備</a>
             <Link href="/blog/curtain-price-guide-2026/">2026 價格指南</Link>
             <Link href="/location/taipei/">台北到府丈量</Link>
             <Link href="/products/">先比較窗簾款式</Link>
@@ -142,7 +150,7 @@ export default function CalculatorPage() {
               </section>
             ))}
           </div>
-          <div id="calculator-form" className="section-anchor">
+          <div id="calculator-form" className="section-anchor" style={{ scrollMarginTop: '9rem' }}>
             <Suspense fallback={<div style={{ textAlign: 'center', padding: '3rem', color: 'var(--stone-400)' }}>載入估價工具...</div>}>
               <CalculatorForm products={calculatorProducts} />
             </Suspense>
@@ -150,10 +158,34 @@ export default function CalculatorPage() {
         </div>
       </section>
 
+      <section id="estimate-preparation" className="py-section bg-white border-t border-stone-200 section-anchor" style={{ scrollMarginTop: '9rem' }} aria-labelledby="estimate-preparation-heading">
+        <div className="section-container" style={{ maxWidth: '900px' }}>
+          <div className="section-heading">
+            <h2 id="estimate-preparation-heading">窗簾估價前，要準備哪些資訊？</h2>
+            <p data-ai-answer="true">先準備窗戶數量與概略寬高、想比較的款式、安裝區域及需求；有現場照片或特殊條件也可以一併提供。自量尺寸供初估，正式報價仍須依現場丈量及施工條件確認。</p>
+          </div>
+          <ul className="calculator-basics-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {estimatePreparation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li className="calculator-basics-item" key={item.title}>
+                  <span className="calculator-basics-icon" aria-hidden="true"><Icon size={22} strokeWidth={1.8} /></span>
+                  <p><strong>{item.title}：</strong>{item.text}</p>
+                </li>
+              );
+            })}
+          </ul>
+          <p style={{ marginTop: '1.25rem', color: 'var(--stone-700)', lineHeight: 1.75 }}>
+            線上試算先選品項、輸入寬高；結果不會自動送出，所在地、照片及其他需求可透過電話或 LINE 提供。自量尺寸只供初估，正式報價仍以現場丈量及施工條件確認。
+          </p>
+          <a href="#calculator-form" className="btn-outline" style={{ marginTop: '0.75rem' }}>開始窗簾價格試算</a>
+        </div>
+      </section>
+
       <section id="calculator-basics" className="py-section bg-white border-t border-stone-200 section-anchor">
         <div className="section-container" style={{ maxWidth: '900px' }}>
           <div className="section-heading">
-            <h2>窗簾價格試算前，先看三個重點</h2>
+            <h2>窗簾估價重點與比較建議</h2>
           </div>
           <div className="calculator-basics-list">
             {calculatorBasics.map((item, index) => {

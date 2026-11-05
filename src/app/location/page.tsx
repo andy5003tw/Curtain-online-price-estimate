@@ -86,7 +86,7 @@ const cityGroups: CityGroupDef[] = [
     cityId: 'taipei',
     anchorId: 'taipei-city',
     badgeText: `🏛️ 台北市服務網絡 ｜ 涵蓋 ${locationCoverage.taipeiAdministrativeAreaCount} 個行政區`,
-    subText: '豪宅聚落・景觀高窗・文教學區，台北全區免費專人攜帶布樣到府丈量',
+    subText: '豪宅聚落・景觀高窗・文教學區，免費到府丈量；施工車資依地址確認',
     themeClass: 'taipei',
     tagText: '✨ 台北都會核心 旗艦總覽',
     heroDesc: '整合信義、大安、士林等全區豪宅、學區與商業空間。30 年工廠直營工班到府精準丈量，提供蛇形簾、調光簾與木百葉等全系列產品客製規劃。',

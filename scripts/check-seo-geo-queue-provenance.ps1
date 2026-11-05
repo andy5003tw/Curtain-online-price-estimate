@@ -91,6 +91,16 @@ function Test-SetEqual {
   return $leftSet.Count -eq $rightSet.Count -and @($leftSet | Where-Object { $_ -notin $rightSet }).Count -eq 0
 }
 
+function Get-SourceEntriesFingerprint {
+  param([object[]]$Entries)
+  $parts = @($Entries | Sort-Object { [string]$_.path } | ForEach-Object {
+    $path = [string]$_.path
+    $hash = [string]$_.sha256
+    "$path=$(if ([string]::IsNullOrWhiteSpace($hash)) { 'missing' } else { $hash })"
+  })
+  return Get-Sha256Text -Text ($parts -join "`n")
+}
+
 function Test-PendingImplementationReceipt {
   param([object]$Receipt, [object]$State)
   if (-not $Receipt -or [string]$State.status -ne 'active') { return $false }
@@ -211,10 +221,10 @@ if (-not $registry -or [string]::IsNullOrWhiteSpace([string]$registry.path) -or 
 }
 
 $sourceFiles = @($state.source_files)
+$repoRoot = if ([string]::IsNullOrWhiteSpace($RepoRoot)) { Split-Path -Parent $runtimeFull } else { [System.IO.Path]::GetFullPath($RepoRoot) }
 if ($sourceFiles.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string]$state.source_fingerprint)) {
   $reasons += 'source_binding_missing'
 } else {
-  $repoRoot = if ([string]::IsNullOrWhiteSpace($RepoRoot)) { Split-Path -Parent $runtimeFull } else { [System.IO.Path]::GetFullPath($RepoRoot) }
   $parts = @()
   $expectedSourceFiles = if ($runtimeAcknowledged) { @($implementationReceipt.source_files_after) } else { $sourceFiles }
   $expectedFingerprint = if ($runtimeAcknowledged) { [string]$implementationReceipt.source_fingerprint_after } else { [string]$state.source_fingerprint }
@@ -236,6 +246,127 @@ if ($sourceFiles.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string]$state.sou
   $currentFingerprint = Get-Sha256Text -Text ($parts -join "`n")
   if ($currentFingerprint -ne $expectedFingerprint.ToLowerInvariant()) {
     $reasons += 'source_fingerprint_mismatch'
+  }
+}
+
+# New queues bind monitor-only routes as an independent source inventory. Old
+# queues have no such fields and retain their previous behavior. A queue-bound
+# implementation receipt may acknowledge an exact changed path only when that
+# path also belongs to the owner inventory; monitor-only-exclusive files must
+# continue to match the queue snapshot.
+$provenance = $state.provenance
+$monitorPropertyNames = @('monitor_only_source_sets', 'monitor_only_source_files', 'monitor_only_source_fingerprint')
+$monitorBindingPresent = $false
+if ($provenance) {
+  $monitorBindingPresent = @($monitorPropertyNames | Where-Object { $provenance.PSObject.Properties.Name -contains $_ }).Count -gt 0
+}
+if ($monitorBindingPresent) {
+  $monitorSets = if ($provenance.PSObject.Properties.Name -contains 'monitor_only_source_sets') { @($provenance.monitor_only_source_sets) } else { @() }
+  $monitorFiles = if ($provenance.PSObject.Properties.Name -contains 'monitor_only_source_files') { @($provenance.monitor_only_source_files) } else { @() }
+  $monitorFingerprint = if ($provenance.PSObject.Properties.Name -contains 'monitor_only_source_fingerprint') { [string]$provenance.monitor_only_source_fingerprint } else { '' }
+  if ($provenance.PSObject.Properties.Name -notcontains 'monitor_only_source_sets' -or
+      $provenance.PSObject.Properties.Name -notcontains 'monitor_only_source_files' -or
+      [string]::IsNullOrWhiteSpace($monitorFingerprint) -or $monitorFiles.Count -eq 0 -or $monitorSets.Count -eq 0) {
+    $reasons += 'monitor_only_source_binding_missing'
+  } else {
+    $monitorByPath = @{}
+    $monitorPaths = @()
+    foreach ($entry in $monitorFiles) {
+      $relativePath = ([string]$entry.path).Replace('\', '/')
+      $expectedSha = ([string]$entry.sha256).ToLowerInvariant()
+      if ([string]::IsNullOrWhiteSpace($relativePath) -or [System.IO.Path]::IsPathRooted($relativePath) -or
+          $relativePath -match '(^|/)\.\.?(/|$)' -or [string]::IsNullOrWhiteSpace($expectedSha)) {
+        $reasons += 'monitor_only_source_path_or_hash_invalid'
+        continue
+      }
+      if ($monitorByPath.ContainsKey($relativePath)) {
+        $reasons += 'monitor_only_source_path_duplicate:' + $relativePath
+        continue
+      }
+      $monitorByPath[$relativePath] = $expectedSha
+      $monitorPaths += $relativePath
+    }
+
+    $setPaths = @()
+    foreach ($sourceSet in $monitorSets) {
+      $setFiles = @($sourceSet.source_files)
+      if ([string]::IsNullOrWhiteSpace([string]$sourceSet.asset_id) -or [string]::IsNullOrWhiteSpace([string]$sourceSet.page) -or $setFiles.Count -eq 0) {
+        $reasons += 'monitor_only_source_set_incomplete'
+        continue
+      }
+      if ((Get-SourceEntriesFingerprint -Entries $setFiles) -ne ([string]$sourceSet.source_fingerprint).ToLowerInvariant()) {
+        $reasons += 'monitor_only_source_set_fingerprint_mismatch:' + [string]$sourceSet.asset_id
+      }
+      foreach ($entry in $setFiles) {
+        $relativePath = ([string]$entry.path).Replace('\', '/')
+        $setPaths += $relativePath
+        if (-not $monitorByPath.ContainsKey($relativePath)) {
+          $reasons += 'monitor_only_source_set_file_unbound:' + $relativePath
+        } elseif (([string]$entry.sha256).ToLowerInvariant() -ne [string]$monitorByPath[$relativePath]) {
+          $reasons += 'monitor_only_source_set_hash_mismatch:' + $relativePath
+        }
+      }
+    }
+    if (-not (Test-SetEqual -Left $monitorPaths -Right $setPaths)) {
+      $reasons += 'monitor_only_source_inventory_mismatch'
+    }
+    if ((Get-SourceEntriesFingerprint -Entries $monitorFiles) -ne $monitorFingerprint.ToLowerInvariant()) {
+      $reasons += 'monitor_only_source_binding_fingerprint_mismatch'
+    }
+
+    $ownerPaths = @{}
+    foreach ($entry in @($sourceFiles)) {
+      $path = ([string]$entry.path).Replace('\', '/')
+      if ($path) { $ownerPaths[$path] = $true }
+    }
+    $receiptAfterByPath = @{}
+    if ($runtimeAcknowledged) {
+      foreach ($entry in @($implementationReceipt.source_files_after)) {
+        $path = ([string]$entry.path).Replace('\', '/')
+        if ($path) { $receiptAfterByPath[$path] = ([string]$entry.sha256).ToLowerInvariant() }
+      }
+    }
+
+    $expectedCurrentEntries = @()
+    $currentEntries = @()
+    foreach ($relativePath in @($monitorByPath.Keys | Sort-Object)) {
+      $expectedSha = [string]$monitorByPath[$relativePath]
+      $sourcePath = Resolve-RelativePath -BasePath $repoRoot -RelativePath $relativePath
+      $currentSha = if ($sourcePath) { Get-Sha256File -Path $sourcePath } else { $null }
+      $acknowledgedSha = if ($runtimeAcknowledged -and $ownerPaths.ContainsKey($relativePath) -and $receiptAfterByPath.ContainsKey($relativePath)) {
+        [string]$receiptAfterByPath[$relativePath]
+      } else { '' }
+      if (-not $currentSha) {
+        $reasons += 'monitor_only_source_file_missing:' + $relativePath
+      } elseif ($currentSha -ne $expectedSha) {
+        if (-not $acknowledgedSha -or $currentSha -ne $acknowledgedSha) {
+          $reasons += 'monitor_only_source_sha_mismatch:' + $relativePath
+        } else {
+          $expectedSha = $acknowledgedSha
+        }
+      }
+      $expectedCurrentEntries += [PSCustomObject]@{ path = $relativePath; sha256 = $expectedSha }
+      $currentEntries += [PSCustomObject]@{ path = $relativePath; sha256 = $currentSha }
+    }
+    $currentMonitorFingerprint = Get-SourceEntriesFingerprint -Entries $currentEntries
+    $authorizedMonitorFingerprint = Get-SourceEntriesFingerprint -Entries $expectedCurrentEntries
+    if ($currentMonitorFingerprint -ne $authorizedMonitorFingerprint) {
+      $reasons += 'monitor_only_source_fingerprint_mismatch'
+    }
+  }
+}
+
+if ($provenance -and $provenance.PSObject.Properties.Name -contains 'manual_deployment_evidence_fingerprint') {
+  $expectedManualFingerprint = [string]$provenance.manual_deployment_evidence_fingerprint
+  $reader = Join-Path $PSScriptRoot 'manual-deploy-evidence-reader.mjs'
+  if ($expectedManualFingerprint -notmatch '^[0-9a-f]{64}$' -or -not (Test-Path -LiteralPath $reader -PathType Leaf)) {
+    $reasons += 'manual_deployment_evidence_binding_invalid'
+  } else {
+    try {
+      $manualJson = (& node $reader --weekly-root $runtimeFull | Out-String)
+      if ($LASTEXITCODE -ne 0) { $reasons += 'manual_deployment_evidence_rejected' }
+      elseif ((Get-Sha256Text -Text $manualJson) -ne $expectedManualFingerprint) { $reasons += 'manual_deployment_evidence_fingerprint_mismatch' }
+    } catch { $reasons += 'manual_deployment_evidence_unavailable' }
   }
 }
 

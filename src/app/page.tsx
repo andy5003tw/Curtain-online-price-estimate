@@ -6,6 +6,7 @@ import { products } from '@/data/products';
 import { getLocationCoverageSummary, locationPages } from '@/data/locationPages';
 import { buildCalculatorUrl, buildOgTwitterMeta, productPath } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
+import { serviceFeePolicy } from '@/data/serviceFees';
 
 const HOME_TITLE = '窗簾｜雙北免費到府丈量、線上價格試算｜宏森窗簾';
 const HOME_DESCRIPTION = '找窗簾訂製、價格試算與雙北到府丈量？宏森窗簾首頁先協助比較布簾、紗簾、調光簾與百葉窗，再依窗型、採光與預算確認合適方案。';
@@ -148,7 +149,7 @@ const homepageFaq = [
   },
   {
     q: '宏森窗簾有提供免費到府丈量嗎？',
-    a: '有，台北與新北主要服務區域提供免費到府丈量與初步配置建議。',
+    a: `有，並提供初步配置建議。${serviceFeePolicy}`,
   },
   {
     q: '窗簾價格試算後多久可正式報價？',
@@ -440,7 +441,7 @@ export default function HomePage() {
               <div>
                 <h3 style={{ margin: '0 0 0.25rem 0' }}>雙北生活圈全境快速導覽</h3>
                 <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--stone-600)' }}>
-                  宏森直營工班覆蓋雙北 {locationCoverage.administrativeAreaCount} 個行政區，全區免費到府丈量，點選直接前往專頁：
+                  查看雙北 {locationCoverage.administrativeAreaCount} 個行政區的服務資訊；到府丈量免費，服務安排與施工車資請依地址洽詢：
                 </p>
               </div>
               <Link href="/location/" className="btn-outline" style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}>

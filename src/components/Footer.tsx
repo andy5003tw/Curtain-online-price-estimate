@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Phone, Mail, MapPin, Clock, ChevronRight } from 'lucide-react';
 import { CATALOG_URL } from '@/lib/seo';
 import { businessEvidence } from '@/data/businessEvidence';
+import { serviceFeePolicy } from '@/data/serviceFees';
 
 export default function Footer() {
   return (
@@ -16,9 +17,10 @@ export default function Footer() {
             </p>
             <div className="footer-trust-chips">
               <span>30年工班經驗</span>
-              <span>雙北免費丈量</span>
+              <span>免費到府丈量</span>
               <span>工廠直營透明價</span>
             </div>
+            <p style={{ marginTop: '0.85rem', lineHeight: 1.7 }}>{serviceFeePolicy}</p>
             <a
               href={CATALOG_URL}
               target="_blank"

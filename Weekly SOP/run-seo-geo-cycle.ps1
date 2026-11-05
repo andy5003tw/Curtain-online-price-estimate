@@ -12,6 +12,9 @@ if (-not (Test-Path -LiteralPath $queueSnapshotHelper -PathType Leaf)) {
   throw "SEO/GEO queue snapshot helper not found: $queueSnapshotHelper"
 }
 . $queueSnapshotHelper
+$manualPolicyHelper = Join-Path (Split-Path -Parent $PSScriptRoot) 'scripts\seo-geo-manual-policy.ps1'
+if (-not (Test-Path -LiteralPath $manualPolicyHelper -PathType Leaf)) { throw "Manual deployment policy helper not found: $manualPolicyHelper" }
+. $manualPolicyHelper
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [Console]::OutputEncoding = $utf8NoBom
@@ -1570,46 +1573,120 @@ function Convert-ListToHtml {
   return '<ul>' + (($Items | ForEach-Object { '<li>' + (Escape-Html -Value $_) + '</li>' }) -join '') + '</ul>'
 }
 
+function Get-CommonSourceForPage {
+  # Every route is rendered inside app/layout.tsx. Include its transitive local
+  # imports so shared navigation, footer, business evidence, fees, CSS, and URL
+  # behavior invalidate every owner page that uses the shared layout.
+  return @(
+    'src/app/layout.tsx',
+    'src/app/globals.css',
+    'src/components/Header.tsx',
+    'src/components/Footer.tsx',
+    'src/components/FloatingLineBtn.tsx',
+    'src/data/businessEvidence.ts',
+    'src/data/serviceFees.ts',
+    'src/lib/base-path.ts',
+    'src/lib/seo.ts'
+  )
+}
+
 function Get-RequiredSourceForPage {
   param([string]$Page)
 
-  $sources = @()
-  if ($Page -eq 'https://online.hong-sen.com/' -or $Page -eq 'https://online.hong-sen.com') {
-    $sources += 'src/app/page.tsx'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/calculator/*') {
-    $sources += 'src/app/calculator/page.tsx'
-    $sources += 'src/app/calculator/CalculatorClient.tsx'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/products/' -or $Page -like '*/products') {
-    $sources += 'src/app/products/page.tsx'
-    $sources += 'src/data/products.ts'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/products/*') {
-    $sources += 'src/data/products.ts'
-    $sources += 'src/app/products/[slug]/page.tsx'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/location/*') {
-    $sources += 'src/data/locationPages.ts'
-    $sources += 'src/app/location/[area]/page.tsx'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/blog/*') {
-    $sources += 'src/data/knowledgePosts.ts'
-    $sources += 'src/app/blog/[id]/page.tsx'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/about/*' -or $Page -like '*/about') {
-    $sources += 'src/app/about/page.tsx'
-    $sources += 'src/lib/seo.ts'
-  } elseif ($Page -like '*/cases/*' -or $Page -like '*/cases') {
-    $sources += 'src/app/cases/layout.tsx'
-    $sources += 'src/app/cases/page.tsx'
-    $sources += 'src/lib/seo.ts'
-  } else {
-    $sources += 'src/app'
-    $sources += 'src/lib/seo.ts'
+  $sources = @(Get-CommonSourceForPage)
+  $route = ''
+  try { $route = ([System.Uri]$Page).AbsolutePath } catch { $route = [string]$Page }
+  $route = $route.TrimEnd('/')
+
+  if ($route -eq '') {
+    $sources += @(
+      'src/app/page.tsx',
+      'src/components/FloatingCta.tsx',
+      'src/data/products.ts',
+      'src/data/locationPages.ts'
+    )
+  } elseif ($route -eq '/calculator') {
+    $sources += @(
+      'src/app/calculator/layout.tsx',
+      'src/app/calculator/page.tsx',
+      'src/app/calculator/CalculatorClient.tsx',
+      'src/data/calculatorFaq.ts',
+      'src/data/products.ts',
+      'src/components/EditorialLandingHero.tsx',
+      'src/components/ProductScrollMenu.tsx'
+    )
+  } elseif ($route -eq '/products') {
+    $sources += @(
+      'src/app/products/page.tsx',
+      'src/data/products.ts',
+      'src/components/EditorialLandingHero.tsx',
+      'src/components/ProductScrollMenu.tsx'
+    )
+  } elseif ($route -like '/products/*') {
+    $sources += @(
+      'src/app/products/[slug]/page.tsx',
+      'src/data/products.ts',
+      'src/data/locationPages.ts',
+      'src/components/ProductScrollMenu.tsx',
+      'src/components/ProductImageGallery.tsx'
+    )
+  } elseif ($route -eq '/location') {
+    $sources += @(
+      'src/app/location/page.tsx',
+      'src/data/locationPages.ts',
+      'src/components/EditorialLandingHero.tsx'
+    )
+  } elseif ($route -like '/location/*') {
+    $sources += @(
+      'src/app/location/[area]/page.tsx',
+      'src/data/locationPages.ts',
+      'src/data/products.ts',
+      'src/components/EditorialLandingHero.tsx'
+    )
+  } elseif ($route -eq '/blog') {
+    $sources += @(
+      'src/app/blog/page.tsx',
+      'src/app/blog/BlogListClient.tsx',
+      'src/data/knowledgePosts.ts',
+      'src/components/EditorialLandingHero.tsx'
+    )
+  } elseif ($route -like '/blog/*') {
+    $sources += @(
+      'src/app/blog/[id]/page.tsx',
+      'src/data/knowledgePosts.ts'
+    )
+  } elseif ($route -eq '/about') {
+    $sources += @(
+      'src/app/about/page.tsx',
+      'src/data/businessEvidence.ts',
+      'src/data/serviceFees.ts',
+      'src/components/EditorialLandingHero.tsx'
+    )
+  } elseif ($route -eq '/cases') {
+    $sources += @(
+      'src/app/cases/layout.tsx',
+      'src/app/cases/page.tsx',
+      'src/data/constructionCases.ts',
+      'src/components/EditorialLandingHero.tsx'
+    )
+  } elseif ($route -like '/curtain/*') {
+    $sources += @(
+      'src/app/curtain/[type]/page.tsx',
+      'src/data/pillarPages.ts',
+      'src/data/products.ts'
+    )
   }
 
   return @($sources | Select-Object -Unique)
+}
+
+function Get-RequiredSourceForMonitorOnlyAsset {
+  param([object]$Asset)
+
+  # Keep the monitor-only inventory independent from owner bindings. It uses
+  # the same route dependency map, but is stored as its own source set so these
+  # assets never become keyword owners or executable actions.
+  return @(Get-RequiredSourceForPage -Page ([string]$Asset.page))
 }
 
 function Test-TextContains {
@@ -2127,6 +2204,7 @@ function Get-NonOverlappingReviewWindows {
 function Get-SourceProvenance {
   param(
     [object[]]$Owners,
+    [object[]]$MonitorOnlyAssets = @(),
     [string]$RepoRoot
   )
   $paths = @()
@@ -2140,6 +2218,7 @@ function Get-SourceProvenance {
       source_files = @($ownerPaths | Sort-Object -Unique)
     }
   }
+
   $parts = @()
   $files = @()
   foreach ($relativePath in @($paths | Select-Object -Unique | Sort-Object)) {
@@ -2149,10 +2228,52 @@ function Get-SourceProvenance {
     $files += [PSCustomObject]@{ path = $relativePath.Replace('\', '/'); sha256 = $hash }
     $parts += "$relativePath=$hashMaterial"
   }
+
+  # Monitor-only routes have their own inventories and fingerprint. Keep them
+  # out of the owner inventory: validation receipts bind owner source files to
+  # active registry owners, while this separate set preserves explicit source
+  # coverage for calculator/blog/other monitored pages without claiming they
+  # are owner-page dependencies.
+  $monitorPaths = @()
+  $monitorBindings = @()
+  foreach ($asset in @($MonitorOnlyAssets)) {
+    $assetPaths = @(Get-RequiredSourceForMonitorOnlyAsset -Asset $asset | Sort-Object -Unique)
+    $assetFiles = @()
+    $assetParts = @()
+    foreach ($relativePath in $assetPaths) {
+      $fullPath = Join-Path $RepoRoot ($relativePath.Replace('/', '\'))
+      $hash = Get-Sha256File -Path $fullPath
+      $hashMaterial = if ([string]::IsNullOrWhiteSpace($hash)) { 'missing' } else { $hash }
+      $assetFiles += [PSCustomObject]@{ path = $relativePath.Replace('\', '/'); sha256 = $hash }
+      $assetParts += "$relativePath=$hashMaterial"
+      $monitorPaths += $relativePath
+    }
+    $monitorBindings += [PSCustomObject]@{
+      asset_id = [string]$asset.id
+      asset_type = [string]$asset.type
+      page = [string]$asset.page
+      source_files = $assetFiles
+      source_fingerprint = Get-Sha256Text -Text ($assetParts -join "`n")
+    }
+  }
+
+  $monitorFiles = @()
+  $monitorParts = @()
+  foreach ($relativePath in @($monitorPaths | Select-Object -Unique | Sort-Object)) {
+    $fullPath = Join-Path $RepoRoot ($relativePath.Replace('/', '\'))
+    $hash = Get-Sha256File -Path $fullPath
+    $hashMaterial = if ([string]::IsNullOrWhiteSpace($hash)) { 'missing' } else { $hash }
+    $monitorFiles += [PSCustomObject]@{ path = $relativePath.Replace('\', '/'); sha256 = $hash }
+    $monitorParts += "$relativePath=$hashMaterial"
+  }
+
   return [PSCustomObject]@{
     source_files = $files
     owners = $ownerBindings
     source_fingerprint = Get-Sha256Text -Text ($parts -join "`n")
+    monitor_only_source_sets = $monitorBindings
+    monitor_only_source_files = $monitorFiles
+    monitor_only_source_fingerprint = Get-Sha256Text -Text ($monitorParts -join "`n")
   }
 }
 
@@ -2765,6 +2886,12 @@ $registryRelativePath = Get-RelativePortablePath -BasePath $weeklyRoot -Path $re
 $registrySha = Get-Sha256File -Path $registryFullPath
 $registryVersion = if ($null -ne $registry.schemaVersion) { [int]$registry.schemaVersion } else { 1 }
 $lifecycleReviewDates = Get-LifecycleReviewDates -WeeklyRoot $weeklyRoot -RepositoryRoot $repoRoot
+$manualReader = Join-Path $repoRoot 'scripts\manual-deploy-evidence-reader.mjs'
+if (-not (Test-Path -LiteralPath $manualReader -PathType Leaf)) { throw "Manual deployment evidence reader not found: $manualReader" }
+$manualJson = (& node $manualReader --weekly-root $weeklyRoot | Out-String)
+if ($LASTEXITCODE -ne 0) { throw "Manual deployment evidence rejected: $manualJson" }
+$manualEvidence = if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind')) { $manualJson | ConvertFrom-Json -DateKind String } else { $manualJson | ConvertFrom-Json }
+if ($manualEvidence.contract -ne 'manual_deploy_evidence_reader_v1' -or $manualEvidence.status -ne 'passed') { throw 'Manual deployment evidence reader returned an invalid contract or status.' }
 $outputHtmlIndex = Get-OutputHtmlIndex -RepoRoot $repoRoot
 
 $query7dPath = Get-BaselinePathFromManifest -WeeklyRoot $weeklyRoot -Manifest $fresh7d.manifest -Kind query -Required $true
@@ -2795,7 +2922,28 @@ $ctrBenchmark = New-CtrBenchmark -Rows $pageRows28d -QueryRows $queryRows28d -De
 $sitewideDaily = New-SitewideDailyAnalysis -Rows $dateRows28d
 $devicePageDifferences = @(Get-DevicePageDifferences -Rows $devicePageRows28d)
 $countryPageAnomalies = @(Get-CountryPageAnomalies -Rows $countryPageRows28d)
+$manualPolicyByPage = Get-ManualDeploymentPolicyByPage -Candidates @($manualEvidence.date_candidates) -Now ([DateTimeOffset]::UtcNow.ToOffset([TimeSpan]::FromHours(8)).DateTime) -LatestFinalizedDate ([string]$fresh28d.end_date) -FinalizedDates @($dateRows28d | ForEach-Object { [string]$_.date })
+foreach ($manualPage in $manualPolicyByPage.Keys) {
+  $policy = $manualPolicyByPage[$manualPage]
+  $manualEvent = if ($policy.latest_unknown) { $policy.latest_unknown } else { $policy.latest_change }
+  if (-not $manualEvent) { continue }
+  $manualDate = [PSCustomObject]@{
+    deployed_at = [string]$manualEvent.candidate_at
+    queue_id = $null
+    evidence_status = if ($policy.classification_blocked) { 'manual_deployment_unclassified' } else { 'manual_deployment_classified_ai_assisted' }
+    date_source = if ($policy.classification_blocked) { 'manual deployment: unclassified; conservative date, not a confirmed content change' } else { 'manual deployment: AI-assisted page classification; release evidence independently verified' }
+    receipt_path = $null
+  }
+  $existing = if ($lifecycleReviewDates.ContainsKey($manualPage)) { $lifecycleReviewDates[$manualPage] } else { $null }
+  $lifecycleReviewDates[$manualPage] = Select-LatestDeploymentDateCandidate -Candidates @($existing, $manualDate)
+}
 $reviewWindows = @(Get-NonOverlappingReviewWindows -Owners $owners -LatestFinalizedDate $fresh28d.end_date -LifecycleDates $lifecycleReviewDates -DateRows $dateRows28d -DatePageRows $datePageRows28d)
+foreach ($window in $reviewWindows) {
+  if ($manualPolicyByPage.ContainsKey([string]$window.page) -and $manualPolicyByPage[[string]$window.page].classification_blocked) {
+    $window.review_7d_status = 'manual_classification_required'
+    $window.review_28d_status = 'manual_classification_required'
+  }
+}
 $gscProperty = if ($siteConfig.gscProperty) { [string]$siteConfig.gscProperty } else { "https://$expectedHost/" }
 $observationBackfill = Get-MatchingObservationBackfill -Document (Read-JsonIfExists -Path (Join-Path $latestRoot 'gsc-observation-backfill.json')) -ReviewWindows $reviewWindows -Property $gscProperty -LatestFinalizedDate ([string]$fresh28d.end_date)
 $homepageReviewReport = Get-HomepageReviewReport -ReviewWindows $reviewWindows -Backfill $observationBackfill
@@ -2827,13 +2975,19 @@ $monitoringAssets = @()
 foreach ($asset in $monitorOnlyAssets) {
   $pageMetric7d = if ($pageMap7d.ContainsKey([string]$asset.page)) { $pageMap7d[[string]$asset.page] } else { $null }
   $pageMetric28d = if ($pageMap28d.ContainsKey([string]$asset.page)) { $pageMap28d[[string]$asset.page] } else { $null }
-  $monitoringAssets += New-MonitoringAssetRow -Asset $asset -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d
+  $monitorRow = New-MonitoringAssetRow -Asset $asset -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d
+  $monitorPolicy = if ($manualPolicyByPage.ContainsKey([string]$asset.page)) { $manualPolicyByPage[[string]$asset.page] } else { $null }
+  $monitorRow | Add-Member -NotePropertyName manual_deployment_policy -NotePropertyValue $monitorPolicy
+  $monitoringAssets += $monitorRow
 }
 
-$sourceProvenance = Get-SourceProvenance -Owners $owners -RepoRoot $repoRoot
+$sourceProvenance = Get-SourceProvenance -Owners $owners -MonitorOnlyAssets $monitorOnlyAssets -RepoRoot $repoRoot
 $sourceFiles = @($sourceProvenance.source_files)
 $sourceOwnerBindings = @($sourceProvenance.owners)
 $sourceFingerprint = [string]$sourceProvenance.source_fingerprint
+$monitorOnlySourceSets = @($sourceProvenance.monitor_only_source_sets)
+$monitorOnlySourceFiles = @($sourceProvenance.monitor_only_source_files)
+$monitorOnlySourceFingerprint = [string]$sourceProvenance.monitor_only_source_fingerprint
 $actionHistoryPath = Join-Path $weeklyRoot 'history\curtain-online\seo-geo-action-history.json'
 if (-not (Test-Path -LiteralPath $actionHistoryPath -PathType Leaf)) {
   Ensure-Dir -Path (Split-Path -Parent $actionHistoryPath)
@@ -2854,6 +3008,7 @@ $observations = @()
 $ownerAnalyses = @()
 foreach ($owner in $owners) {
   $page = [string]$owner.ownerPage
+  $manualPolicy = if ($manualPolicyByPage.ContainsKey($page)) { $manualPolicyByPage[$page] } else { $null }
   $terms = @(Get-QueryTerms -Owner $owner)
   $queryMetric7d = Get-BestQueryMetric -Terms $terms -Map7d $queryMap7d -Map28d @{} -Mode 'weekly'
   $queryMetric28d = Get-BestQueryMetric -Terms $terms -Map7d @{} -Map28d $queryMap28d -Mode 'monthly'
@@ -2874,7 +3029,7 @@ foreach ($owner in $owners) {
     $alignmentRow.actionType = 'Query × Page alignment review'
     $alignmentHistoryCooldown = Get-ActionHistoryCooldown -Entries $actionHistoryEntries -Fingerprint ([string]$alignmentRow.fingerprint)
     $pageHistoryCooldown = if ($actionHistoryCooldown.active) { $actionHistoryCooldown } else { $alignmentHistoryCooldown }
-    $alignmentDisposition = if (-not $cycleDecisionReady) { 'monitor_only' } elseif ($registryCooldown.active) { 'registry_cooldown' } elseif ($pageHistoryCooldown.active) { 'action_history_cooldown' } else { 'alignment_review' }
+    $alignmentDisposition = if (-not $cycleDecisionReady) { 'monitor_only' } elseif ($manualPolicy -and $manualPolicy.classification_blocked) { 'manual_classification_required' } elseif ($manualPolicy -and $manualPolicy.cooldown_active) { 'manual_deployment_cooldown' } elseif ($manualPolicy -and $manualPolicy.awaiting_final_data) { 'manual_awaiting_final_data' } elseif ($registryCooldown.active) { 'registry_cooldown' } elseif ($pageHistoryCooldown.active) { 'action_history_cooldown' } else { 'alignment_review' }
     $alignmentSignals += [PSCustomObject]@{
       cluster_id=[string]$owner.clusterId; page=$page; primary_keyword=[string]$owner.primaryKeyword
       owner_share=[double]$queryPageAnalysis28d.owner_share; cluster_impressions=[int]$queryPageAnalysis28d.total_impressions
@@ -2894,6 +3049,15 @@ foreach ($owner in $owners) {
   if (-not $cycleDecisionReady) {
     $disposition = 'monitor_only'
     $reason = 'snapshot 尚未 decision-ready，只記錄完整 metrics。'
+  } elseif ($manualPolicy -and $manualPolicy.classification_blocked) {
+    $disposition = 'manual_classification_required'
+    $reason = '已驗證手動發布，但頁面主內容是否變更尚未確認；暫停此頁自動動作。'
+  } elseif ($manualPolicy -and $manualPolicy.cooldown_active) {
+    $disposition = 'manual_deployment_cooldown'
+    $reason = "手動發布逐頁分類顯示主內容變更；完整 28 天至 $($manualPolicy.post_28d_end)，冷卻至 $($manualPolicy.cooldown_until)。"
+  } elseif ($manualPolicy -and $manualPolicy.awaiting_final_data) {
+    $disposition = 'manual_awaiting_final_data'
+    $reason = "手動發布後 28 天 final 資料尚未到齊（需至 $($manualPolicy.post_28d_end)）。"
   } elseif ($registryCooldown.active) {
     $disposition = 'registry_cooldown'
     $reason = "registry lastChangedAt=$($registryCooldown.last_changed_at)，28d cooldown 至 $($registryCooldown.cooldown_until)。"
@@ -2920,6 +3084,7 @@ foreach ($owner in $owners) {
     $reason += " Query × Page owner share：$($queryPageAnalysis28d.reason)"
   }
   $observation = New-ObservationRow -Owner $owner -PageMetric7d $pageMetric7d -PageMetric28d $pageMetric28d -QueryMetric7d $queryMetric7d -QueryMetric28d $queryMetric28d -Compliance $compliance -RegistryCooldown $registryCooldown -ActionHistoryCooldown $actionHistoryCooldown -QueryPageAnalysis7d $queryPageAnalysis7d -QueryPageAnalysis28d $queryPageAnalysis28d -PrimaryKeywordMetrics7d $primaryKeywordMetrics7d -PrimaryKeywordMetrics28d $primaryKeywordMetrics28d -PageAvailable7d ($pageRows7d.Count -gt 0) -PageAvailable28d ($pageRows28d.Count -gt 0) -ActionFingerprint ([string]$row.fingerprint) -Disposition $disposition -Reason $reason
+  $observation | Add-Member -NotePropertyName manual_deployment_policy -NotePropertyValue $manualPolicy
   $observations += $observation
   $analysis = [PSCustomObject]@{
     owner = $owner
@@ -2935,7 +3100,7 @@ foreach ($owner in $owners) {
     observation = $observation
   }
   $ownerAnalyses += $analysis
-  if ($cycleDecisionReady -and ($disposition -eq 'actionable' -or $disposition -eq 'performance_actionable') -and -not $registryCooldown.active -and -not $actionHistoryCooldown.active) {
+  if ($cycleDecisionReady -and ($disposition -eq 'actionable' -or $disposition -eq 'performance_actionable') -and -not $registryCooldown.active -and -not $actionHistoryCooldown.active -and (-not $manualPolicy -or -not $manualPolicy.blocks_action)) {
     $candidateItems += [PSCustomObject]@{
       page = $page
       strategicOrder = [int]$owner.order
@@ -3070,6 +3235,10 @@ $provenance = [ordered]@{
   action_history = $actionHistoryBinding
   source_files = $sourceFiles
   source_fingerprint = $sourceFingerprint
+  monitor_only_source_sets = $monitorOnlySourceSets
+  monitor_only_source_files = $monitorOnlySourceFiles
+  monitor_only_source_fingerprint = $monitorOnlySourceFingerprint
+  manual_deployment_evidence_fingerprint = Get-Sha256Text -Text $manualJson
 }
 $cycleMaterial = [ordered]@{
   schema_version = 2
@@ -3444,11 +3613,16 @@ foreach ($analysis in @($ownerAnalyses | Where-Object {
     'single_page_review' { '待人工決定' }
     'registry_cooldown' { '冷卻觀察' }
     'action_history_cooldown' { '冷卻觀察' }
+    'manual_deployment_cooldown' { '手動發布後冷卻觀察' }
+    'manual_classification_required' { '手動發布待分類' }
+    'manual_awaiting_final_data' { '等待發布後 final 資料' }
     'output_compliant' { '正常觀察' }
     default { [string]$observation.disposition }
   }
-  if ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus -eq 'live_verified') { $statusLabel = '已上線觀察' }
-  elseif ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus) { $statusLabel = $previousLifecycleStatus }
+  if ([string]$observation.disposition -notin @('manual_deployment_cooldown', 'manual_classification_required', 'manual_awaiting_final_data')) {
+    if ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus -eq 'live_verified') { $statusLabel = '已上線觀察' }
+    elseif ($analysis.owner.ownerPage -in $previousExecutionPages -and $previousLifecycleStatus) { $statusLabel = $previousLifecycleStatus }
+  }
   $pageReportRow = @(Get-PageMetricReportRows -Rows @($observation))[0]
   $pageReportRow.'目前狀態' = $statusLabel
   $pageReportRow | Add-Member -NotePropertyName '優先級（P0 最高）' -NotePropertyValue ([string]$analysis.owner.priority)

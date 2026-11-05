@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { CalculatorCatalogProvider, CalculatorForm, CalculatorProductMenu, CalculatorProductsList } from './CalculatorClient';
 import { products } from '@/data/products';
 import { calculatorFaq } from '@/data/calculatorFaq';
-import { buildCalculatorUrl } from '@/lib/seo';
+import { buildCalculatorUrl, COMPANY_NAME } from '@/lib/seo';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
 import {
   Calculator,
@@ -69,19 +69,19 @@ const calculatorBasics = [
   { text: '若要比較不同產品，建議固定同一尺寸切換捲簾、鋁百葉、實木百葉、調光簾與風琴簾，判斷更直覺。', icon: LayoutGrid },
   { text: '若你想先做「百葉窗價格試算」，可先比較鋁百葉與實木百葉，再依防潮、木質感與安裝條件挑選。', icon: ShieldCheck },
   { text: '若你想先比較「紗簾價格」，可用同尺寸切換無縫紗簾與遮光布簾，確認透光不透人、雙層搭配與安裝費差異。', icon: Sparkles },
-  { text: '比較實木百葉時，可先輸入尺寸試算材料與基本安裝費。線上試算金額不隨地區變動，台北、新北以外及較偏遠地區需酌收車資，費用與服務安排請先洽詢確認。', icon: Home },
+  { text: '比較實木百葉時，可先輸入尺寸試算材料與基本安裝費。線上試算金額不隨地區變動，也未含可能另計的施工車資；車資及服務安排請先洽詢確認。', icon: Home },
   { text: '若你正在搜尋「三重窗簾」或「板橋窗簾」，可直接從本頁快速切到對應地區頁比對在地方案與交期。', icon: MapPin },
 ];
 
 const estimatePreparation = [
   { title: '窗戶數量與概略尺寸', text: '記下需要安裝的窗戶數量，分別量取每扇窗的寬、高（公分）；線上工具每次試算一扇，多窗請逐扇輸入並記錄。', icon: Ruler },
   { title: '喜歡的款式與用途', text: '先想想要比較布簾、捲簾或百葉等款式，以及遮光、採光或隱私需求。', icon: SlidersHorizontal },
-  { title: '安裝區域與現場條件', text: '準備所在行政區，並留意窗型、窗簾盒、既有軌道與可能影響安裝的障礙物。台北、新北以外及較偏遠地區需酌收車資，請先洽詢費用與服務安排。', icon: MapPin },
+  { title: '安裝區域與現場條件', text: '準備所在行政區，並留意窗型、窗簾盒、既有軌道與可能影響安裝的障礙物。到府丈量免費；雙北偏遠地區及雙北以外確認施工時車資另計，費用與服務安排請先洽詢。', icon: MapPin },
   { title: '窗戶與現場照片', text: '若方便，可準備窗戶正面、側面及窗簾盒或既有軌道的照片，聯絡時提供參考。', icon: Home },
   { title: '預算與其他需求', text: '若已有預算，或想討論舊簾拆除、搬運、清運等需求，可先告知；是否提供及費用需另行確認。', icon: ClipboardList },
 ];
 
-const calculatorFaqIcons = [Calculator, CircleDollarSign, SlidersHorizontal, ClipboardList, LayoutGrid, Wrench];
+const calculatorFaqIcons = [Calculator, Calculator, CircleDollarSign, SlidersHorizontal, ClipboardList, LayoutGrid, Wrench];
 
 export default function CalculatorPage() {
   return (
@@ -98,7 +98,7 @@ export default function CalculatorPage() {
         theme="calculator"
         eyebrow="線上估價・先掌握材料與基本安裝費"
         title="1 分鐘，掌握預算範圍"
-        description="輸入接近實際的尺寸，先比較不同窗簾的預算方向。"
+        description={`宏森窗簾（${COMPANY_NAME}）線上估價：輸入接近實際的尺寸，先比較不同窗簾的預算方向。`}
         desktopImage="/nav-hero/calculator-desktop.webp"
         mobileImage="/nav-hero/calculator-mobile.webp"
         imageAlt="窗邊布樣與量尺整理於估價準備桌面的情境"
@@ -110,7 +110,7 @@ export default function CalculatorPage() {
         <div className="section-container editorial-guide__inner">
           <div className="editorial-guide__copy">
             <h2 id="calculator-guide-heading">窗簾價格試算與窗簾線上估價</h2>
-            <p>先用同一組尺寸比較材料與基本安裝費，再安排雙北到府丈量確認窗型、配件與正式報價。</p>
+            <p>宏森窗簾（{COMPANY_NAME}）提供線上試算：先選擇窗簾品項、輸入寬高，比較材料與基本安裝費，再聯繫安排丈量，確認窗型、配件與正式報價。</p>
           </div>
           <nav className="editorial-guide__links" aria-label="線上估價快速入口">
             <a href="#calculator-form">立即開始試算</a>
@@ -118,6 +118,7 @@ export default function CalculatorPage() {
             <Link href="/blog/curtain-price-guide-2026/">2026 價格指南</Link>
             <Link href="/location/taipei/">台北到府丈量</Link>
             <Link href="/products/">先比較窗簾款式</Link>
+            <Link href="/products/s-fold-curtains/">宏森蛇形窗簾產品介紹</Link>
           </nav>
         </div>
       </section>

@@ -655,12 +655,40 @@ try {
   })
 
   foreach ($relativePath in @(
+    'src/app/layout.tsx',
+    'src/app/globals.css',
+    'src/components/Header.tsx',
+    'src/components/Footer.tsx',
+    'src/components/FloatingLineBtn.tsx',
+    'src/components/EditorialLandingHero.tsx',
+    'src/components/FloatingCta.tsx',
+    'src/components/ProductScrollMenu.tsx',
+    'src/components/ProductImageGallery.tsx',
+    'src/app/calculator/layout.tsx',
+    'src/app/calculator/page.tsx',
+    'src/app/calculator/CalculatorClient.tsx',
+    'src/data/calculatorFaq.ts',
+    'src/app/blog/[id]/page.tsx',
+    'src/app/blog/page.tsx',
+    'src/app/blog/BlogListClient.tsx',
+    'src/data/knowledgePosts.ts',
+    'src/app/location/[area]/page.tsx',
+    'src/app/location/page.tsx',
+    'src/data/locationPages.ts',
+    'src/data/businessEvidence.ts',
+    'src/data/serviceFees.ts',
+    'src/data/constructionCases.ts',
     'src/app/cases/layout.tsx',
     'src/app/cases/page.tsx',
     'src/app/about/page.tsx',
+    'src/app/page.tsx',
     'src/app/products/page.tsx',
     'src/app/products/[slug]/page.tsx',
     'src/data/products.ts',
+    'src/components/EditorialLandingHero.tsx',
+    'src/components/ProductScrollMenu.tsx',
+    'src/components/ProductImageGallery.tsx',
+    'src/lib/base-path.ts',
     'src/lib/seo.ts'
   )) {
     Copy-SourceFixture -RelativePath $relativePath
@@ -824,7 +852,7 @@ try {
   Assert-True ([bool]$uiActive.consistent -and [string]$uiActive.primary_action.id -eq 'COPY_ROUND_PROMPT' -and [bool]$uiActive.primary_action.enabled -and -not [bool]$uiActive.actions.ADVANCE_ROUND.enabled) 'Active UI projection did not require a validation receipt before advancing.'
   $missingGateScripts = Join-Path $testRoot 'missing-round-gate-scripts'
   Ensure-Dir -Path $missingGateScripts
-  foreach ($scriptName in @('get-seo-geo-ui-projection.ps1', 'get-seo-geo-effective-workflow.ps1', 'check-seo-geo-queue-provenance.ps1')) {
+  foreach ($scriptName in @('get-seo-geo-ui-projection.ps1', 'get-seo-geo-effective-workflow.ps1', 'check-seo-geo-queue-provenance.ps1', 'manual-deploy-evidence-reader.mjs')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $scriptName) -Destination (Join-Path $missingGateScripts $scriptName)
   }
   $missingGateResult = Invoke-PwshFile -File (Join-Path $missingGateScripts 'get-seo-geo-ui-projection.ps1') -ScriptArgs @('-RuntimeRoot', $runtimeRoot, '-RepoRoot', $runtimeRoot)
@@ -863,6 +891,13 @@ try {
   Assert-True ([int]$queue.registry.version -eq 9 -and -not [string]::IsNullOrWhiteSpace([string]$queue.registry.sha256)) 'queue is not bound to registry version/SHA.'
   Assert-True (-not [string]::IsNullOrWhiteSpace([string]$queue.source_fingerprint)) 'queue source fingerprint is missing.'
   Assert-True (@($queue.source_files).Count -gt 0) 'queue source_files binding is missing.'
+  $monitorCalculatorSources = @($queue.provenance.monitor_only_source_sets | Where-Object { $_.asset_id -eq 'fixture-calculator' })[0]
+  $monitorBlogSources = @($queue.provenance.monitor_only_source_sets | Where-Object { $_.asset_id -eq 'fixture-price-guide' })[0]
+  Assert-True ($null -ne $monitorCalculatorSources -and @($monitorCalculatorSources.source_files.path) -contains 'src/app/calculator/page.tsx' -and @($monitorCalculatorSources.source_files.path) -contains 'src/data/calculatorFaq.ts') 'Calculator monitor-only source set is missing the route or its FAQ data.'
+  Assert-True ($null -ne $monitorBlogSources -and @($monitorBlogSources.source_files.path) -contains 'src/app/blog/[id]/page.tsx' -and @($monitorBlogSources.source_files.path) -contains 'src/data/knowledgePosts.ts') 'Blog monitor-only source set is missing the route or post/FAQ data.'
+  Assert-True (@($queue.provenance.monitor_only_source_files).Count -gt 0 -and -not [string]::IsNullOrWhiteSpace([string]$queue.provenance.monitor_only_source_fingerprint)) 'Monitor-only source inventory/fingerprint is missing.'
+  $ownerSourcePaths = @($queue.registry.owners | ForEach-Object { @($_.source_files) })
+  Assert-True ($ownerSourcePaths -notcontains 'src/app/calculator/page.tsx' -and $ownerSourcePaths -notcontains 'src/app/blog/[id]/page.tsx') 'Monitor-only route sources were incorrectly asserted as keyword-owner sources.'
   Assert-True ([string]$queue.action_history.path -eq 'history/curtain-online/seo-geo-action-history.json') 'action history path is not stable and relative.'
 
   Write-Baselines -Window '28d' -CasesImpressions 88 -CasesCtr 5 -CasesPosition 2
@@ -931,6 +966,36 @@ try {
   Assert-True ([string]$receipt.source_fingerprint_before -ceq [string]$receipt.source_fingerprint_after) 'no_change_verified receipt changed the source fingerprint.'
   Assert-True ([string]$receipt.registry.sha256 -ceq [string]$queue.registry.sha256) 'receipt registry binding does not match the queue.'
   Assert-True ([string]$receipt.snapshot.'28d'.sha256 -ceq [string]$queue.snapshot.'28d'.sha256) 'receipt 28d snapshot binding does not match the queue.'
+
+  # A receipt may acknowledge a changed shared layout dependency because it
+  # belongs to the owner inventory, but it must not acknowledge a changed
+  # calculator-only source merely because calculator is monitor-only.
+  $monitorAckRuntimeRoot = Join-Path $testRoot 'monitor-source-ack-runtime'
+  Copy-Item -LiteralPath $runtimeRoot -Destination $monitorAckRuntimeRoot -Recurse -Force
+  $monitorAckReceiptPath = Join-Path $monitorAckRuntimeRoot 'latest\seo-geo-validation-receipt.json'
+  Remove-Item -LiteralPath $monitorAckReceiptPath -Force
+  $monitorAckFooterPath = Join-Path $monitorAckRuntimeRoot 'src\components\Footer.tsx'
+  [System.IO.File]::AppendAllText($monitorAckFooterPath, "`n// approved shared-source change`n", $utf8NoBom)
+  $monitorAckValidation = @($state.rounds[0].required_validations | ForEach-Object {
+    [ordered]@{ command = [string]$_; status = 'passed'; exit_code = 0 }
+  }) | ConvertTo-Json -Depth 5 -Compress
+  $monitorAckReceipt = Invoke-PwshFile -File $receiptWriter -ScriptArgs @(
+    '-RuntimeRoot', $monitorAckRuntimeRoot,
+    '-QueueId', $queueIdBefore,
+    '-CycleKey', $cycleKeyBefore,
+    '-Round', '1',
+    '-Result', 'implemented',
+    '-ChangedFiles', 'src/components/Footer.tsx',
+    '-ValidationResultsJson', $monitorAckValidation
+  )
+  Assert-True ($monitorAckReceipt.ExitCode -eq 0) ('shared-source implementation receipt was rejected: ' + ($monitorAckReceipt.Output -join ' '))
+  $monitorAckCurrent = Invoke-PwshFile -File $provenanceChecker -ScriptArgs @('-RuntimeRoot', $monitorAckRuntimeRoot, '-RepoRoot', $monitorAckRuntimeRoot)
+  $monitorAckCurrentJson = Convert-CommandJson -Output $monitorAckCurrent.Output -Label 'monitor shared-source acknowledged provenance'
+  Assert-True ($monitorAckCurrent.ExitCode -eq 0 -and -not [bool]$monitorAckCurrentJson.stale) ('queue-bound receipt did not acknowledge the exact owner-overlap source change: ' + (@($monitorAckCurrentJson.reasons) -join ', '))
+  [System.IO.File]::AppendAllText((Join-Path $monitorAckRuntimeRoot 'src\app\calculator\page.tsx'), "`n// unapproved monitor-only drift`n", $utf8NoBom)
+  $monitorAckExclusiveDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs @('-RuntimeRoot', $monitorAckRuntimeRoot, '-RepoRoot', $monitorAckRuntimeRoot)
+  $monitorAckExclusiveJson = Convert-CommandJson -Output $monitorAckExclusiveDrift.Output -Label 'monitor exclusive source after implementation receipt'
+  Assert-True ([bool]$monitorAckExclusiveJson.stale -and @($monitorAckExclusiveJson.reasons) -contains 'monitor_only_source_sha_mismatch:src/app/calculator/page.tsx') 'Implementation receipt incorrectly acknowledged a monitor-only-exclusive source change.'
 
   $receiptHashBefore = (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash
   $badReceiptResult = Invoke-PwshFile -File $receiptWriter -ScriptArgs @(
@@ -1322,6 +1387,45 @@ try {
   $historyDriftJson = Convert-CommandJson -Output $historyDrift.Output -Label 'history-drift provenance'
   Assert-True ([bool]$historyDriftJson.stale -and @($historyDriftJson.reasons) -contains 'action_history_sha_mismatch') 'action-history SHA drift was not detected.'
   Write-Utf8NoBom -Path $historyFixturePath -Text $historyFixtureText
+
+  foreach ($relativePath in @('src/app/layout.tsx', 'src/components/Footer.tsx', 'src/data/serviceFees.ts')) {
+    $commonSourceFixturePath = Join-Path $runtimeRoot ($relativePath.Replace('/', '\'))
+    $commonSourceFixtureText = Get-Content -LiteralPath $commonSourceFixturePath -Raw -Encoding UTF8
+    try {
+      [System.IO.File]::AppendAllText($commonSourceFixturePath, "`n// common source drift fixture`n", $utf8NoBom)
+      $commonSourceDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
+      $commonSourceDriftJson = Convert-CommandJson -Output $commonSourceDrift.Output -Label "common-source-drift provenance ($relativePath)"
+      Assert-True ([bool]$commonSourceDriftJson.stale -and @($commonSourceDriftJson.reasons) -contains 'source_fingerprint_mismatch' -and @($commonSourceDriftJson.reasons) -contains "source_sha_mismatch:$relativePath") "Common source drift was not detected for $relativePath."
+    } finally {
+      Write-Utf8NoBom -Path $commonSourceFixturePath -Text $commonSourceFixtureText
+    }
+  }
+
+  foreach ($relativePath in @('src/app/calculator/page.tsx', 'src/app/blog/[id]/page.tsx')) {
+    $monitorSourceFixturePath = Join-Path $runtimeRoot ($relativePath.Replace('/', '\'))
+    $monitorSourceFixtureText = Get-Content -LiteralPath $monitorSourceFixturePath -Raw -Encoding UTF8
+    try {
+      [System.IO.File]::AppendAllText($monitorSourceFixturePath, "`n// monitor-only source drift fixture`n", $utf8NoBom)
+      $monitorSourceDrift = Invoke-PwshFile -File $provenanceChecker -ScriptArgs $provenanceArgs
+      $monitorSourceDriftJson = Convert-CommandJson -Output $monitorSourceDrift.Output -Label "monitor-only-source-drift provenance ($relativePath)"
+      Assert-True ([bool]$monitorSourceDriftJson.stale -and @($monitorSourceDriftJson.reasons) -contains ("monitor_only_source_sha_mismatch:$relativePath")) "Monitor-only source drift was not detected for $relativePath."
+    } finally {
+      Write-Utf8NoBom -Path $monitorSourceFixturePath -Text $monitorSourceFixtureText
+    }
+  }
+
+  $legacyMonitorRuntimeRoot = Join-Path $testRoot 'legacy-monitor-source-runtime'
+  Copy-Item -LiteralPath $runtimeRoot -Destination $legacyMonitorRuntimeRoot -Recurse -Force
+  $legacyMonitorStatePath = Join-Path $legacyMonitorRuntimeRoot 'latest\seo-geo-action-queue-state.json'
+  $legacyMonitorState = Read-Json -Path $legacyMonitorStatePath
+  foreach ($propertyName in @('monitor_only_source_sets', 'monitor_only_source_files', 'monitor_only_source_fingerprint')) {
+    $legacyMonitorState.provenance.PSObject.Properties.Remove($propertyName)
+  }
+  Write-Json -Path $legacyMonitorStatePath -Value $legacyMonitorState
+  [System.IO.File]::AppendAllText((Join-Path $legacyMonitorRuntimeRoot 'src\app\calculator\page.tsx'), "`n// legacy monitor source drift fixture`n", $utf8NoBom)
+  $legacyMonitorCheck = Invoke-PwshFile -File $provenanceChecker -ScriptArgs @('-RuntimeRoot', $legacyMonitorRuntimeRoot, '-RepoRoot', $legacyMonitorRuntimeRoot)
+  $legacyMonitorJson = Convert-CommandJson -Output $legacyMonitorCheck.Output -Label 'legacy queue monitor source provenance'
+  Assert-True ($legacyMonitorCheck.ExitCode -eq 0 -and -not [bool]$legacyMonitorJson.stale) 'Legacy queue without monitor-only source fields changed its existing freshness behavior.'
 
   $sourceFixturePath = Join-Path $runtimeRoot 'src\app\cases\page.tsx'
   [System.IO.File]::AppendAllText($sourceFixturePath, "`n// provenance drift fixture`n", $utf8NoBom)

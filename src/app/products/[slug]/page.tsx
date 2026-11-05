@@ -649,7 +649,7 @@ const howToSchema = (productName: string) => ({
   name: `宏森${productName}訂製安裝完整流程`,
   description: `詳細說明宏森開發${productName}從預約到完工安裝的四個專業步驟`,
   step: [
-    { '@type': 'HowToStep', position: 1, name: '預約免費到府丈量', text: '透過電話或 LINE 預約，專業人員攜帶樣本與色卡親赴您家丈量，完全免費。' },
+    { '@type': 'HowToStep', position: 1, name: '預約免費到府丈量', text: '透過電話或 LINE 預約，專業人員攜帶樣本與色卡到府丈量。丈量免費；雙北市區施工免車資，雙北偏遠地區及雙北以外確認施工時師傅施工工資另加車資，費用與服務安排請先洽詢。未施工不收車資。' },
     { '@type': 'HowToStep', position: 2, name: '現場選料與報價', text: '師傅於現場依您的空間、採光與風格需求，推薦最合適的布料材質，並立即提供透明報價。' },
     { '@type': 'HowToStep', position: 3, name: '依確認規格製作', text: '確認訂單、材料與尺寸後進入製作，完成後再依約安排安裝。' },
     { '@type': 'HowToStep', position: 4, name: '專業到府安裝', text: '完工後約定時間由專業師傅上門安裝，並提供完整使用說明與售後服務諮詢。' },
@@ -729,7 +729,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       { href: '/location/zhongzheng/', label: '中正區窗簾價格試算：客廳紗簾與調光簾比價入口' },
     ],
     P003: [
-      { href: '/calculator/?product=P003', label: '蛇形窗簾線上估價：先帶入客廳落地窗尺寸與蛇形軌道需求' },
+      { href: '/calculator/?product=P003', label: '宏森窗簾線上估價：帶入蛇形窗簾與客廳落地窗尺寸' },
       { href: '/blog/s-curtain-vs-vertical-blind/', label: '蛇形窗簾與直立簾比較：客廳落地窗先確認垂墜或葉片調光需求' },
       { href: '/products/custom-curtains/', label: '一般布簾訂製：比較固定 S 型摺距與傳統布簾抓褶做法' },
       { href: '/location/sanchong/', label: '三重窗簾丈量：客廳落地窗、窗簾盒與蛇形軌道條件確認' },

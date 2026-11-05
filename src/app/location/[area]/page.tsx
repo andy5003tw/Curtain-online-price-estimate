@@ -663,7 +663,7 @@ export default async function LocationPage({ params }: { params: Promise<{ area:
         <div className="section-container">
           <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>立即預約 {pageData.areaName} 免費到府丈量</h2>
           <p style={{ color: 'var(--stone-300)', marginBottom: '2.5rem', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto 2.5rem auto' }}>
-            專人攜帶樣本到府，依據您的現場採光、裝潢風格給予最專業的配置建議，量尺與報價完全免費！
+            專人攜帶樣本到府，依現場條件提供配置建議。到府丈量免費；雙北市區施工免車資，雙北偏遠地區及雙北以外確認施工時師傅施工工資另加車資，未施工不收車資。費用與服務安排請先洽詢。
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href={buildCalculatorUrl(undefined, pageData.id)} className="btn-primary" style={{ background: 'var(--amber-600)', padding: '1rem 2.5rem', fontSize: '1.1rem' }}>線上快速估價 <ChevronRight size={20} /></Link>

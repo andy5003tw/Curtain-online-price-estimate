@@ -5,6 +5,7 @@ import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { withBasePath } from '@/lib/base-path';
 import { businessEvidence } from '@/data/businessEvidence';
 import EditorialLandingHero from '@/components/EditorialLandingHero';
+import { serviceFeePolicy } from '@/data/serviceFees';
 
 const ABOUT_TITLE = '工廠直營窗簾｜台北窗簾免費丈量、報價流程與品牌服務';
 const ABOUT_DESCRIPTION = '想找工廠直營窗簾或台北窗簾免費丈量？宏森提供台北、新北到府丈量、窗簾價格試算、工廠直營報價與安裝服務流程。';
@@ -46,10 +47,10 @@ const iconicCases = [
 ];
 
 const faqs = [
-  { q: '台北窗簾免費丈量真的不用先付費嗎？', a: '宏森開發提供台北市與新北市主要服務區的免費到府量尺與報價服務，確認施作才收費。若你想先抓預算，也可以先用窗簾價格試算，再安排台北窗簾免費丈量。', icon: BadgeDollarSign },
+  { q: '台北窗簾免費丈量真的不用先付費嗎？', a: serviceFeePolicy, icon: BadgeDollarSign },
   { q: '工廠直營窗簾可以先線上估價再丈量嗎？', a: '可以。建議先用線上估價工具抓大約預算，再從工廠直營窗簾服務流程安排到府丈量、選料與正式報價，這樣比直接問單一款式價格更容易收斂。', icon: Calculator },
   { q: '只有一窗也可以服務嗎？', a: '沒問題！無論是整間房屋或是單一窗戶，我們都提供同樣專業的丈量與安裝服務。', icon: PanelTop },
-  { q: '外縣市有服務嗎？', a: '我們主要服務大台北地區（雙北）。台北市及新北市以外的區域，視距離酌收基本出差車資，歡迎致電洽詢。', icon: MapPinned },
+  { q: '外縣市有服務嗎？', a: `是否能安排服務請先依地址洽詢。${serviceFeePolicy}`, icon: MapPinned },
   { q: '先做線上估價，再安排丈量可以嗎？', a: '可以，建議先用窗簾價格試算抓預算，再安排到府丈量確認材質、窗型、配件與正式報價。台北、板橋、鶯歌等服務頁也都可先比對流程。', icon: Route },
   { q: '估價後多久可以安排丈量？', a: '一般案件可先在線上估價後安排最近時段丈量；若是大面積、透天或特殊窗型案件，會先確認空間條件再排入丈量時程。', icon: CalendarClock },
   { q: '工廠直營窗簾和一般門市報價差在哪裡？', a: '工廠直營窗簾從丈量、選料、製作到安裝由同一服務鏈完成，能減少轉單溝通與中間成本。對屋主來說，價格、交期與售後責任會更清楚。', icon: Scale },

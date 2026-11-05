@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { absoluteUrl, buildOgTwitterMeta } from '@/lib/seo';
 import { calculatorFaq } from '@/data/calculatorFaq';
+import { businessEvidence } from '@/data/businessEvidence';
 
 const CALCULATOR_SNIPPET_VARIANTS = {
   A: {
@@ -41,6 +42,7 @@ const calculatorSchema = {
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Any',
   url: absoluteUrl('/calculator/'),
+  provider: { '@id': businessEvidence.companyEntity.id },
   description: '宏森窗簾計算機可快速完成窗簾價格試算與窗簾線上估價，輸入尺寸即可比較百葉窗、實木百葉、捲簾、調光簾與安裝預算。'
 };
 

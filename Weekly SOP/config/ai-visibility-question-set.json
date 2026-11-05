@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "question_set_id": "curtain-online-zh-tw-v1",
+  "locale": "zh-TW",
+  "measurement_rule": "Direct observation from a named AI engine/model only. GSC ranking, CTR, impressions, or position must never be used to infer mention, citation, or accuracy.",
+  "questions": [
+    {
+      "question_id": "brand_estimate_desktop",
+      "question": "宏森窗簾線上估價怎麼做？",
+      "region": "Taipei, Taiwan",
+      "device": "desktop",
+      "brand_context": "brand"
+    },
+    {
+      "question_id": "brand_sfold_mobile",
+      "question": "宏森窗簾的蛇形窗簾適合客廳嗎？",
+      "region": "Taipei, Taiwan",
+      "device": "mobile",
+      "brand_context": "brand"
+    },
+    {
+      "question_id": "nonbrand_curtain_quote_desktop",
+      "question": "台北窗簾估價通常要先準備哪些資訊？",
+      "region": "Taipei, Taiwan",
+      "device": "desktop",
+      "brand_context": "non_brand"
+    },
+    {
+      "question_id": "nonbrand_sfold_mobile",
+      "question": "蛇形窗簾和傳統布簾差在哪裡？",
+      "region": "Taipei, Taiwan",
+      "device": "mobile",
+      "brand_context": "non_brand"
+    },
+    {
+      "question_id": "nonbrand_blackout_desktop",
+      "question": "台北臥室遮光窗簾怎麼選才不會太悶？",
+      "region": "Taipei, Taiwan",
+      "device": "desktop",
+      "brand_context": "non_brand"
+    },
+    {
+      "question_id": "nonbrand_install_mobile",
+      "question": "台北裝窗簾前要怎麼量窗戶尺寸？",
+      "region": "Taipei, Taiwan",
+      "device": "mobile",
+      "brand_context": "non_brand"
+    }
+  ]
+}

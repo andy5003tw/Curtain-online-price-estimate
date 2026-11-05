@@ -37,7 +37,11 @@ npm.cmd run deploy:ftp:dry
 npm.cmd run deploy:ftp
 ```
 
-`deploy:ftp` runs `scripts/deploy-ftp.ps1` in `quick` mode. It selects deployment-critical files only: generated HTML/TXT, sitemap, robots, `.htaccess`, and `_next/static`. It checks remote file sizes, skips same-size files, uploads sequentially with per-file progress, and retries transient failures.
+`deploy:ftp` runs `scripts/deploy-ftp.ps1` in `quick` mode. It selects generated HTML/TXT, sitemap, robots, `.htaccess`, `_next/static`, and supported public images and fonts. For a same-size remote file, it downloads the remote bytes and compares SHA-256; it skips only when the hashes match. If the size differs or the comparison fails, it uploads the selected file. `-Force` bypasses comparisons and uploads every selected file. Uploads are sequential and transient failures are retried.
+
+This comparison can download substantial data during a quick deployment; use a focused `paths` deploy when appropriate. Do not run a build or edit deployment files during an upload; the script fails a file if its local hash has changed since the manifest was prepared. The deployment manifest records `skipped_same_hash` and `remote_sha256_before` for verified skips. Historical `skipped_same_size` results do not prove matching content and cannot support a new deployed lifecycle receipt. Always perform the usual public live verification after a deployment.
+
+Run `npm.cmd run test:deploy-ftp` to exercise the deploy script against an isolated local FTP server without contacting the production host.
 
 Use `quick` mode for normal SEO/GEO batches, schema changes, title/meta updates, FAQ changes, internal link changes, sitemap updates, and route HTML changes.
 

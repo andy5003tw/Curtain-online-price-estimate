@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, Suspense, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useState, Suspense, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Calculator, CheckCircle2, ChevronRight } from 'lucide-react';
@@ -84,6 +84,7 @@ function updateCalculatorProductUrl(productId: string, area?: string) {
 
 export function CalculatorForm({ products: bootstrapProducts }: CalculatorClientProps) {
   const catalog = useCatalog(bootstrapProducts);
+  const dimensionId = useId();
   const products = catalog.products;
   const searchParams = useSearchParams();
   const isGitHubPages =
@@ -180,6 +181,7 @@ export function CalculatorForm({ products: bootstrapProducts }: CalculatorClient
               <h3>選擇產品</h3>
             </div>
             <select
+              aria-label="選擇產品"
               value={selectedProductExists ? selectedProduct : ''}
               onChange={(e) => changeProduct(e.target.value)}
               className="form-select"
@@ -216,8 +218,9 @@ export function CalculatorForm({ products: bootstrapProducts }: CalculatorClient
             </div>
             <div className="dim-grid">
               <div>
-                <label>寬度</label>
+                <label htmlFor={`${dimensionId}-width`}>寬度（公分）</label>
                 <input
+                  id={`${dimensionId}-width`}
                   type="number"
                   min="0"
                   value={width}
@@ -227,8 +230,9 @@ export function CalculatorForm({ products: bootstrapProducts }: CalculatorClient
                 />
               </div>
               <div>
-                <label>高度</label>
+                <label htmlFor={`${dimensionId}-height`}>高度（公分）</label>
                 <input
+                  id={`${dimensionId}-height`}
                   type="number"
                   min="0"
                   value={height}
@@ -271,13 +275,13 @@ export function CalculatorForm({ products: bootstrapProducts }: CalculatorClient
                 <span>總估價</span>
                 <span>NT$ {result.total_price.toLocaleString()}</span>
               </div>
-              <p className="form-hint" style={{ marginTop: '0.75rem' }}>
+              <p className="form-hint" style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--stone-700)' }}>
                 單一窗的材料費與安裝費先作線上初估；整筆工程最低總施工費為 NT$1,300，非每窗最低安裝費。特殊窗型、配件與施工條件須於丈量後確認正式報價。
               </p>
               <p className="form-hint" style={{ marginTop: '0.75rem', color: 'var(--amber-800)' }}>
                 <strong>車資提醒：</strong>線上試算金額不隨地區變動，也未含車資。{serviceFeePolicy}
               </p>
-              <p className="form-hint" style={{ marginTop: '1.25rem' }}>
+              <p className="form-hint" style={{ marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--stone-700)' }}>
                 試算結果不會自動送出；請透過電話或 LINE 提供品項、尺寸及所在地，預約丈量。
               </p>
               <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>

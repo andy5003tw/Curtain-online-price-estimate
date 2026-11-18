@@ -5,6 +5,7 @@ require_once dirname(__DIR__, 2) . '/private/lib/common.php';
 require_once dirname(__DIR__, 2) . '/private/lib/storage.php';
 require_once dirname(__DIR__, 2) . '/private/lib/auth.php';
 require_once dirname(__DIR__, 2) . '/private/lib/audit.php';
+require_once dirname(__DIR__, 2) . '/private/lib/formula_settings.php';
 
 function hs_pricing_default_value(string $formulaType, string $field): float
 {
@@ -39,6 +40,16 @@ function hs_pricing_fields_for_formula(string $formulaType, array $pricing): arr
     return $fields;
 }
 
+function hs_legacy_formula_setting_key(string $field): ?string
+{
+    $mapping = [
+        'min_track_ft' => 'min_track_ft',
+        'min_per_tai' => 'min_per_tai',
+        'base_installation_per_tai' => 'min_install_tai',
+    ];
+    return $mapping[$field] ?? null;
+}
+
 hs_bootstrap_session();
 hs_require_login();
 
@@ -64,7 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $productId = strtoupper(trim((string) ($_POST['product_id'] ?? '')));
-        $saveResult = hs_with_lock('pricing-rules', function () use ($productId) {
+        $expectedRevision = (string) ($_POST['rules_revision'] ?? '');
+        $saveResult = hs_with_lock('pricing-rules', function () use ($productId, $expectedRevision) {
+            if ($expectedRevision === '' || hs_rules_revision() !== $expectedRevision) {
+                return ['ok' => false, 'message' => '其他人已更新規則，請重新載入後再儲存。'];
+            }
             $rules = hs_read_rules();
             $products = $rules['products'] ?? [];
             if (!is_array($products) || !isset($products[$productId])) {
@@ -78,6 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $formulaType = (string) ($product['formula_type'] ?? '');
             $editableFields = hs_pricing_fields_for_formula($formulaType, $pricing);
+            $savedSettings = $product['formula_settings'] ?? [];
+            if (!is_array($savedSettings)) {
+                $savedSettings = [];
+            }
+            $effectiveSettings = hs_formula_definition($formulaType) === null
+                ? [] : hs_effective_formula_settings($formulaType, $pricing, $savedSettings);
 
             $changes = [];
             foreach ($editableFields as $key) {
@@ -85,10 +106,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!array_key_exists($inputName, $_POST)) {
                     continue;
                 }
-                $oldValue = $pricing[$key] ?? hs_pricing_default_value($formulaType, $key);
+                $settingKey = hs_legacy_formula_setting_key($key);
+                $oldValue = $settingKey !== null && array_key_exists($settingKey, $effectiveSettings)
+                    ? $effectiveSettings[$settingKey]
+                    : ($pricing[$key] ?? hs_pricing_default_value($formulaType, $key));
 
                 $raw = trim((string) $_POST[$inputName]);
-                if ($raw === '' || !is_numeric($raw)) {
+                if ($raw === '' || !is_numeric($raw) || !is_finite((float) $raw)) {
                     return ['ok' => false, 'message' => $key . ' 的數值格式錯誤。'];
                 }
 
@@ -105,6 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'new' => $normalized,
                     ];
                     $pricing[$key] = $normalized;
+                    if ($settingKey !== null && array_key_exists($settingKey, $effectiveSettings)) {
+                        $savedSettings[$settingKey] = $normalized;
+                    }
                 }
             }
 
@@ -118,8 +145,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $rules['products'][$productId]['pricing'] = $pricing;
+            if (count($savedSettings) > 0) {
+                $rules['products'][$productId]['formula_settings'] = $savedSettings;
+            }
             $rules['updated_at'] = hs_now_iso();
-            $rules['version'] = 'manual-' . date('Ymd-His');
+            $rules['version'] = hs_next_rules_version();
             if (!hs_save_rules($rules)) {
                 return ['ok' => false, 'message' => '儲存價格規則失敗。'];
             }
@@ -273,6 +303,9 @@ function hs_product_name_zh_by_id(string $productId): string
         <span>最後更新：<code><?= htmlspecialchars((string) ($rules['updated_at'] ?? '無'), ENT_QUOTES, 'UTF-8') ?></code></span>
       </div>
       <div class="actions">
+        <?php if (hs_can_manage_formula()): ?>
+          <a class="btn" href="/admin/pricing/new.php">新增試算產品</a>
+        <?php endif; ?>
         <?php if (hs_can_manage_users()): ?>
           <a class="btn secondary" href="/admin/pricing/users.php">人員管理</a>
         <?php endif; ?>
@@ -309,30 +342,37 @@ function hs_product_name_zh_by_id(string $productId): string
         if (!is_array($pricing)) {
             continue;
         }
-        $productNameEn = (string) ($product['name'] ?? '');
-        $productNameZh = hs_product_name_zh_by_id((string) $productId);
-        $productNameDisplay = $productNameEn;
-        if ($productNameZh !== '') {
-            $productNameDisplay .= '（' . $productNameZh . '）';
-        }
+        $productNameDisplay = hs_product_display_name((string) $productId, $product);
       ?>
       <section class="panel">
         <div class="product-head">
           <strong><?= htmlspecialchars((string) $productId, ENT_QUOTES, 'UTF-8') ?> - <?= htmlspecialchars($productNameDisplay, ENT_QUOTES, 'UTF-8') ?></strong>
-          <span class="small">公式類型：<code><?= htmlspecialchars((string) ($product['formula_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></code></span>
+          <span class="small">狀態：<?= htmlspecialchars(hs_product_status($product), ENT_QUOTES, 'UTF-8') ?>　公式類型：<code><?= htmlspecialchars((string) ($product['formula_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></code>　<a href="/admin/pricing/formula.php?product_id=<?= urlencode((string) $productId) ?>">公式設定</a></span>
         </div>
 
         <form method="post">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(hs_csrf_token(), ENT_QUOTES, 'UTF-8') ?>" />
           <input type="hidden" name="action" value="save_product" />
           <input type="hidden" name="product_id" value="<?= htmlspecialchars((string) $productId, ENT_QUOTES, 'UTF-8') ?>" />
+          <input type="hidden" name="rules_revision" value="<?= htmlspecialchars(hs_rules_revision(), ENT_QUOTES, 'UTF-8') ?>" />
           <div class="grid">
             <?php
               $formulaType = (string) ($product['formula_type'] ?? '');
               $editableFields = hs_pricing_fields_for_formula($formulaType, $pricing);
+              $savedSettings = $product['formula_settings'] ?? [];
+              if (!is_array($savedSettings)) {
+                  $savedSettings = [];
+              }
+              $effectiveSettings = hs_formula_definition($formulaType) === null
+                  ? [] : hs_effective_formula_settings($formulaType, $pricing, $savedSettings);
             ?>
             <?php foreach ($editableFields as $field): ?>
-              <?php $value = $pricing[$field] ?? hs_pricing_default_value($formulaType, $field); ?>
+              <?php
+                $settingKey = hs_legacy_formula_setting_key((string) $field);
+                $value = $settingKey !== null && array_key_exists($settingKey, $effectiveSettings)
+                    ? $effectiveSettings[$settingKey]
+                    : ($pricing[$field] ?? hs_pricing_default_value($formulaType, $field));
+              ?>
               <div>
                 <label for="<?= htmlspecialchars($productId . '-' . $field, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(hs_field_label((string) $field), ENT_QUOTES, 'UTF-8') ?></label>
                 <input

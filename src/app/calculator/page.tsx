@@ -33,6 +33,7 @@ const calculatorQuickGroups = [
   {
     title: '熱門產品與價格',
     links: [
+      { href: '/products/custom-curtains/', label: '一般窗簾訂製：布料、價格與安裝條件', icon: Home },
       { href: '/products/roller-blinds/', label: '捲簾估價：先看遮光、安裝與適用空間', icon: SlidersHorizontal },
       { href: buildCalculatorUrl('P007'), label: '實木百葉試算：直接帶入木百葉品項', icon: Ruler },
       { href: '/blog/curtain-price-guide-2026/', label: '2026 窗簾價格指南：先看安裝費與預算', icon: CircleDollarSign },

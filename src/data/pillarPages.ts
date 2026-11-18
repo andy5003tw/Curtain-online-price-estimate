@@ -184,6 +184,7 @@ export const pillarPages: PillarPage[] = [
     quickLinks: [
       { href: '/products/seamless-sheer-curtains/', label: '無縫紗簾推薦：客廳透光不透人與雙層搭配' },
       { href: '/calculator/?product=P003', label: '客廳蛇形窗簾價格試算：先輸入落地窗尺寸' },
+      { href: '/products/s-fold-curtains/', label: '蛇形窗簾產品：軌道、布料與安裝條件' },
       { href: '/products/zebra-blinds/', label: '調光簾推薦：客廳控光與價格重點' },
       { href: '/products/wooden-blinds/', label: '實木百葉窗價格試算：客廳木質感方案' },
       { href: '/calculator/?product=P002', label: '無縫紗簾價格試算：直接比客廳紗簾與雙層窗簾' },

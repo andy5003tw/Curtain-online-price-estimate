@@ -96,9 +96,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 // Product-specific rich content
 const productDetails: Record<string, { features: string[]; useCases: string[]; fullDesc: string }> = {
   P001: {
-    features: ['優異遮光效果', '良好隔音性能', '多種布料與花色選擇', '耐洗耐用'],
+    features: ['依布料選擇遮光程度', '多種布料與花色選擇', '尺寸可依窗型訂製', '清潔方式依布料標示'],
     useCases: ['臥室', '客廳', '辦公室'],
-    fullDesc: '窗簾訂製價格會依窗戶寬高、布料與遮光需求、軌道和安裝條件而不同。一般布簾適合客廳、臥室與辦公室；可先輸入尺寸試算布簾及基本安裝預算，再安排到府丈量確認布料、施工條件與正式報價。',
+    fullDesc: '窗簾訂製價格受窗戶尺寸、布料、遮光需求、軌道與安裝條件影響。先輸入寬高，初估一扇一般布簾的材料與基本安裝費，再透過電話或 LINE 安排到府丈量，確認布料、施工條件與正式報價。',
   },
   P002: {
     features: ['無縫設計、視覺更純淨', '透光不透人的遮蔽效果', '輕薄飄逸，極具美感', '適合搭配遮光布簾使用'],
@@ -106,9 +106,9 @@ const productDetails: Record<string, { features: string[]; useCases: string[]; f
     fullDesc: '紗簾價格可先固定同一尺寸，試算透光不透人無縫紗簾、雙層搭配、軌道、窗高與基本安裝費；再透過電話或 LINE 安排到府看樣與丈量。無縫紗簾兼顧白天採光、隱私與空間通透感，適合客廳、書房與落地窗。',
   },
   P003: {
-    features: ['獨特 S 型曲線設計', '布料垂墜感極佳', '適合落地窗使用', '展現現代奢華風格'],
+    features: ['專用軌道與等距配件形成波浪', '適合客廳落地窗', '布料遮光依實際規格確認', '窗簾盒與固定面需丈量確認'],
     useCases: ['客廳落地窗', '主臥室', '高端商業空間'],
-    fullDesc: `宏森窗簾（${COMPANY_NAME}）的蛇形窗簾（也常稱蛇形簾或 S 型窗簾）以專用軌道與等距吊掛配件形成規律波浪，特別適合想讓客廳落地窗保有整齊垂墜與一致摺距的空間。若主要需求是葉片調光或左右收合方式，應另比較直立簾；實際波浪密度、布量、窗簾盒與軌道條件仍需在丈量後確認。`,
+    fullDesc: `宏森窗簾（${COMPANY_NAME}）的蛇形窗簾（蛇形簾或 S 型窗簾）搭配專用軌道與等距吊掛配件，讓客廳落地窗的布料形成規律波浪。可先輸入寬高，試算一扇窗的材料與基本安裝費，再安排丈量確認布量、窗簾盒、軌道與正式報價。`,
   },
   P004: {
     features: ['層次分明的摺疊設計', '收起時佔空間小', '多種布料選擇', '適合小窗與多窗格'],
@@ -170,11 +170,11 @@ const productSeoExtras: Record<string, {
 }> = {
   P001: {
     priceTable: [
-      { label: '窗簾訂製價格試算：標準半腰窗 (150×150 cm)', range: '約 NT$ 1,800 – 2,800 起' },
-      { label: '訂製窗簾價格：標準落地窗 (200×240 cm)', range: '約 NT$ 3,500 – 5,500 起' },
-      { label: '做窗簾價格與基本安裝 (300×240 cm)', range: '約 NT$ 5,000 – 8,000 起' },
+      { label: '半腰窗（150×150 公分）', range: '約 NT$ 1,800 – 2,800 起' },
+      { label: '落地窗（200×240 公分）', range: '約 NT$ 3,500 – 5,500 起' },
+      { label: '大型落地窗（300×240 公分）', range: '約 NT$ 5,000 – 8,000 起' },
     ],
-    lsiParagraph: '窗簾訂製價格若想抓得準，通常要先釐清空間用途、遮光程度、布料手感、雙層需求與安裝條件。一般布簾（cloth curtains）是台灣居家最普及的窗簾選擇，適用於客廳落地窗、主臥室、書房及辦公室。若你正在比較做窗簾價格、訂製窗簾價格、窗簾訂做價格、遮光窗簾、布簾訂製與客廳布簾，重點不只在布料本身，也包含軌道長度、雙層配置、基本安裝費、安裝高度與是否需要窗簾盒修飾。相較於捲簾或百葉窗，布簾更能展現空間的溫馨氛圍與個人風格。若您在三重、板橋、內湖或樹林尋找窗簾訂製與遮光窗簾服務，建議先做線上估價，再安排到府丈量與樣本挑選。',
+    lsiParagraph: '訂製一般布簾時，可依客廳、臥室或辦公室的採光與隱私需求選擇布料；遮光表現也受布料規格和安裝縫隙影響。窗戶寬高、軌道、雙層配置及施工條件都會影響做窗簾價格。可先輸入每扇窗戶的尺寸，試算材料與基本安裝費，再透過電話或 LINE 預約丈量，確認實際用料與正式報價。',
     relatedBlogIds: ['blog-001', 'blog-002'],
   },
   P002: {
@@ -192,7 +192,7 @@ const productSeoExtras: Record<string, {
       { label: '蛇形軌道落地窗 (200×240 cm)', range: '約 NT$ 5,000 – 8,000 起' },
       { label: '大型落地窗 (300×240 cm)', range: '約 NT$ 7,500 – 12,000 起' },
     ],
-    lsiParagraph: '蛇形窗簾（S-fold curtains）是客廳落地窗常見的 S 型布簾做法，透過專用軌道與等距吊掛配件形成規律曲線。若你在比較蛇形簾、S 型窗簾、客廳窗簾或落地窗窗簾，先確認希望的是布料垂墜與固定摺距，還是葉片調光；後者可改看直立簾。規劃時要一起確認窗幅、布量、波浪密度、窗簾盒深度與軌道固定面；線上內容只能協助理解差異，最後仍以現場丈量與材料確認為準。',
+    lsiParagraph: '蛇形窗簾以專用軌道與等距吊掛配件形成波浪，適合偏好整齊垂墜感的客廳或臥室。若需要調整葉片角度，可比較直立簾；兩者的遮光、預算與清潔方式仍須依選用材料與安裝條件判斷。若已有軌道或規劃雙層，丈量時可一起確認既有配件、窗簾盒空間與固定面。',
     relatedBlogIds: ['blog-001'],
   },
   P004: {
@@ -324,12 +324,11 @@ const productV3Data: Record<string, {
 }> = {
   P001: {
     faqs: [
-      { q: '窗簾訂製價格、做窗簾價格怎麼先抓預算？', a: '先量窗戶寬高，再用同一尺寸比較布簾訂製的布料、遮光等級、軌道與基本安裝費；客廳布簾或雙層搭配也納入估算，最後由到府丈量確認正式報價。' },
-      { q: '訂製窗簾價格和窗簾訂做價格會因哪些條件改變？', a: '線上試算先估布料、軌道、車工與基本安裝費；正式報價還會看窗型、安裝高度、窗簾盒、是否拆舊與五金條件。先用同尺寸比較，再由丈量確認。' },
+      { q: '窗簾訂製價格怎麼先抓預算？', a: '先量窗戶寬高，線上工具每次試算一扇，結果分列材料費與基本安裝費。一般布簾的材料初估包含布料、軌道與車工；實際用料與施工條件由到府丈量確認。' },
+      { q: '線上試算有哪些費用需要另外確認？', a: '線上初估未含車資；整筆工程施工費、拆舊、特殊窗型與配件的服務及費用須另行確認。試算結果不會自動送出，可透過電話或 LINE 安排丈量。' },
       { q: '布簾可以做到完全遮光嗎？', a: '可選擇高遮光布或遮光塗層布；實際遮光除了看布料規格，也受窗簾盒、兩側及下緣縫隙影響。若有降低漏光的需求，請先確認材料標示，並由現場丈量評估安裝條件。' },
       { q: '布簾和蛇形簾有什麼差異？', a: '一般布簾可依款式選擇不同抓褶方式；蛇形簾常搭配專用軌道與等距吊掛配件，呈現規律波浪。遮光、清潔方式及價格仍要依布料、配件、尺寸與安裝條件比較，不能只憑簾型判定。' },
-      { q: '遮光窗簾價格怎麼抓比較準？', a: '建議先用同一尺寸比較一般布簾、遮光布簾與遮光捲簾，再依遮光等級、雙層需求、軌道與安裝條件判斷最適合的正式報價區間。' },
-      { q: '訂製窗簾價格除了布料，還要看什麼？', a: '還要看窗型尺寸、雙層需求、軌道長度、安裝高度、窗簾盒與施工難度。這些條件會直接影響窗簾訂製價格與正式報價差異。' },
+      { q: '客廳落地窗怎麼選布簾與遮光？', a: '先確認採光與隱私需求，再比較布料標示與單層或雙層配置。量取窗戶寬高，並留意窗簾盒與軌道條件；先試算預算，再由現場丈量確認報價。' },
     ],
     material: '聚酯纖維、棉麻混紡、天鵝絨、三明治遮光布',
     colorOptions: '超過50種顏色選擇，提供訂製花色',
@@ -367,9 +366,10 @@ const productV3Data: Record<string, {
   P003: {
     faqs: [
       { q: '宏森窗簾的蛇形窗簾適合客廳嗎？', a: `適合希望落地窗布簾呈現整齊波浪與垂墜感的客廳。宏森窗簾（${COMPANY_NAME}）提供蛇形窗簾訂製；窗幅、布量、窗簾盒深度與軌道安裝條件仍需依現場丈量確認。` },
-      { q: '蛇形簾的軌道安裝有什麼特別之處？', a: '蛇形簾常搭配專用軌道與等距吊掛配件，讓布料形成規律波浪。丈量時需確認窗簾盒、固定面與軌道條件，再決定適合的配置。' },
+      { q: '蛇形簾需要什麼軌道？原有軌道能沿用嗎？', a: '蛇形簾通常搭配專用軌道與等距吊掛配件，讓布料形成規律波浪。原有軌道是否可沿用，須檢查軌道與吊掛配件規格、窗簾盒空間及固定面，再由丈量確認。' },
       { q: '客廳落地窗想做蛇形窗簾或 S 型窗簾，要先確認什麼？', a: '先確認希望的是固定 S 型摺距與布料垂墜，還是葉片調光；前者可規劃蛇形窗簾，後者可一併比較直立簾。接著量測窗幅、窗高、窗簾盒深度與軌道固定面，正式規格仍以丈量為準。' },
       { q: '蛇形簾的清潔難度高嗎？', a: '清潔方式需看實際布料與吊掛配件，先依材料洗滌標示確認是否能水洗、機洗及如何拆裝；若不確定，請先向供應商或專業清潔人員詢問。' },
+      { q: '蛇形窗簾價格怎麼估算？', a: '可先輸入窗戶寬高，試算一扇蛇形窗簾的材料與基本安裝費。線上初估未含車資，布料、軌道、窗簾盒與現場條件會影響正式報價；可透過電話或 LINE 安排丈量確認。' },
     ],
     material: '高垂墜感聚酯纖維、棉麻混紡，搭配鋁合金蛇形軌道',
     colorOptions: '深灰、軍綠、米白、奶油、深藍等30種精選色系',
@@ -692,9 +692,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const serviceAreas = getServiceAreasForProduct(product.id, 6);
   const primaryAreaId = serviceAreas[0]?.id;
   const productHeroTitleMap: Record<string, string> = {
-    P001: '窗簾訂製價格｜做窗簾價格、布簾與遮光線上估算',
+    P001: '窗簾訂製價格｜一般布簾預算與線上試算',
     P002: '紗簾價格試算｜透光不透人紗簾、安裝費與到府看樣',
-    P003: '蛇形窗簾｜客廳落地窗 S 型布簾、軌道與線上估價',
+    P003: '蛇形窗簾｜軌道安裝、價格試算與客廳落地窗',
     P005: '捲簾價格試算｜遮光捲簾、捲簾安裝價格與線上估價',
     P006: '百葉窗價格試算｜鋁百葉防潮、安裝費與線上估價',
     P007: '實木百葉窗價格試算｜木百葉、客廳書房與安裝費',
@@ -731,6 +731,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     P003: [
       { href: '/calculator/?product=P003', label: '宏森窗簾線上估價：帶入蛇形窗簾與客廳落地窗尺寸' },
       { href: '/blog/s-curtain-vs-vertical-blind/', label: '蛇形窗簾與直立簾比較：客廳落地窗先確認垂墜或葉片調光需求' },
+      { href: '/curtain/living-room/', label: '客廳窗簾選款：比較蛇形簾、調光簾與木百葉' },
       { href: '/products/custom-curtains/', label: '一般布簾訂製：比較固定 S 型摺距與傳統布簾抓褶做法' },
       { href: '/location/sanchong/', label: '三重窗簾丈量：客廳落地窗、窗簾盒與蛇形軌道條件確認' },
       { href: '/location/taipei/', label: '台北窗簾估價：客廳落地窗蛇形簾先抓預算與丈量條件' },
@@ -879,12 +880,18 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     ]
   };
 
-  // Reuse one price table; only P002 presents it before the gallery and service flow.
+  // Reuse one price table for both positions in the page.
+  const showPriceBeforeGallery = product.id === 'P001' || product.id === 'P002' || product.id === 'P003';
+  const priceHeading = product.id === 'P001'
+    ? '窗簾訂製價格：參考區間與估價條件'
+    : product.id === 'P002'
+      ? '紗簾價格：參考區間與估價條件'
+      : `${product.name}參考價格一覽`;
   const priceSection = (
     <section className="py-section bg-white">
       <div className="section-container" style={{ maxWidth: '860px' }}>
         <div className="section-heading">
-          <h2>{product.id === 'P002' ? '紗簾價格：參考區間與估價條件' : `${product.name}參考價格一覽`}</h2>
+          <h2>{priceHeading}</h2>
           <p style={{ fontSize: '0.9rem', color: 'var(--stone-500)' }}>
             {product.id === 'P006'
               ? '以下為鋁百葉市場行情參考區間，實際依鋁合金葉片規格、窗型與施工條件報價；請用同一組尺寸試算，再由丈量確認正式報價。'
@@ -1049,7 +1056,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      {product.id === 'P002' && priceSection}
+      {showPriceBeforeGallery && priceSection}
 
       {/* Image Gallery */}
       {gallery.length > 0 && (
@@ -1087,7 +1094,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* 2. Price Transparency Table */}
-      {product.id !== 'P002' && priceSection}
+      {!showPriceBeforeGallery && priceSection}
 
       {/* V3: Specification Panel */}
       <section className="py-section bg-white" style={{ borderTop: '1px solid var(--stone-100)' }}>
